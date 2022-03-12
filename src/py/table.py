@@ -11,8 +11,13 @@ def is_draw():
 def end_game():
     print("not implemented")
 
-def update_threat_map(new_move)
-    print("not implemented")
+graph = [ [ None ] * 8 ] * 8
+# building the graph incrementally
+def update_threat_graph(new_move)
+    if new_move == None:
+        # load initial graph
+    else:
+        # update the graph
 
     # 64 places, 8*8 bit threat map
 
