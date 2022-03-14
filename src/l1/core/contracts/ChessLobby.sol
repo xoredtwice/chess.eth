@@ -1,24 +1,30 @@
 pragma solidity ^0.8;
 
 import '../interfaces/IERC20.sol';
+import '../interfaces/IChessBoard.sol';
+
+import './ChessBoard.sol';
 import './libraries/SafeMath.sol';
+
 
 contract Lobby {
     using SafeMath for uint;
 
     string public constant name = "lobby-test-01"
-    uint8  public constant maxBoards = 2;
+    uint8  public constant maxBoardCount = 3;
     uint8  public constant maxWaitingListLength = 10;
 
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
-    address public generosity;
+    address public chessToken;
     address public freeBoard;
     uint8 public waitingListLength;
+    uint8 public boardCounter;
 
+    address[maxBoardCount] public boards;
     //assuming each player can sit only on one board
     mapping(address => address) public playerToBoard;
-    mapping(address => mapping(address => address)) public boardToPlayers;
+    mapping(address => address[2]) public boardToPlayers;
     mapping(address => uint8) public boardToState;
     mapping(address => uint8) public WaitingIndexToPlayer;
 
@@ -32,39 +38,60 @@ contract Lobby {
     event GameStarted(address indexed board, address indexed player1, address indexed player2, uint meta);
     event GameEnded(address indexed board, uint result);
 
-    constructor(address chessToken) public {
+    constructor(address chessTokenAddress) public {
         waitingListLength = 0;
-        generosity = chessTokenAddress;
+        chessToken = chessTokenAddress;
 
         uint8 constant boardOneConfig = 0x0;
         _createBoard("gary", boardOneConfig);
 
         uint8 constant boardTwoConfig = 0x0;
-        _createBoard("magnus", boardOneConfig);
+        _createBoard("magnus", boardTwoConfig);
 
     }
 
-    function _deposit(address owner, address spender, uint value) private {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'ChessLobby: DEPOSIT_FAILED');
+    function _safeTransferFrom(
+        IERC20 token,
+        address sender,
+        address recipient,
+        uint amount
+    ) private {
+        bool sent = token.transferFrom(sender, recipient, amount);
+        require(sent, "ChessLobby: TOKEN_TRANSFER_FAILED");
     }
 
-    function _cashout(address owner, address spender, uint value) private {
+    function _deposit(address player, uint value) private {
+        _safeTransferFrom(chessToken, player, address(this), value);
+        credits[player] = credits[player] + value;
+        emit PlayerDeposited(player, value);
+        // (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
+        // require(success && (data.length == 0 || abi.decode(data, (bool))), 'ChessLobby: DEPOSIT_FAILED');
+    }
+
+    function _cashout(address player, uint value) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'ChessLobby: CASHOUT_FAILED');
     }
 
-    function _createBoard(uint options) private {
+    function _createBoard(uint options) private returns (address){
+        require(boardCounter < maxBoardCount - 1, 'ChessLobby: OUT_OF_BOARD');
         bytes memory bytecode = type(ChessBoard).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(options));
+        bytes32 salt = keccak256(abi.encodePacked(boardCounter));
         assembly {
             board := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        emit BoardCreated(board, boards.length);
+        boardToState[board] = 0x01;
+
+        // any new board is a free board
+        freeBoard = board;
+        emit BoardCreated(board, boardCounter);
+        boardCounter = boardCounter + 1;
+
+        return board;
     }
 
-    function _getFreeBoard() private{
-
+    function _findFreeBoard() private{
+        return freeBoard;
     }
 
     function _sitAndWait(address player, uint8 options) private {
@@ -75,15 +102,16 @@ contract Lobby {
             address constant player2 = player;
             require(player1 != player2, 'ChessLobby: IDENTICAL_ADDRESSES');
 
-            address constant freeBoard = _getFreeBoard()
-            IChessBoard(freeBoard).initialize(player1, player2);
-            playerToBoard[player1] = freeBoard;
-            playerToBoard[player2] = freeBoard;
+            address constant newBoard = _getFreeBoard()
+            IChessBoard(newBoard).initialize(player1, player2);
+            playerToBoard[player1] = newBoard;
+            playerToBoard[player2] = newBoard;
+            boardToPlayers[newBoard] = [player1, player2];
 
             delete WaitingIndexToPlayer[waitingListLength - 1];
             waitingListLength = waitingListLength - 1;
 
-            emit GameStarted(freeBoard, player1, player2, 0x0); 
+            emit GameStarted(newBoard, player1, player2, 0x0); 
         }
         else{
             WaitingIndexToPlayer[waitingListLength] = player;
@@ -91,6 +119,7 @@ contract Lobby {
         }
 
     }
+
 
     function sitAndWait(uint options) external returns (bool) {
         // Player must not be sitting on a board
@@ -107,12 +136,17 @@ contract Lobby {
     }
 
     function deposit(uint value) external returns (bool) {
-        _deposit(msg.sender, spender, value);
+        require(
+            IERC20(chessToken).allowance(msg.sender, address(this)) >= value,
+            "ChessLobby: LOW_ALLOWANCE"
+        );
+        _deposit(msg.sender, value);
         return true;
     }
 
     function cashout(uint value) external returns (bool) {
-        _deposit(msg.sender, spender, value);
+        require(credits[msg.sender] >= value, "NOT_ENOUGH_CREDIT");
+        _cashout(msg.sender, value);
         return true;
     }
 
