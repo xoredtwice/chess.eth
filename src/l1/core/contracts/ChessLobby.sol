@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL3
 pragma solidity ^0.8;
 
 import '../interfaces/IERC20.sol';
@@ -10,7 +11,7 @@ import './libraries/SafeMath.sol';
 contract Lobby {
     using SafeMath for uint;
 
-    string public constant name = "lobby-test-01"
+    string public constant name = "lobby-test-01";
     uint8  public constant maxBoardCount = 3;
     uint8  public constant maxWaitingListLength = 10;
 
@@ -26,13 +27,13 @@ contract Lobby {
     mapping(address => address) public playerToBoard;
     mapping(address => address[2]) public boardToPlayers;
     mapping(address => uint8) public boardToState;
-    mapping(address => uint8) public WaitingIndexToPlayer;
+    mapping(uint8 => address) public WaitingIndexToPlayer;
 
     // supporting only its own token right now
     mapping(address => uint) public credits;
     mapping(address => uint) public nonces;
 
-    event BoardCreated(address indexed board);
+    event BoardCreated(address indexed board, uint8 indexed boardCounter);
     event PlayerDeposited(address indexed player, uint amount);
     event PlayerSit(address indexed player, uint8 waitingListLength);
     event GameStarted(address indexed board, address indexed player1, address indexed player2, uint meta);
@@ -42,11 +43,11 @@ contract Lobby {
         waitingListLength = 0;
         chessToken = chessTokenAddress;
 
-        uint8 constant boardOneConfig = 0x0;
-        _createBoard("gary", boardOneConfig);
+        uint boardOneConfig = 0x0;
+        _createBoard(boardOneConfig);
 
-        uint8 constant boardTwoConfig = 0x0;
-        _createBoard("magnus", boardTwoConfig);
+        uint boardTwoConfig = 0x0;
+        _createBoard(boardTwoConfig);
 
     }
 
@@ -61,7 +62,7 @@ contract Lobby {
     }
 
     function _deposit(address player, uint value) private {
-        _safeTransferFrom(chessToken, player, address(this), value);
+        _safeTransferFrom(IERC20(chessToken), player, address(this), value);
         credits[player] = credits[player] + value;
         emit PlayerDeposited(player, value);
         // (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
@@ -69,7 +70,7 @@ contract Lobby {
     }
 
     function _cashout(address player, uint value) private {
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
+        (bool success, bytes memory data) = chessToken.call(abi.encodeWithSelector(SELECTOR, player, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'ChessLobby: CASHOUT_FAILED');
     }
 
@@ -77,6 +78,7 @@ contract Lobby {
         require(boardCounter < maxBoardCount - 1, 'ChessLobby: OUT_OF_BOARD');
         bytes memory bytecode = type(ChessBoard).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(boardCounter));
+        address board = address(0x0);
         assembly {
             board := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
@@ -90,19 +92,19 @@ contract Lobby {
         return board;
     }
 
-    function _findFreeBoard() private{
+    function _findFreeBoard() private returns (address){
         return freeBoard;
     }
 
-    function _sitAndWait(address player, uint8 options) private {
+    function _sitAndWait(address player, uint options) private {
         // TODO:: this waitingList only matches the waitingplayer with the first coming player
         // later it would be added to waitingList and selected randomly
         if(waitingListLength % 2 == 1){
-            address constant player1 = WaitingIndexToPlayer[waitingListLength - 1];
-            address constant player2 = player;
+            address player1 = WaitingIndexToPlayer[waitingListLength - 1];
+            address player2 = player;
             require(player1 != player2, 'ChessLobby: IDENTICAL_ADDRESSES');
 
-            address constant newBoard = _getFreeBoard()
+            address newBoard = _findFreeBoard();
             IChessBoard(newBoard).initialize(player1, player2);
             playerToBoard[player1] = newBoard;
             playerToBoard[player2] = newBoard;
@@ -127,7 +129,7 @@ contract Lobby {
         
         // Player must have sufficient credit
         // TODO:: 0 is buggy, we should calculate mix credit required to play
-        require(credit[msg.sender] == 0 , "ChessLobby: INSUFFICIENT_CREDIT");
+        require(credits[msg.sender] == 0 , "ChessLobby: INSUFFICIENT_CREDIT");
         
         require(waitingListLength < maxWaitingListLength, "ChessLobby: FULL_WAITING_LIST");
 

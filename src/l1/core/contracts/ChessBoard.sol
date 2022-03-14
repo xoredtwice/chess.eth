@@ -1,20 +1,25 @@
+// SPDX-License-Identifier: GPL3
 pragma solidity ^0.8;
 
-import './libraries/Math.sol';
-import './libraries/UQ112x112.sol';
+import './libraries/SafeMath.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IChessBoard.sol';
 
 contract ChessBoard is IChessBoard{
     using SafeMath  for uint;
-    using UQ112x112 for uint224;
 
     uint public constant MINIMUM_LIQUIDITY = 10**3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
+    string public name;
     address public lobby;
     address public player1;
     address public player2;
+    
+    uint public activeGame;
+    uint8 public lastMove;
+    uint8 public gameState;
+
 
     uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
 
@@ -28,7 +33,7 @@ contract ChessBoard is IChessBoard{
 
     constructor() public {
         lobby = msg.sender;
-        factoryName = "";
+        name = "gary";
     }
 
     // called once by the factory at time of deployment
@@ -38,11 +43,11 @@ contract ChessBoard is IChessBoard{
         player2 = _player2;
     }
 
-    function _move(address player, uint8 move) private{
+    function _move(address player, uint8 newMove) private{
 
     }
 
-    function move(uint8 newMove) external lock returns (bool) {
+    function move(uint8 newMove) external returns (bool) {
         _move(msg.sender, newMove);
         return true;
     }
