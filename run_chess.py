@@ -7,7 +7,7 @@ import json
 from run.utils.logger import setup_logger, lprint, lsection
 from run.utils.yaml_wrapper import load_configuration
 from run.steps.s0_prepare import s0_create_chess_project, s0_create_token_project
-# from run.steps.s1_compile import s1_compile_chess_project, s1_compile_token_project
+from run.steps.s1_compile import s1_compile_chess_project, s1_compile_token_project
 # from run.steps.s2_deploy import s2_deploy_03_chess_project, s2_deploy_02_token_project
 # from run.steps.s3_simulate import s3_simulate_experiment
 ############################################################################33
@@ -41,13 +41,11 @@ if "'create'" in args.commands or "'all'" in args.commands:
 	s0_create_chess_project(root_path, "chess")
 	lprint("Create step completed!")
 
-# if "'compile'" in args.commands or "'all'" in args.commands:
-# 	lsection("[[COMPILE]]")
-# 	s1_compile_token_project()
-# 	for exchange in exp["exchanges"]:
-# 		s1_compile_exchange_projects(exchange["name"])
-# 	s1_compile_arb_project(exp["exchanges"])
-# 	lprint("Compile step completed!")
+if "'compile'" in args.commands or "'all'" in args.commands:
+	lsection("[[COMPILE]]")
+	s1_compile_token_project(root_path)
+	s1_compile_chess_project(root_path, "chess")
+	lprint("Compile step completed!")
 
 # if "'deploy'" in args.commands or "'all'" in args.commands:
 # 	lsection("[[DEPLOY]]")

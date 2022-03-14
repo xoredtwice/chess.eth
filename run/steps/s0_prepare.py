@@ -16,7 +16,7 @@ def s0_create_chess_project(root_path, project_name):
 	# cleaning up the exchange path
 	if os.path.exists(project_path):
 		shutil.rmtree(project_path)
-	os.makedirs(project_path)lsection
+	os.makedirs(project_path)
 
     # filling the subproject folders
 	subprojects = ["core"]
