@@ -1,0 +1,9 @@
+---
+id: "dev"
+desc: "under developement"
+tokens:
+  - {name: "pawnToken", symbol: "pwn"}
+  
+boards:
+  - {name: "Gary"}
+  - {name: "Magnus"}
