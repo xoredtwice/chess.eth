@@ -1,9 +1,22 @@
 ---
 id: "dev"
 desc: "under developement"
-tokens:
-  - {name: "pawnToken", symbol: "pwn"}
-  
-boards:
+network:
+  accounts:
+    [
+      {
+        address: "0x0F1013e0e46B97144b25b3131668EF99858BD8D0",
+        private: "0x34d091c661db4c814d65c8ae9277b7055c0dde5a752ce5a3fdfd4ea11a8f7154"
+      },
+
+    ]
+  host: "127.0.0.1"
+  port: "8545"
+  chain-id: "1337"
+chess:
+  lobby-name: "test-lobby"
+  boards:
   - {name: "Gary"}
   - {name: "Magnus"}
+tokens:
+  - {name: "pawnToken", symbol: "pwn"}

@@ -8,7 +8,7 @@ import './ChessBoard.sol';
 import './libraries/SafeMath.sol';
 
 
-contract Lobby {
+contract ChessLobby {
     using SafeMath for uint;
 
     string public constant name = "lobby-test-01";

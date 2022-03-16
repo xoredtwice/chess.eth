@@ -8,7 +8,7 @@ from run.utils.logger import setup_logger, lprint, lsection
 from run.utils.yaml_wrapper import load_configuration
 from run.steps.s0_prepare import s0_create_chess_project, s0_create_token_project
 from run.steps.s1_compile import s1_compile_chess_project, s1_compile_token_project
-# from run.steps.s2_deploy import s2_deploy_03_chess_project, s2_deploy_02_token_project
+from run.steps.s2_deploy import s2_deploy_chess_project, s2_deploy_token_project
 # from run.steps.s3_simulate import s3_simulate_experiment
 ############################################################################33
 
@@ -47,24 +47,17 @@ if "'compile'" in args.commands or "'all'" in args.commands:
 	s1_compile_chess_project(root_path, "chess")
 	lprint("Compile step completed!")
 
-# if "'deploy'" in args.commands or "'all'" in args.commands:
-# 	lsection("[[DEPLOY]]")
-# 	receipts["WETH"] = s2_deploy_01_WETH()
-# 	for token in exp["tokens"]:
-# 		receipts[token["name"]] = s2_deploy_02_token(token["name"], token["symbol"])
+if "'deploy'" in args.commands or "'all'" in args.commands:
+	lsection("[[DEPLOY]]")
+	for token in conf["tokens"]:
+		receipts[token["name"]] = s2_deploy_token_project(root_path, conf["network"], token)
+	receipts["chess"] = s2_deploy_chess_project(root_path, conf["network"], conf["chess"], receipts[conf["tokens"][0]["name"]])
 
-# 	factories = []
-# 	for exchange in exp["exchanges"]:
-# 		receipts[exchange["name"]] = s2_deploy_03_exchange(exchange["name"], receipts["WETH"])
-# 		factories.append(receipts[exchange["name"]]["FACTORY"]["contractAddress"])
-
-# 	receipts["arb"] = s2_deploy_04_arb(factories)
-
-# 	receipts_path = os.path.join(root_path, "build", "deploy_receipts.json")
-# 	receipts_file = open(receipts_path, "w")
-# 	json.dump(receipts, receipts_file,  default=lambda o: o.__dict__, indent=4)
-# 	receipts_file.close()
-# 	lprint("Deploy step completed! Receipts have been saved into " + str(receipts_path))
+	receipts_path = os.path.join(root_path, "build", "deploy_receipts.json")
+	receipts_file = open(receipts_path, "w")
+	json.dump(receipts, receipts_file,  default=lambda o: o.__dict__, indent=4)
+	receipts_file.close()
+	lprint("Deploy step completed! Receipts have been saved into " + str(receipts_path))
 
 # if "'simulate'" in args.commands or "'all'" in args.commands:
 # 	lsection("[[SIMULATE]]")
