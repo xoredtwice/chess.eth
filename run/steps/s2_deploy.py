@@ -5,33 +5,18 @@ import os
 import pathlib
 import shutil
 from run.utils.logger import lprint, lsection
+from run.utils.utils import load_web3_environment
 #*******************************************************************************
 #*******************************************************************************
 #*******************************************************************************
-def load_deploy_environment(network):
-    ###############################################################################
-    # Preparing environment
-    ################################################################################
-    connection_string = "http://"+ network["host"] + ":" + network["port"]
-    w3 = Web3(Web3.HTTPProvider(connection_string))
-
-    lprint("Using Account_00 for deployment")
-    my_key = network["accounts"][0]["private"]
-    my_address = network["accounts"][0]["address"]
-
-    lprint("private: " + my_key)
-    lprint("address: " + my_address)
-
-    # Submit the transaction that deploys the contract
-    chain_id = int(network["chain-id"])
-
-    return w3, chain_id, my_key, my_address
 #*******************************************************************************
 def s2_deploy_token_project(root_path, network, token):
     lsection("[ERC20 Deploy script]", 1)
 
-    w3, chain_id, private_key, my_address = load_deploy_environment(network)
+    w3, chain_id, accounts = load_web3_environment(network)
 
+    private_key = accounts[0]["private"]
+    my_address = accounts[0]["address"]
     nonce = w3.eth.getTransactionCount(my_address)
     build_path = os.path.join(root_path, "build")
 
@@ -63,7 +48,7 @@ def s2_deploy_token_project(root_path, network, token):
 def s2_deploy_chess_project(root_path, network, chess, token_receipt):
     lsection(f"[Chess Deploy script]", 1)
 
-    w3, chain_id, private_key, my_address = load_deploy_environment(network)
+    w3, chain_id, private_key, my_address = load_web3_environment(network)
     nonce = w3.eth.getTransactionCount(my_address)
 
     chess_path = os.path.join(root_path, "build", "chess")

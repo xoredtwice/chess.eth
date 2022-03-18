@@ -2,6 +2,7 @@ from tempfile import mkstemp
 from shutil import move, copymode
 import os
 import json
+from pprint import pprint
 from brownie import Contract
 #*******************************************************************************
 def replace_in_file(filepath, current_text, new_text):
@@ -19,3 +20,18 @@ def get_brownie_provider(compiled_path, contract_filename, deploy_address, owner
         compiled_sol = json.load(file)
     compiled_abi = compiled_sol["abi"]
     return Contract.from_abi(contract_filename[-4], deploy_address, abi = compiled_abi, owner = owner_address)
+
+#*******************************************************************************
+def load_web3_environment(network):
+    ###############################################################################
+    # Preparing environment
+    ################################################################################
+    connection_string = "http://"+ network["host"] + ":" + network["port"]
+    w3 = Web3(Web3.HTTPProvider(connection_string))
+
+    pprint(network["accounts"])
+
+    # Submit the transaction that deploys the contract
+    chain_id = int(network["chain-id"])
+
+    return w3, chain_id, network["accounts"]

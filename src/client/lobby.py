@@ -10,7 +10,7 @@ def should_start():
 def start_match(addrs):
     print("not implemented")
 
-def reserve(address):
+def sit_and_wait(address):
     print("Not implemented")
     if should_start():
         start_match()
