@@ -30,12 +30,11 @@ def lprint(text):
 def lsection(text, level = 0):
     indent = "    " * level
     if level == 0 :
-        lprint("\n\n***********************************")
-    else:
-        lprint("\n")
-    lprint(f"{indent}{text}")
-    if level == 0:
         lprint("***********************************")
     else:
         lprint("")
+        lprint("")
+    lprint(f"{indent}{text}")
+    if level == 0:
+        lprint("***********************************")
 #*******************************************************************************

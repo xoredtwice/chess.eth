@@ -4,6 +4,7 @@ import os
 import json
 from pprint import pprint
 from brownie import Contract
+from web3 import Web3
 #*******************************************************************************
 def replace_in_file(filepath, current_text, new_text):
    fd, abspath = mkstemp()

@@ -62,7 +62,7 @@ contract ChessLobby {
     }
 
     function _deposit(address player, uint value) private {
-        _safeTransferFrom(IERC20(chessToken), player, address(this), value);
+        // _safeTransferFrom(IERC20(chessToken), player, address(this), value);
         credits[player] = credits[player] + value;
         emit PlayerDeposited(player, value);
         // (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
@@ -142,7 +142,7 @@ contract ChessLobby {
             IERC20(chessToken).allowance(msg.sender, address(this)) >= value,
             "ChessLobby: LOW_ALLOWANCE"
         );
-        _deposit(msg.sender, value);
+        // _deposit(msg.sender, value);
         return true;
     }
 

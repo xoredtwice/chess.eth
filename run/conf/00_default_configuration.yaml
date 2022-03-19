@@ -33,7 +33,7 @@ network:
 
 
 tokens:
-  - {name: "pawnToken", symbol: "pwn", initial-mint: "50000"}
+  - {name: "pawnToken", symbol: "pwn", initial-mint: 5000000}
 
 chess:
   lobby-name: "test-lobby"
@@ -43,6 +43,6 @@ chess:
   - {name: "Magnus"}
 
   players:
-    - {name: "Alice", account: "1", initial-token: 2000}
-    - {name: "Bob", account: "2", initial-token: 1000}
+    - {name: "Alice", account: "1", initial-token: 20000}
+    - {name: "Bob", account: "2", initial-token: 30000}
 

@@ -17,6 +17,7 @@ def s2_deploy_token_project(root_path, network, token):
 
     private_key = accounts[0]["private"]
     my_address = accounts[0]["address"]
+    
     nonce = w3.eth.getTransactionCount(my_address)
     build_path = os.path.join(root_path, "build")
 
@@ -48,7 +49,11 @@ def s2_deploy_token_project(root_path, network, token):
 def s2_deploy_chess_project(root_path, network, chess, token_receipt):
     lsection(f"[Chess Deploy script]", 1)
 
-    w3, chain_id, private_key, my_address = load_web3_environment(network)
+    w3, chain_id, accounts = load_web3_environment(network)
+    private_key = accounts[0]["private"]
+    my_address = accounts[0]["address"]
+
+
     nonce = w3.eth.getTransactionCount(my_address)
 
     chess_path = os.path.join(root_path, "build", "chess")
