@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import brownie
 
 
 def setup_logger(path, name):
@@ -26,6 +27,11 @@ def setup_logger(path, name):
 def lprint(text):
     logger = logging.getLogger("LOGGER")
     logger.info(text)
+
+def lexcept(ex, should_show_brownie_trace = True):
+    lprint(ex)
+    if should_show_brownie_trace == True:
+        lprint(brownie.history[-1].call_trace(True))
 
 def lsection(text, level = 0):
     indent = "    " * level

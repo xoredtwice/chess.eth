@@ -71,7 +71,7 @@ def s2_deploy_chess_project(root_path, network, chess, token_receipt):
     lobby_abi = compiled_lobby["abi"]
 
     lobby_contract = w3.eth.contract(abi=lobby_abi, bytecode=lobby_bytecode)
-    lobby_transaction = lobby_contract.constructor(my_address).buildTransaction(
+    lobby_transaction = lobby_contract.constructor(token_receipt["contractAddress"]).buildTransaction(
         {"gasPrice": w3.eth.gas_price, "chainId": chain_id, "from": my_address, "nonce": nonce}
     )
     lobby_signed_txn = w3.eth.account.sign_transaction(lobby_transaction, private_key=private_key)

@@ -8,7 +8,7 @@ import eth_event
 import traceback
 import brownie
 from run.utils.utils import get_brownie_provider, load_web3_environment
-from run.utils.logger import lprint, lsection
+from run.utils.logger import lprint, lsection, lexcept
 #*******************************************************************************
 #*******************************************************************************
 def s3_simulate_game_initialization(root_path, network, receipts, tokens, players):
@@ -29,76 +29,90 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
 
 
     token_address = receipts[tokens[0]["name"]]["contractAddress"]
+    erc20_path = os.path.join(build_path, "erc20", "build", "contracts", "ERC20.json")
+    token_provider = get_brownie_provider(erc20_path, "ERC20.sol", token_address, house_address)
+    p1_token_provider = get_brownie_provider(erc20_path, "ERC20.sol", token_address, p1_address)
+    p2_token_provider = get_brownie_provider(erc20_path, "ERC20.sol", token_address, p2_address)
+
+    token_name = token_provider.name()
+    token_mint_amount = w3.toWei(tokens[0]["initial-mint"], 'kwei')
+
+    lobby_path = os.path.join(build_path, "chess", "core", "build", "contracts", "ChessLobby.json")
+    p1_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", receipts["chess"]["LOBBY"]["contractAddress"], p1_address)
+    p2_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", receipts["chess"]["LOBBY"]["contractAddress"], p2_address)
+
+    p1_token_amount = w3.toWei(players[0]['initial-token'], 'kwei')
+    p1_deposit_amount = w3.toWei(1, 'kwei')
+    p2_token_amount = w3.toWei(players[1]['initial-token'], 'kwei')
+    p2_deposit_amount = w3.toWei(1, 'kwei')
 
     ###############################################################################
     # Minting tokens
-    ################################################################################
-    erc20_path = os.path.join(build_path, "erc20", "build", "contracts", "ERC20.json")
-    token_provider = get_brownie_provider(erc20_path, "ERC20.sol", token_address, house_address)
-    ##############################################################################
+    ###############################################################################
     try:
-        lsection("house calls chessToken.mint()", 1)
-        token_name = token_provider.name()
-        token_mint_amount = w3.toWei(tokens[0]["initial-mint"], 'kwei')
-
+        lsection("[HOUSE calls chessToken.mint()]", 1)
         lprint("Minting " + str(token_mint_amount) + "  of " + token_name + " for: " + str(house_address))
-
-        token_provider.mint(house_address, token_mint_amount)
-        token_mint_result = token_provider.balanceOf(house_address)
-
-        lprint("Minted " + str(token_mint_result) + " " + token_name+ " for: " + str(token_address))
+        mint_tx = token_provider.mint(house_address, token_mint_amount)
+        lprint(str(mint_tx.events["Transfer"]) + "\n")
     except Exception as ex:
         lprint("Exception in sending token.mint")
-        lprint(ex)
-        lprint(brownie.history[-1].call_trace(True))
-
-
-    # ###############################################################################
-    #  transferring initial tokens to players
-    # ################################################################################
+        lexcept(ex, True)
+    ###############################################################################
+    # transferring initial tokens to players
+    ################################################################################
     try:
-        lsection("house calls chessToken.transfer(player1)", 1)
-        p1_token_amount = w3.toWei(players[0]['initial-token'], 'kwei')
-        a1_tx = token_provider.transfer(p1_address, p1_token_amount)
-        lprint(str(a1_tx.events["Transfer"]) + "\n")
+        lsection("[HOUSE calls chessToken.transfer(PLAYER1])", 1)
+        p1_tr_tx = token_provider.transfer(p1_address, p1_token_amount)
+        lprint(str(p1_tr_tx.events["Transfer"]) + "\n")
     except Exception as ex:
         lprint(f"Exception in sending token.transfer({p1_address},{p1_token_amount})")
-        lprint(ex)
-        lprint(brownie.history[-1].call_trace(True))
+        lexcept(ex, True)
 
     try:
-        lsection("house calls chessToken.transfer(player2)", 1)
-        p2_token_amount = w3.toWei(players[1]['initial-token'], 'kwei')
-        a2_tx = token_provider.transfer(p2_address, p2_token_amount)
-        lprint(str(a2_tx.events["Transfer"]) + "\n")
+        lsection("[HOUSE calls chessToken.transfer(PLAYER2)]", 1)
+        p2_tr_tx = token_provider.transfer(p2_address, p2_token_amount)
+        lprint(str(p2_tr_tx.events["Transfer"]) + "\n")
     except Exception as ex:
         lprint(f"Exception in sending token.transfer({p2_address},{p2_token_amount})")
-        lprint(ex)
-        lprint(brownie.history[-1].call_trace(True))
+        lexcept(ex, True)
 
     # ###############################################################################
     #  player1 sends approve and deposits
     # ################################################################################
     try:
-        lobby_path = os.path.join(build_path, "chess", "core", "build", "contracts", "ChessLobby.json")
-
-        lsection("player1 calls token.approve(house, amount)",1)
-        p1_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", receipts["chess"]["LOBBY"]["contractAddress"], p1_address)
-
-        p1_deposit_amount = w3.toWei(1, 'kwei')
-        p1_token_provider = get_brownie_provider(erc20_path, "ERC20.sol", token_address, p1_address)
+        lsection("[PLAYER1 calls token.approve(HOUSE, amount)]",1)
         p1_ap_tx = p1_token_provider.approve(house_address, p1_deposit_amount)
         lprint(str(p1_ap_tx.events["Approval"]) + "\n")
+    except Exception as ex:
+        lprint(f"Exception in sending token.approve({p1_address},{p1_token_amount})")
+        lexcept(ex, True)
 
-        lprint("player1 calls lobby.deposit(player1)")
-
+    try:
+        lsection("[PLAYER1 calls lobby.deposit(amount)]", 1)
         p1_dp_tx = p1_lobby_provider.deposit(p1_deposit_amount)
         lprint(str(p1_dp_tx.events["PlayerDeposited"]) + "\n")
     except Exception as ex:
-        lprint(f"Exception in sending token.approve({p1_address},{p1_token_amount})")
-        lprint(ex)
-        lprint(brownie.history[-1].call_trace(True))
+        lprint(f"Exception in sending lobby({p1_deposit_amount})")
+        lexcept(ex, True)
 
+    # ###############################################################################
+    #  player2 sends approve and deposits
+    # ################################################################################
+    try:
+        lsection("[PLAYER2 calls token.approve(HOUSE, amount)]",1)
+        p2_ap_tx = p2_token_provider.approve(house_address, p2_deposit_amount)
+        lprint(str(p2_ap_tx.events["Approval"]) + "\n")
+    except Exception as ex:
+        lprint(f"Exception in sending token.approve({p2_address},{p2_token_amount})")
+        lexcept(ex, True)
+
+    try:
+        lsection("[PLAYER2 calls lobby.deposit(amount)]", 1)
+        p2_dp_tx = p2_lobby_provider.deposit(p2_deposit_amount)
+        lprint(str(p2_dp_tx.events["PlayerDeposited"]) + "\n")
+    except Exception as ex:
+        lprint(f"Exception in sending lobby({p2_deposit_amount})")
+        lexcept(ex, True)
     # ###############################################################################
     # # Sitting with player1 and player2
     # ################################################################################

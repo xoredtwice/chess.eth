@@ -17,6 +17,7 @@ contract ChessLobby {
 
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
+    address public house;
     address public chessToken;
     address public freeBoard;
     uint8 public waitingListLength;
@@ -42,6 +43,7 @@ contract ChessLobby {
     constructor(address chessTokenAddress) public {
         waitingListLength = 0;
         chessToken = chessTokenAddress;
+        house = msg.sender;
 
         uint boardOneConfig = 0x0;
         _createBoard(boardOneConfig);
@@ -128,7 +130,7 @@ contract ChessLobby {
         require(playerToBoard[msg.sender] == address(0x0) , "ChessLobby: ALREADY_IN_GAME");
         
         // Player must have sufficient credit
-        // TODO:: 0 is buggy, we should calculate mix credit required to play
+        // TODO:: 0 is buggy, we should calculate min credit required to play
         require(credits[msg.sender] == 0 , "ChessLobby: INSUFFICIENT_CREDIT");
         
         require(waitingListLength < maxWaitingListLength, "ChessLobby: FULL_WAITING_LIST");
@@ -137,12 +139,12 @@ contract ChessLobby {
         return true;
     }
 
-    function deposit(uint value) external returns (bool) {
+    function deposit(uint256 _value) external returns (bool) {
         require(
-            IERC20(chessToken).allowance(msg.sender, address(this)) >= value,
+            IERC20(chessToken).allowance(msg.sender, house) >= _value,
             "ChessLobby: LOW_ALLOWANCE"
         );
-        // _deposit(msg.sender, value);
+        _deposit(msg.sender, _value);
         return true;
     }
 
