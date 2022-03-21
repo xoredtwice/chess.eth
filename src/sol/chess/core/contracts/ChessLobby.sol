@@ -2,9 +2,9 @@
 pragma solidity ^0.8;
 
 import '../interfaces/IERC20.sol';
-import '../interfaces/IChessBoard.sol';
+import '../interfaces/IChessTable.sol';
 
-import './ChessBoard.sol';
+import './ChessTable.sol';
 import './libraries/SafeMath.sol';
 
 
@@ -12,43 +12,44 @@ contract ChessLobby {
     using SafeMath for uint;
 
     string public constant name = "lobby-test-01";
-    uint8  public constant maxBoardCount = 3;
+    uint8  public constant maxTableCount = 3;
     uint8  public constant maxWaitingListLength = 10;
 
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
 
     address public house;
     address public chessToken;
-    address public freeBoard;
+    address public freeTable;
     uint8 public waitingListLength;
-    uint8 public boardCounter;
+    uint8 public tableCounter;
 
-    address[maxBoardCount] public boards;
-    //assuming each player can sit only on one board
-    mapping(address => address) public playerToBoard;
-    mapping(address => address[2]) public boardToPlayers;
-    mapping(address => uint8) public boardToState;
+    address[maxTableCount] public tables;
+    //assuming each player can sit only on one table
+    mapping(address => address) public playerToTable;
+    mapping(address => address[2]) public tableToPlayers;
+    mapping(address => uint8) public tableToState;
     mapping(uint8 => address) public WaitingIndexToPlayer;
 
     // supporting only its own token right now
     mapping(address => uint) public credits;
     mapping(address => uint) public nonces;
 
-    event BoardCreated(address indexed board, uint8 indexed boardCounter);
+    event TableCreated(address indexed table, uint8 indexed tableCounter);
+    event TableInitialized(address indexed table, uint result);
+
     event PlayerDeposited(address indexed player, uint amount);
     event PlayerSit(address indexed player, uint8 waitingListLength);
-    event BoardInitialized(address indexed board, uint result);
 
     constructor(address chessTokenAddress) public {
         waitingListLength = 0;
         chessToken = chessTokenAddress;
         house = msg.sender;
 
-        uint boardOneConfig = 0x0;
-        _createBoard(boardOneConfig);
+        uint tableOneConfig = 0x0;
+        _createTable(tableOneConfig);
 
-        uint boardTwoConfig = 0x0;
-        _createBoard(boardTwoConfig);
+        uint tableTwoConfig = 0x0;
+        _createTable(tableTwoConfig);
 
     }
 
@@ -75,26 +76,26 @@ contract ChessLobby {
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'ChessLobby: CASHOUT_FAILED');
     }
 
-    function _createBoard(uint options) private returns (address){
-        require(boardCounter < maxBoardCount - 1, 'ChessLobby: OUT_OF_BOARD');
-        bytes memory bytecode = type(ChessBoard).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(boardCounter));
-        address board = address(0x0);
+    function _createTable(uint options) private returns (address){
+        require(tableCounter < maxTableCount - 1, 'ChessLobby: OUT_OF_TABLE');
+        bytes memory bytecode = type(ChessTable).creationCode;
+        bytes32 salt = keccak256(abi.encodePacked(tableCounter));
+        address newTable = address(0x0);
         assembly {
-            board := create2(0, add(bytecode, 32), mload(bytecode), salt)
+            newTable := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        boardToState[board] = 0x01;
+        tableToState[newTable] = 0x01;
 
-        // any new board is a free board
-        freeBoard = board;
-        emit BoardCreated(board, boardCounter);
-        boardCounter = boardCounter + 1;
+        // any new table is a free table
+        freeTable = newTable;
+        emit TableCreated(newTable, tableCounter);
+        tableCounter = tableCounter + 1;
 
-        return board;
+        return newTable;
     }
 
-    function _findFreeBoard() private returns (address){
-        return freeBoard;
+    function _findFreeTable() private returns (address){
+        return freeTable;
     }
 
     function _sitAndWait(address player, uint options) private {
@@ -106,15 +107,15 @@ contract ChessLobby {
             address player2 = player;
             require(player1 != player2, 'ChessLobby: IDENTICAL_ADDRESSES');
 
-            address newBoard = _findFreeBoard();
-            IChessBoard(newBoard).initialize(player1, player2);
-            emit BoardInitialized(newBoard, 0x0); 
+            address newTable = _findFreeTable();
+            IChessTable(newTable).initialize(player1, player2);
+            emit TableInitialized(newTable, 0x0); 
 
             credits[player1] -= 100;
             credits[player2] -= 100;
-            playerToBoard[player1] = newBoard;
-            playerToBoard[player2] = newBoard;
-            boardToPlayers[newBoard] = [player1, player2];
+            playerToTable[player1] = newTable;
+            playerToTable[player2] = newTable;
+            tableToPlayers[newTable] = [player1, player2];
 
             delete WaitingIndexToPlayer[waitingListLength - 1];
             waitingListLength = waitingListLength - 1;
@@ -130,8 +131,8 @@ contract ChessLobby {
 
 
     function sitAndWait(uint options) external returns (bool) {
-        // Player must not be sitting on a board
-        require(playerToBoard[msg.sender] == address(0x0) , "ChessLobby: ALREADY_IN_GAME");
+        // Player must not be sitting on a table
+        require(playerToTable[msg.sender] == address(0x0) , "ChessLobby: ALREADY_IN_GAME");
         
         // Player must have sufficient credit
         // TODO:: 0 is buggy, we should calculate min credit required to play

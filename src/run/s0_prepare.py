@@ -5,8 +5,8 @@ import shutil
 from tempfile import mkstemp
 from shutil import move, copymode
 import subprocess
-from run.utils.utils import replace_in_file
-from run.utils.logger import lprint, lsection
+from src.utils.utils import replace_in_file
+from src.utils.logger import lprint, lsection
 #*******************************************************************************
 def s0_create_chess_project(root_path, project_name):
 	project_path = os.path.join(root_path, "build", project_name)
@@ -31,13 +31,13 @@ def s0_create_chess_project(root_path, project_name):
 		brownie_subfolders = ["contracts", "interfaces"]
 		for subfolder in brownie_subfolders:
 
-			old_path = os.path.join(root_path, "src", "l1", sp_name, subfolder)
+			old_path = os.path.join(root_path, "src", "sol", "chess", sp_name, subfolder)
 			new_path = os.path.join(sp_path, subfolder)
 			shutil.rmtree(new_path)
 			lprint("copying " + old_path + " to " + new_path)
 			shutil.copytree(old_path, new_path)
 
-		config_path = os.path.join(root_path, "src", "l1", sp_name, "brownie-config.yaml")
+		config_path = os.path.join(root_path, "src", "sol", "chess", sp_name, "brownie-config.yaml")
 		if os.path.exists(config_path):
 			shutil.copy(config_path, sp_path)
 #*******************************************************************************
@@ -58,12 +58,12 @@ def s0_create_token_project(root_path):
 		
 		brownie_subfolders = ["contracts", "interfaces"]
 		for subfolder in brownie_subfolders:
-			old_path = os.path.join(root_path, "src", "l1", sp_name, subfolder)
+			old_path = os.path.join(root_path, "src", "sol", sp_name, subfolder)
 			new_path = os.path.join(sp_path, subfolder)
 			shutil.rmtree(new_path)
 			lprint("copying " + old_path + " to " + new_path)
 			shutil.copytree(old_path, new_path)
 
-		config_path = os.path.join(root_path, "src", "l1", sp_name, "brownie-config.yaml")
+		config_path = os.path.join(root_path, "src", "sol", sp_name, "brownie-config.yaml")
 		if os.path.exists(config_path):
 			shutil.copy(config_path, sp_path)

@@ -4,18 +4,18 @@ import argparse
 import pathlib
 import json
 
-from run.utils.logger import setup_logger, lprint, lsection
-from run.utils.yaml_wrapper import load_configuration
-from run.steps.s0_prepare import s0_create_chess_project, s0_create_token_project
-from run.steps.s1_compile import s1_compile_chess_project, s1_compile_token_project
-from run.steps.s2_deploy import s2_deploy_chess_project, s2_deploy_token_project
-from run.steps.s3_simulate import s3_simulate_chess
+from src.utils.logger import setup_logger, lprint, lsection
+from src.utils.yaml_wrapper import load_configuration
+from src.run.s0_prepare import s0_create_chess_project, s0_create_token_project
+from src.run.s1_compile import s1_compile_chess_project, s1_compile_token_project
+from src.run.s2_deploy import s2_deploy_chess_project, s2_deploy_token_project
+from src.run.s3_simulate import s3_simulate_chess
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())
 
 parser = argparse.ArgumentParser(description='Chess.eth local runner')
-parser.add_argument('-f', dest='conf_path', type=ascii, default=os.path.join(root_path, "run", "conf", "00_default_configuration.yaml"),
+parser.add_argument('-f', dest='conf_path', type=ascii, default=os.path.join(root_path, "conf", "00_default_configuration.yaml"),
                     help='configuration YAML file path')
 parser.add_argument('-c', dest='commands', type=ascii, nargs='+',
                     default='all',

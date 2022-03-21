@@ -1,8 +1,8 @@
 import json
 import os
 import brownie
-from run.utils.utils import get_brownie_provider, load_web3_environment
-from run.utils.logger import lprint, lsection, lexcept
+from src.utils.utils import get_brownie_provider, load_web3_environment
+from src.utils.logger import lprint, lsection, lexcept
 #*******************************************************************************
 #*******************************************************************************
 def s3_simulate_game_initialization(root_path, network, receipts, tokens, players):
@@ -128,7 +128,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
         lsection("[PLAYER2 calls lobby.sitAndWait()]", 1)
         p2_sw_tx = p2_lobby_provider.sitAndWait(p2_game_options)
         lprint(f"[EVENT] ChessLobby.PlayerSit: {json.dumps(dict(p2_sw_tx.events['PlayerSit']), indent=4)}")
-        lprint(f"[EVENT] ChessLobby.BoardInitialized: {json.dumps(dict(p2_sw_tx.events['BoardInitialized']), indent=4)}")
+        lprint(f"[EVENT] ChessLobby.TableInitialized: {json.dumps(dict(p2_sw_tx.events['TableInitialized']), indent=4)}")
     except Exception as ex:
         lprint(f"Exception in sending lobby.sitAndWait() by {p2_address}")
         lexcept(ex, True)

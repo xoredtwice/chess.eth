@@ -1,19 +1,6 @@
-import json
-from pprint import pprint
-from web3 import Web3
-
-from solcx import compile_standard, install_solc
 import os
-from dotenv import load_dotenv
-import pathlib
-import shutil
-
-from brownie import *
 import subprocess
-from tempfile import mkstemp
-from shutil import move, copymode
-from run.utils.utils import replace_in_file
-from run.utils.logger import lprint, lsection
+from src.utils.logger import lprint, lsection
 #*******************************************************************************
 def s1_compile_token_project(root_path):
     lsection("[Compiling shared subprojects]",1)
