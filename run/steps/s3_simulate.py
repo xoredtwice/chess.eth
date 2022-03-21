@@ -1,11 +1,5 @@
 import json
-from pprint import pprint
 import os
-import pathlib
-import shutil
-import time
-import eth_event
-import traceback
 import brownie
 from run.utils.utils import get_brownie_provider, load_web3_environment
 from run.utils.logger import lprint, lsection, lexcept
@@ -27,6 +21,8 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     p2_address = accounts[2]['address']
     p2_private = accounts[2]['private']
 
+    lobby_address = receipts["chess"]["LOBBY"]["contractAddress"]
+
 
     token_address = receipts[tokens[0]["name"]]["contractAddress"]
     erc20_path = os.path.join(build_path, "erc20", "build", "contracts", "ERC20.json")
@@ -38,13 +34,16 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     token_mint_amount = w3.toWei(tokens[0]["initial-mint"], 'kwei')
 
     lobby_path = os.path.join(build_path, "chess", "core", "build", "contracts", "ChessLobby.json")
-    p1_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", receipts["chess"]["LOBBY"]["contractAddress"], p1_address)
-    p2_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", receipts["chess"]["LOBBY"]["contractAddress"], p2_address)
+    p1_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", lobby_address, p1_address)
+    p2_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", lobby_address, p2_address)
 
     p1_token_amount = w3.toWei(players[0]['initial-token'], 'kwei')
     p1_deposit_amount = w3.toWei(1, 'kwei')
     p2_token_amount = w3.toWei(players[1]['initial-token'], 'kwei')
     p2_deposit_amount = w3.toWei(1, 'kwei')
+
+    p1_game_options = 0
+    p2_game_options = 0
 
     ###############################################################################
     # Minting tokens
@@ -53,7 +52,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
         lsection("[HOUSE calls chessToken.mint()]", 1)
         lprint("Minting " + str(token_mint_amount) + "  of " + token_name + " for: " + str(house_address))
         mint_tx = token_provider.mint(house_address, token_mint_amount)
-        lprint(str(mint_tx.events["Transfer"]) + "\n")
+        lprint(f"[EVENT] ChessToken.Transfer: {json.dumps(dict(mint_tx.events['Transfer']), indent=4)}")
     except Exception as ex:
         lprint("Exception in sending token.mint")
         lexcept(ex, True)
@@ -63,7 +62,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     try:
         lsection("[HOUSE calls chessToken.transfer(PLAYER1])", 1)
         p1_tr_tx = token_provider.transfer(p1_address, p1_token_amount)
-        lprint(str(p1_tr_tx.events["Transfer"]) + "\n")
+        lprint(f"[EVENT] ChessToken.Transfer: {json.dumps(dict(p1_tr_tx.events['Transfer']), indent=4)}")
     except Exception as ex:
         lprint(f"Exception in sending token.transfer({p1_address},{p1_token_amount})")
         lexcept(ex, True)
@@ -71,7 +70,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     try:
         lsection("[HOUSE calls chessToken.transfer(PLAYER2)]", 1)
         p2_tr_tx = token_provider.transfer(p2_address, p2_token_amount)
-        lprint(str(p2_tr_tx.events["Transfer"]) + "\n")
+        lprint(f"[EVENT] ChessToken.Transfer: {json.dumps(dict(p2_tr_tx.events['Transfer']), indent=4)}")
     except Exception as ex:
         lprint(f"Exception in sending token.transfer({p2_address},{p2_token_amount})")
         lexcept(ex, True)
@@ -80,9 +79,9 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     #  player1 sends approve and deposits
     # ################################################################################
     try:
-        lsection("[PLAYER1 calls token.approve(HOUSE, amount)]",1)
-        p1_ap_tx = p1_token_provider.approve(house_address, p1_deposit_amount)
-        lprint(str(p1_ap_tx.events["Approval"]) + "\n")
+        lsection("[PLAYER1 calls token.approve(LOBBY, amount)]",1)
+        p1_ap_tx = p1_token_provider.approve(lobby_address, p1_deposit_amount)
+        lprint(f"[EVENT] ChessToken.Approval: {json.dumps(dict(p1_ap_tx.events['Approval']), indent=4)}")
     except Exception as ex:
         lprint(f"Exception in sending token.approve({p1_address},{p1_token_amount})")
         lexcept(ex, True)
@@ -90,7 +89,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     try:
         lsection("[PLAYER1 calls lobby.deposit(amount)]", 1)
         p1_dp_tx = p1_lobby_provider.deposit(p1_deposit_amount)
-        lprint(str(p1_dp_tx.events["PlayerDeposited"]) + "\n")
+        lprint(f"[EVENT] ChessLobby.PlayerDeposited: {json.dumps(dict(p1_dp_tx.events['PlayerDeposited']), indent=4)}")
     except Exception as ex:
         lprint(f"Exception in sending lobby({p1_deposit_amount})")
         lexcept(ex, True)
@@ -99,9 +98,9 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     #  player2 sends approve and deposits
     # ################################################################################
     try:
-        lsection("[PLAYER2 calls token.approve(HOUSE, amount)]",1)
-        p2_ap_tx = p2_token_provider.approve(house_address, p2_deposit_amount)
-        lprint(str(p2_ap_tx.events["Approval"]) + "\n")
+        lsection("[PLAYER2 calls token.approve(LOBBY, amount)]",1)
+        p2_ap_tx = p2_token_provider.approve(lobby_address, p2_deposit_amount)
+        lprint(f"[EVENT] ChessToken.Approval: {json.dumps(dict(p2_ap_tx.events['Approval']), indent=4)}")
     except Exception as ex:
         lprint(f"Exception in sending token.approve({p2_address},{p2_token_amount})")
         lexcept(ex, True)
@@ -109,36 +108,30 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     try:
         lsection("[PLAYER2 calls lobby.deposit(amount)]", 1)
         p2_dp_tx = p2_lobby_provider.deposit(p2_deposit_amount)
-        lprint(str(p2_dp_tx.events["PlayerDeposited"]) + "\n")
+        lprint(f"[EVENT] ChessLobby.PlayerDeposited: {json.dumps(dict(p2_dp_tx.events['PlayerDeposited']), indent=4)}")
     except Exception as ex:
-        lprint(f"Exception in sending lobby({p2_deposit_amount})")
+        lprint(f"Exception in sending lobby.deposit({p2_deposit_amount})")
         lexcept(ex, True)
-    # ###############################################################################
-    # # Sitting with player1 and player2
-    # ################################################################################
-    # lprint("player1 calls lobby.sitAndWait()")
-    # lobby_path = os.path.join(build_path, "chess", "core", "build", "contracts", "ChessLobby.json")
-    # # ################################################################################
-    # try:
-    #     p1_game_options = 0
-    #     cp_tx = p1_lobby_provider.sitAndWait(p1_game_options)
-    #     lprint(str(cp_tx.events["PlayerSit"]) + "\n")
-    # except Exception as ex:
-    #     lprint("Exception in sending lobby.sitAndWait() by player1")
-    #     lprint(ex)
-    #     lprint(history[-1].call_trace(True))
+    ###############################################################################
+    # Sitting with player1 and player2
+    ################################################################################
+    try:
+        lsection("[PLAYER1 calls lobby.sitAndWait()]", 1)
+        p1_sw_tx = p1_lobby_provider.sitAndWait(p1_game_options)
+        lprint(f"[EVENT] ChessLobby.PlayerSit: {json.dumps(dict(p1_sw_tx.events['PlayerSit']), indent=4)}")
+    except Exception as ex:
+        lprint(f"Exception in sending lobby.sitAndWait() by {p1_address}")
+        lexcept(ex, True)
 
-    # lprint("player2 calls lobby.sitAndWait()")
-    # p2_lobby_provider = get_brownie_provider(lobby_path, "ChessLobby.sol", receipts["chess"]["LOBBY"]["contractAddress"], p2_address)
-    # # ################################################################################
-    # try:
-    #     p2_game_options = 0
-    #     p2_sit_tx = p2_lobby_provider.sitAndWait(p2_game_options)
-    #     lprint(str(p2_sit_tx.events["PlayerSit"]) + "\n")
-    # except Exception as ex:
-    #     lprint("Exception in sending lobby.sitAndWait() by player1")
-    #     lprint(ex)
-    #     lprint(history[-1].call_trace(True))
+    # ################################################################################
+    try:
+        lsection("[PLAYER2 calls lobby.sitAndWait()]", 1)
+        p2_sw_tx = p2_lobby_provider.sitAndWait(p2_game_options)
+        lprint(f"[EVENT] ChessLobby.PlayerSit: {json.dumps(dict(p2_sw_tx.events['PlayerSit']), indent=4)}")
+        lprint(f"[EVENT] ChessLobby.BoardInitialized: {json.dumps(dict(p2_sw_tx.events['BoardInitialized']), indent=4)}")
+    except Exception as ex:
+        lprint(f"Exception in sending lobby.sitAndWait() by {p2_address}")
+        lexcept(ex, True)
 
 def s3_simulate_chess(root_path, conf):
     ###############################################################################

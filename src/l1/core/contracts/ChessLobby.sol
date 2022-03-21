@@ -37,8 +37,7 @@ contract ChessLobby {
     event BoardCreated(address indexed board, uint8 indexed boardCounter);
     event PlayerDeposited(address indexed player, uint amount);
     event PlayerSit(address indexed player, uint8 waitingListLength);
-    event GameStarted(address indexed board, address indexed player1, address indexed player2, uint meta);
-    event GameEnded(address indexed board, uint result);
+    event BoardInitialized(address indexed board, uint result);
 
     constructor(address chessTokenAddress) public {
         waitingListLength = 0;
@@ -64,7 +63,7 @@ contract ChessLobby {
     }
 
     function _deposit(address player, uint value) private {
-        // _safeTransferFrom(IERC20(chessToken), player, address(this), value);
+        _safeTransferFrom(IERC20(chessToken), player, address(this), value);
         credits[player] = credits[player] + value;
         emit PlayerDeposited(player, value);
         // (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
@@ -101,6 +100,7 @@ contract ChessLobby {
     function _sitAndWait(address player, uint options) private {
         // TODO:: this waitingList only matches the waitingplayer with the first coming player
         // later it would be added to waitingList and selected randomly
+        emit PlayerSit(player, waitingListLength);
         if(waitingListLength % 2 == 1){
             address player1 = WaitingIndexToPlayer[waitingListLength - 1];
             address player2 = player;
@@ -108,6 +108,10 @@ contract ChessLobby {
 
             address newBoard = _findFreeBoard();
             IChessBoard(newBoard).initialize(player1, player2);
+            emit BoardInitialized(newBoard, 0x0); 
+
+            credits[player1] -= 100;
+            credits[player2] -= 100;
             playerToBoard[player1] = newBoard;
             playerToBoard[player2] = newBoard;
             boardToPlayers[newBoard] = [player1, player2];
@@ -115,12 +119,12 @@ contract ChessLobby {
             delete WaitingIndexToPlayer[waitingListLength - 1];
             waitingListLength = waitingListLength - 1;
 
-            emit GameStarted(newBoard, player1, player2, 0x0); 
         }
         else{
             WaitingIndexToPlayer[waitingListLength] = player;
             waitingListLength = waitingListLength + 1;
         }
+        emit PlayerSit(player, waitingListLength);
 
     }
 
@@ -131,7 +135,7 @@ contract ChessLobby {
         
         // Player must have sufficient credit
         // TODO:: 0 is buggy, we should calculate min credit required to play
-        require(credits[msg.sender] == 0 , "ChessLobby: INSUFFICIENT_CREDIT");
+        require(credits[msg.sender] >= 100 , "ChessLobby: INSUFFICIENT_CREDIT");
         
         require(waitingListLength < maxWaitingListLength, "ChessLobby: FULL_WAITING_LIST");
 
@@ -141,7 +145,7 @@ contract ChessLobby {
 
     function deposit(uint256 _value) external returns (bool) {
         require(
-            IERC20(chessToken).allowance(msg.sender, house) >= _value,
+            IERC20(chessToken).allowance(msg.sender, address(this)) >= _value,
             "ChessLobby: LOW_ALLOWANCE"
         );
         _deposit(msg.sender, _value);

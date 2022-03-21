@@ -8,9 +8,6 @@ import '../interfaces/IChessBoard.sol';
 contract ChessBoard is IChessBoard{
     using SafeMath  for uint;
 
-    uint public constant MINIMUM_LIQUIDITY = 10**3;
-    bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
-
     string public name;
     address public lobby;
     address public player1;
@@ -20,10 +17,8 @@ contract ChessBoard is IChessBoard{
     uint8 public lastMove;
     uint8 public gameState;
 
-
-    uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
-
     uint private unlocked = 1;
+
     modifier lock() {
         require(unlocked == 1, 'ChessBoard: LOCKED');
         unlocked = 0;
@@ -38,7 +33,7 @@ contract ChessBoard is IChessBoard{
 
     // called once by the factory at time of deployment
     function initialize(address _player1, address _player2) external {
-        require(msg.sender == lobby, 'ChessBoard: FORBIDDEN'); // sufficient check
+        require(msg.sender == lobby, 'ChessBoard: IDENTICAL_PLAYERS'); // sufficient check
         player1 = _player1;
         player2 = _player2;
     }

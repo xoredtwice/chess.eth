@@ -8,7 +8,8 @@ interface IChessBoard {
     function gameState() external view returns (uint8);
 
     event PlayerMoved(address indexed player, uint8 move, uint8 stateUpdates);
-    event GameStarted(address indexed player1, address indexed player2, uint options);
+    event GameStarted(address indexed player1, address indexed player2, uint meta);
+    event GameEnded(uint result);
     event PlayerWon(address indexed player, uint conclusion);
 
     function lobby() external view returns (address);
