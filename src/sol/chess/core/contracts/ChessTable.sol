@@ -43,6 +43,9 @@ contract ChessTable is IChessTable{
 
     }
 
+    function getBoard() external view returns(uint8[8][8] memory){
+        return board;
+    }
     function move(uint8 newMove) external returns (bool) {
         _move(msg.sender, newMove);
         return true;

@@ -9,7 +9,7 @@ interface IChessTable {
     function player2() external view returns (address);
 
     function state() external view returns (uint8);
-    // function board() external view returns(uint8[8][8] memory);
+    function getBoard() external view returns(uint8[8][8] memory);
     function activeGame() external view returns (uint);
     function lastMove() external view returns (uint8);
 
