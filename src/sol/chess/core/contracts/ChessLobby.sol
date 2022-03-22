@@ -105,7 +105,7 @@ contract ChessLobby {
 
             address newTable = _findFreeTable();
             (address _player1, address _player2) = newPlayer < sittingPlayer ? (newPlayer, sittingPlayer) : (sittingPlayer, newPlayer);
-            IChessTable(newTable).initialize(_player1, _player2);
+            IChessTable(newTable).initialize(_player1, _player2, 0x0);
             emit TableInitialized(newTable, 0x0); 
 
             credits[_player1] -= 100;

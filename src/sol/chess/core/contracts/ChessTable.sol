@@ -14,7 +14,21 @@ contract ChessTable is IChessTable{
     // tournament play. In theory, the longest chess game can go up to 
     // 5,949 moves.
     uint16 public constant MAX_MOVES = 400;
+    
+    uint8 public constant WH_P = 0x10;
+    uint8 public constant WH_N = 0x20;
+    uint8 public constant WH_B = 0x30;
+    uint8 public constant WH_R = 0x40;
+    uint8 public constant WH_Q = 0x50;
+    uint8 public constant WH_K = 0x60;
 
+    uint8 public constant BL_P = 0x90;
+    uint8 public constant BL_N = 0xA0;
+    uint8 public constant BL_B = 0xB0;
+    uint8 public constant BL_R = 0xC0;
+    uint8 public constant BL_Q = 0xD0;
+    uint8 public constant BL_K = 0xE0;
+    
     string public name;
     address public lobby;
     address public white;
@@ -22,7 +36,7 @@ contract ChessTable is IChessTable{
     address public turn;
     
     uint public activeGame;
-    uint8 public lastMove;
+    uint16 public lastMove;
     uint8 public state;
     uint8[8][8] public board;
 
@@ -42,11 +56,17 @@ contract ChessTable is IChessTable{
     }
 
     // called once by the factory at time of deployment
-    function _initialize(address _player1, address _player2, uint8 meta) external {
+    function _initialize(address _player1, address _player2, uint8 meta) private {
         white = _player1;
         black = _player2;
         turn = white;
-        state = 0x01;
+        state = 0x10;
+        board[7] = [BL_R, BL_N, BL_B, BL_Q, BL_K, BL_B, BL_N, BL_R];
+        board[6] = [BL_P, BL_P, BL_P, BL_P, BL_P, BL_P, BL_P, BL_P];
+
+        board[1] = [WH_P, WH_P, WH_P, WH_P, WH_P, WH_P, WH_P, WH_P];
+        board[0] = [WH_R, WH_N, WH_B, WH_Q, WH_K, WH_B, WH_N, WH_R];
+        emit GameStarted(white, black, meta);
 
     }
 
@@ -66,7 +86,7 @@ contract ChessTable is IChessTable{
         turn = moves.length % 2 == 0 ? white : black;
 
         _updateBoard(_newMove);
-        emit PlayerMoved(_player, _newMove);
+        emit PlayerMoved(_player, _newMove, state);
     }
 
     function getBoard() external view returns(uint8[8][8] memory){
@@ -81,7 +101,7 @@ contract ChessTable is IChessTable{
     }
 
     function move(uint16 newMove) external returns (bool) {
-        require(state > 0x00, 'ChessTable: STATE_MISMATCH');
+        require(state >= 0x10, 'ChessTable: STATE_MISMATCH');
         // TODO:: the maxed out game's result must get resolved.
         require(moves.length < MAX_MOVES, 'ChessTable: MOVE_OVERFLOW');
         require(msg.sender == turn, 'ChessTable: NOT_IN_TURN');
