@@ -67,8 +67,6 @@ contract ChessLobby {
         _safeTransferFrom(IERC20(chessToken), player, address(this), value);
         credits[player] = credits[player] + value;
         emit PlayerDeposited(player, value);
-        // (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
-        // require(success && (data.length == 0 || abi.decode(data, (bool))), 'ChessLobby: DEPOSIT_FAILED');
     }
 
     function _cashout(address player, uint value) private {
@@ -98,35 +96,33 @@ contract ChessLobby {
         return freeTable;
     }
 
-    function _sitAndWait(address player, uint options) private {
+    function _sitAndWait(address newPlayer, uint options) private {
         // TODO:: this waitingList only matches the waitingplayer with the first coming player
         // later it would be added to waitingList and selected randomly
-        emit PlayerSit(player, waitingListLength);
         if(waitingListLength % 2 == 1){
-            address player1 = WaitingIndexToPlayer[waitingListLength - 1];
-            address player2 = player;
-            require(player1 != player2, 'ChessLobby: IDENTICAL_ADDRESSES');
+            address sittingPlayer = WaitingIndexToPlayer[waitingListLength - 1];
+            require(newPlayer != sittingPlayer, 'ChessLobby: IDENTICAL_ADDRESSES');
 
             address newTable = _findFreeTable();
-            IChessTable(newTable).initialize(player1, player2);
+            (address _player1, address _player2) = newPlayer < sittingPlayer ? (newPlayer, sittingPlayer) : (sittingPlayer, newPlayer);
+            IChessTable(newTable).initialize(_player1, _player2);
             emit TableInitialized(newTable, 0x0); 
 
-            credits[player1] -= 100;
-            credits[player2] -= 100;
-            playerToTable[player1] = newTable;
-            playerToTable[player2] = newTable;
-            tableToPlayers[newTable] = [player1, player2];
+            credits[_player1] -= 100;
+            credits[_player2] -= 100;
+            playerToTable[_player1] = newTable;
+            playerToTable[_player2] = newTable;
+            tableToPlayers[newTable] = [_player1, _player2];
 
             delete WaitingIndexToPlayer[waitingListLength - 1];
             waitingListLength = waitingListLength - 1;
 
         }
         else{
-            WaitingIndexToPlayer[waitingListLength] = player;
+            WaitingIndexToPlayer[waitingListLength] = newPlayer;
             waitingListLength = waitingListLength + 1;
         }
-        emit PlayerSit(player, waitingListLength);
-
+        emit PlayerSit(newPlayer, waitingListLength);
     }
 
 
