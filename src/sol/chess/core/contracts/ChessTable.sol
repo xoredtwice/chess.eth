@@ -15,19 +15,32 @@ contract ChessTable is IChessTable{
     // 5,949 moves.
     uint16 public constant MAX_MOVES = 400;
     
-    uint8 public constant WH_P = 0x10;
-    uint8 public constant WH_N = 0x20;
-    uint8 public constant WH_B = 0x30;
-    uint8 public constant WH_R = 0x40;
-    uint8 public constant WH_Q = 0x50;
-    uint8 public constant WH_K = 0x60;
+    uint8 public constant PIECE_PAWN = 0x00;
+    uint8 public constant PIECE_KING = 0x01;
+    // Queen moves Bishop + Rock
+    uint8 public constant PIECE_BISHOP = 0x02;
+    uint8 public constant PIECE_ROCK = 0x04;
+    uint8 public constant PIECE_QUEEN = 0x06;
+    uint8 public constant PIECE_KNIGHT = 0x03;
 
-    uint8 public constant BL_P = 0x90;
-    uint8 public constant BL_N = 0xA0;
-    uint8 public constant BL_B = 0xB0;
-    uint8 public constant BL_R = 0xC0;
-    uint8 public constant BL_Q = 0xD0;
-    uint8 public constant BL_K = 0xE0;
+    uint8 public constant PIECE_PROMOTED = 0x08;
+
+    uint8 public constant COLOR_WHITE = 0x10;
+    uint8 public constant COLOR_BLACK = 0x20;
+
+    uint8 public constant WH_P = COLOR_WHITE | PIECE_PAWN;
+    uint8 public constant WH_N = COLOR_WHITE | PIECE_KNIGHT;
+    uint8 public constant WH_B = COLOR_WHITE | PIECE_BISHOP;
+    uint8 public constant WH_R = COLOR_WHITE | PIECE_ROCK;
+    uint8 public constant WH_Q = COLOR_WHITE | PIECE_QUEEN;
+    uint8 public constant WH_K = COLOR_WHITE | PIECE_KING;
+    
+    uint8 public constant BL_P = COLOR_BLACK | PIECE_PAWN;
+    uint8 public constant BL_N = COLOR_BLACK | PIECE_KNIGHT;
+    uint8 public constant BL_B = COLOR_BLACK | PIECE_BISHOP;
+    uint8 public constant BL_R = COLOR_BLACK | PIECE_ROCK;
+    uint8 public constant BL_Q = COLOR_BLACK | PIECE_QUEEN;
+    uint8 public constant BL_K = COLOR_BLACK | PIECE_KING;
     
     string public name;
     address public lobby;
