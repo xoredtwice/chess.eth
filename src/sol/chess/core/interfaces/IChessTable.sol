@@ -19,5 +19,5 @@ interface IChessTable {
     event GameEnded(bool isDraw, address indexed winner, address indexed log);
 
     function initialize(address, address, uint8) external returns (bool);
-    function move(uint16 move) external returns (bool);
+    function move(uint8 newMove, uint8 meta) external returns (bool);
 }

@@ -15,18 +15,28 @@ contract ChessTable is IChessTable{
     // 5,949 moves.
     uint16 public constant MAX_MOVES = 400;
     
-    uint8 public constant PIECE_PAWN = 0x00;
-    uint8 public constant PIECE_KING = 0x01;
+    uint8 public constant PIECE_MASK = 0xF0;
+    
+    uint8 public constant FROM_MASK = 0x0F;
+    uint8 public constant FROM_RANK_MASK = 0x0C;
+    uint8 public constant FROM_FILE_MASK = 0x03;
+
+    uint8 public constant TO_MASK = 0xF0;
+    uint8 public constant TO_RANK_MASK = 0xC0;
+    uint8 public constant TO_FILE_MASK = 0x30;
+
+    uint8 public constant PIECE_PAWN = 0x10;
+    uint8 public constant PIECE_KING = 0x50;
+
+    uint8 public constant PIECE_KNIGHT = 0x30;
+
     // Queen moves Bishop + Rock
-    uint8 public constant PIECE_BISHOP = 0x02;
-    uint8 public constant PIECE_ROCK = 0x04;
-    uint8 public constant PIECE_QUEEN = 0x06;
-    uint8 public constant PIECE_KNIGHT = 0x03;
+    uint8 public constant PIECE_BISHOP = 0x20;
+    uint8 public constant PIECE_ROCK = 0x40;
+    uint8 public constant PIECE_QUEEN = 0x60;
 
-    uint8 public constant PIECE_PROMOTED = 0x08;
-
-    uint8 public constant COLOR_WHITE = 0x10;
-    uint8 public constant COLOR_BLACK = 0x20;
+    uint8 public constant COLOR_WHITE = 0x00;
+    uint8 public constant COLOR_BLACK = 0x08;
 
     uint8 public constant WH_P = COLOR_WHITE | PIECE_PAWN;
     uint8 public constant WH_N = COLOR_WHITE | PIECE_KNIGHT;
@@ -42,6 +52,8 @@ contract ChessTable is IChessTable{
     uint8 public constant BL_Q = COLOR_BLACK | PIECE_QUEEN;
     uint8 public constant BL_K = COLOR_BLACK | PIECE_KING;
     
+    // mapping uint8 => ();
+
     string public name;
     address public lobby;
     address public white;
@@ -83,22 +95,20 @@ contract ChessTable is IChessTable{
 
     }
 
-    function _logic(uint16 _newMove) private returns(bool){
+    // function _logic(uint8 _from, uint8 _to) private returns(bool){
+    //     // require(_logic(_from, _to), 'ChessTable: INVALID_MOVE');
 
-        return false;
-    }
+    //     // board[][]
+    //     return false;
+    // }
 
-    function _updateBoard(uint16 _newMove) private {
+    function _move(address _player, uint8 _newMove ,uint8 _meta) private{        
 
-    }
-
-    function _move(address _player, uint16 _newMove) private{
-        require(_logic(_newMove), 'ChessTable: INVALID_MOVE');
-        moves.push(_newMove);
+        uint16 newMove = _newMove << 8 + _meta; 
+        moves.push(newMove);
         // TODO:: it can be done through flipping the addresses too.
         turn = moves.length % 2 == 0 ? white : black;
 
-        _updateBoard(_newMove);
         emit PlayerMoved(_player, _newMove, state);
     }
 
@@ -113,12 +123,16 @@ contract ChessTable is IChessTable{
         return true;
     }
 
-    function move(uint16 newMove) external returns (bool) {
+    function move(uint8 newMove, uint8 meta) external returns (bool) {
         require(state >= 0x10, 'ChessTable: STATE_MISMATCH');
         // TODO:: the maxed out game's result must get resolved.
         require(moves.length < MAX_MOVES, 'ChessTable: MOVE_OVERFLOW');
-        require(msg.sender == turn, 'ChessTable: NOT_IN_TURN');
-        _move(msg.sender, newMove);
+        require(msg.sender == turn, 'ChessTable: NOT_YOUR_TURN');
+        uint8 selectedPiece = board[newMove & FROM_RANK_MASK][newMove & FROM_FILE_MASK];
+        address pieceOwner = (selectedPiece & COLOR_BLACK == 0 ? white : black);
+        require( msg.sender == pieceOwner, 'ChessTable: NOT_YOUR_PIECE');
+
+        _move(pieceOwner, newMove, meta);
         return true;
     }
 
