@@ -125,7 +125,6 @@ contract ChessLobby {
         emit PlayerSit(newPlayer, waitingListLength);
     }
 
-
     function sitAndWait(uint options) external returns (bool) {
         // Player must not be sitting on a table
         require(playerToTable[msg.sender] == address(0x0) , "ChessLobby: ALREADY_IN_GAME");

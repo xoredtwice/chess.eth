@@ -150,6 +150,30 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
         lprint(f"Exception in sending table.getBoard() by {p1_address}")
         lexcept(ex, True)
 
+    ###############################################################################
+    # player2 sends move -> [REVERT EXPECTED]
+    ################################################################################
+    p2_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p2_address)
+    try:
+        lsection("[PLAYER1 sends e4]", 1)
+        p2_il_tx = p1_table_provider.move( 0xC2, 0x00);
+        lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(p2_il_tx.events['PlayerMoved']), indent=4)}")
+    except Exception as ex:
+        lprint(f"Exception in sending table.getBoard() by {p1_address}")
+        lexcept(ex, True)
+
+    ###############################################################################
+    # player1 sends move for player2's piece -> [REVERT EXPECTED]
+    ################################################################################
+
+    ###############################################################################
+    # player1 sends illegal move for her own piece -> [REVERT EXPECTED]
+    ################################################################################
+
+    ###############################################################################
+    # player1 sends [e4]
+    ################################################################################
+
 def s3_simulate_chess(root_path, conf):
     ###############################################################################
     # Preparing environment
