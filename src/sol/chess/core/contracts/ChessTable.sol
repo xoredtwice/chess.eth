@@ -14,45 +14,73 @@ contract ChessTable is IChessTable{
     // tournament play. In theory, the longest chess game can go up to 
     // 5,949 moves.
     uint16 public constant MAX_MOVES = 400;
-    
-    // FromTo encoding    
-    uint16 public constant FROM_MASK = 0xFC00;
-    uint16 public constant FROM_FILE_MASK = 0xE000;
-    uint16 public constant FROM_RANK_MASK = 0x1C00;
 
-    uint16 public constant TO_MASK = 0x03F0;
-    uint16 public constant TO_FILE_MASK = 0x0380;
-    uint16 public constant TO_RANK_MASK = 0x0070;
+    // maybe not needed
+    uint8 public constant FILE_MASK = 0xF0;
+    uint8 public constant RANK_MASK = 0x0F;
 
-    uint16 public constant META_MASK = 0x000F; //lol
+    // FILEs
+    uint8 public constant F_A = 0x00 << 3;
+    uint8 public constant F_B = 0x01 << 3;
+    uint8 public constant F_C = 0x02 << 3;
+    uint8 public constant F_D = 0x03 << 3;
+    uint8 public constant F_E = 0x04 << 3;
+    uint8 public constant F_F = 0x05 << 3;
+    uint8 public constant F_G = 0x06 << 3;
+    uint8 public constant F_H = 0x07 << 3;
 
-    // piece encoding
-    uint8 public constant PIECE_PAWN = 0x10;
-    uint8 public constant PIECE_KING = 0x50;
+    // RANKs
+    uint8 public constant R_1 = 0x00;
+    uint8 public constant R_2 = 0x01;
+    uint8 public constant R_3 = 0x02;
+    uint8 public constant R_4 = 0x03;
+    uint8 public constant R_5 = 0x04;
+    uint8 public constant R_6 = 0x05;
+    uint8 public constant R_7 = 0x06;
+    uint8 public constant R_8 = 0x07;
 
-    uint8 public constant PIECE_KNIGHT = 0x30;
+    // TODO:: not implemented
+    uint8 public constant ID_IMP = 0x09; // FOR IMPROVEMENTS
 
-    // Queen moves Bishop + Rook
-    uint8 public constant PIECE_BISHOP = 0x20;
-    uint8 public constant PIECE_ROOK = 0x40;
-    uint8 public constant PIECE_QUEEN = 0x60;
 
-    uint8 public constant COLOR_WHITE = 0x00;
-    uint8 public constant COLOR_BLACK = 0xE0;
+    uint8 public constant W_K = 0;
+    uint8 public constant B_K = 1;
 
-    uint8 public constant WH_P = COLOR_WHITE | PIECE_PAWN;
-    uint8 public constant WH_N = COLOR_WHITE | PIECE_KNIGHT;
-    uint8 public constant WH_B = COLOR_WHITE | PIECE_BISHOP;
-    uint8 public constant WH_R = COLOR_WHITE | PIECE_ROOK;
-    uint8 public constant WH_Q = COLOR_WHITE | PIECE_QUEEN;
-    uint8 public constant WH_K = COLOR_WHITE | PIECE_KING;
-    
-    uint8 public constant BL_P = COLOR_BLACK | PIECE_PAWN;
-    uint8 public constant BL_N = COLOR_BLACK | PIECE_KNIGHT;
-    uint8 public constant BL_B = COLOR_BLACK | PIECE_BISHOP;
-    uint8 public constant BL_R = COLOR_BLACK | PIECE_ROOK;
-    uint8 public constant BL_Q = COLOR_BLACK | PIECE_QUEEN;
-    uint8 public constant BL_K = COLOR_BLACK | PIECE_KING;
+    uint8 public constant W_Q = 2;
+    uint8 public constant B_Q = 3;
+
+    uint8 public constant W_R_A = 4;
+    uint8 public constant B_R_A = 5;
+
+    uint8 public constant W_R_H = 6;
+    uint8 public constant B_R_H = 7;
+
+    uint8 public constant W_B_C = 8;
+    uint8 public constant B_B_C = 9;
+    uint8 public constant W_B_F = 10;
+    uint8 public constant B_B_F = 11;
+
+    uint8 public constant W_N_B = 12;
+    uint8 public constant B_N_B = 13;
+    uint8 public constant W_N_G = 14;
+    uint8 public constant B_N_G = 15;
+
+    uint8 public constant W_P_A = 16;
+    uint8 public constant B_P_A = 17;
+    uint8 public constant W_P_B = 18;
+    uint8 public constant B_P_B = 19;
+    uint8 public constant W_P_C = 20;
+    uint8 public constant B_P_C = 21;
+    uint8 public constant W_P_D = 22;
+    uint8 public constant B_P_D = 23;
+    uint8 public constant W_P_E = 24;
+    uint8 public constant B_P_E = 25;
+    uint8 public constant W_P_F = 26;
+    uint8 public constant B_P_F = 27;
+    uint8 public constant W_P_G = 28;
+    uint8 public constant B_P_G = 29;
+    uint8 public constant W_P_H = 30;
+    uint8 public constant B_P_H = 31;    
 
     string public name;
     address public lobby;
@@ -64,9 +92,7 @@ contract ChessTable is IChessTable{
     uint16 public lastMove;
     uint8 public state;
 
-
-    // square to piece
-    mapping (uint8 => uint8) public piece;
+    uint256 public board;
     
     // square to squares
     mapping (uint8 => uint8[]) public paths;
@@ -90,7 +116,13 @@ contract ChessTable is IChessTable{
     constructor() public {
         lobby = msg.sender;
         name = "gary";
-        // initial state
+    
+        // setting the board pieces
+        board = 0;
+        board = board | ((uint256)(F_E | R_1) << W_K);
+
+        board = board | ((uint256)(F_A | R_1) << W_R_A);
+
     }
 
 
@@ -100,33 +132,27 @@ contract ChessTable is IChessTable{
         black = _player2;
         turn = white;
         state = 0x10;
-
-        // piece[]
         emit GameStarted(white, black, meta);
 
     }
 
-    function _logic(uint8 _from, uint8 _to , uint8 _meta) private {
+    function _logic(uint8 _piece, uint8 _action) private {
         // 
 
         // board[][]
     }
 
-    function _move(address _player, uint16 _newMove, uint8 _from, uint8 _to , uint8 _meta) private{   
+    function _move(address _player, uint8 _piece, uint8 _action) private{   
 
 
-        _logic(_from, _to, _meta);
-        lastMove = _newMove; 
+        _logic(_piece, _action);
+        lastMove = _piece << 8 | _action; 
         moves.push(lastMove);
 
         // TODO:: it can be done through flipping the addresses too.
         turn = moves.length % 2 == 0 ? white : black;
 
-        emit PlayerMoved(_player, _newMove, state);
-    }
-
-    function getBoard() external view returns(uint16[] memory){
-
+        emit PlayerMoved(_player, lastMove, state);
     }
 
     function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {
@@ -135,7 +161,7 @@ contract ChessTable is IChessTable{
         return true;
     }
 
-    function move(uint16 newMove) external returns (bool) {
+    function move(uint8 piece, uint8 action) external returns (bool) {
         require(state >= 0x10, 'ChessTable: STATE_MISMATCH');
         
         // TODO:: the maxed out game's result must get resolved.
@@ -143,16 +169,12 @@ contract ChessTable is IChessTable{
         
         // checking the turn condition
         require(msg.sender == turn, 'ChessTable: NOT_YOUR_TURN');
-        
-        uint8 _from = (uint8)((newMove & FROM_MASK) >> 8);
-        uint8 _to = (uint8)((newMove & TO_MASK) >> 8);
-        uint8 _meta = (uint8)((newMove & META_MASK) >> 8);
 
         // player should not be able to move other player's pieces
-        address pieceOwner = (piece[_from] & COLOR_BLACK == 0 ? white : black);
+        address pieceOwner = (piece % 2 == 0 ? white : black);
         require( msg.sender == pieceOwner, 'ChessTable: NOT_YOUR_PIECE');
 
-        _move(pieceOwner, newMove, _from, _to, _meta);
+        _move(pieceOwner, piece, action);
         return true;
     }
 }

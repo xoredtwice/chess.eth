@@ -143,9 +143,8 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
 
     try:
         lsection("[PLAYER1 reads the board]", 1)
-        board = p1_table_provider.getBoard();
-        for level in board:
-            lprint(level)
+        board = p1_table_provider.board();
+        lprint(board)
     except Exception as ex:
         lprint(f"Exception in sending table.getBoard() by {p1_address}")
         lexcept(ex, True)
@@ -159,7 +158,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
         p2_il_tx = p1_table_provider.move( 0xC2, 0x00);
         lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(p2_il_tx.events['PlayerMoved']), indent=4)}")
     except Exception as ex:
-        lprint(f"Exception in sending table.getBoard() by {p1_address}")
+        lprint(f"Exception in sending move() by {p1_address}")
         lexcept(ex, True)
 
     ###############################################################################
