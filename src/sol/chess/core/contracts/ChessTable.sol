@@ -39,8 +39,11 @@ contract ChessTable is IChessTable{
     uint8 public constant R_7 = 0x06;
     uint8 public constant R_8 = 0x07;
 
-    // TODO:: not implemented
-    uint8 public constant ID_IMP = 0x09; // FOR IMPROVEMENTS
+    // MODES
+    uint8 public constant M_DEAD = 0x00 << 6;
+    uint8 public constant M_SET = 0x01 << 6;
+    uint8 public constant M_PINNED = 0x02 << 6;
+    uint8 public constant M_IMP = 0x03 << 6;
 
 
     uint8 public constant W_K = 0;
@@ -118,11 +121,47 @@ contract ChessTable is IChessTable{
         name = "gary";
     
         // setting the board pieces
-        board = 0;
-        board = board | ((uint256)(F_E | R_1) << W_K);
+        // this is for clean coding
+        // this part can be replaced with
+        // board = 57206024880500355210511422320168595472987210685811253910150542059381089396576
 
-        board = board | ((uint256)(F_A | R_1) << W_R_A);
+        // setting white pieces
+        board = board | ((uint256)(M_SET | F_A | R_1) << (W_R_A * 8));
+        board = board | ((uint256)(M_SET | F_B | R_1) << (W_N_B * 8));
+        board = board | ((uint256)(M_SET | F_C | R_1) << (W_B_C * 8));
+        board = board | ((uint256)(M_SET | F_D | R_1) << (W_Q * 8));
+        board = board | ((uint256)(M_SET | F_E | R_1) << (W_K * 8));
+        board = board | ((uint256)(M_SET | F_F | R_1) << (W_B_F * 8));
+        board = board | ((uint256)(M_SET | F_G | R_1) << (W_N_G * 8));
+        board = board | ((uint256)(M_SET | F_H | R_1) << (W_R_H * 8));
 
+        board = board | ((uint256)(M_SET | F_A | R_2) << (W_P_A * 8));
+        board = board | ((uint256)(M_SET | F_B | R_2) << (W_P_B * 8));
+        board = board | ((uint256)(M_SET | F_C | R_2) << (W_P_C * 8));
+        board = board | ((uint256)(M_SET | F_D | R_2) << (W_P_D * 8));
+        board = board | ((uint256)(M_SET | F_E | R_2) << (W_P_E * 8));
+        board = board | ((uint256)(M_SET | F_F | R_2) << (W_P_F * 8));
+        board = board | ((uint256)(M_SET | F_G | R_2) << (W_P_G * 8));
+        board = board | ((uint256)(M_SET | F_H | R_2) << (W_P_H * 8));
+
+        // setting black pieces
+        board = board | ((uint256)(M_SET | F_A | R_8) << (B_R_A * 8));
+        board = board | ((uint256)(M_SET | F_B | R_8) << (B_N_B * 8));
+        board = board | ((uint256)(M_SET | F_C | R_8) << (B_B_C * 8));
+        board = board | ((uint256)(M_SET | F_D | R_8) << (B_Q * 8));
+        board = board | ((uint256)(M_SET | F_E | R_8) << (B_K * 8));
+        board = board | ((uint256)(M_SET | F_F | R_8) << (B_B_F * 8));
+        board = board | ((uint256)(M_SET | F_G | R_8) << (B_N_G * 8));
+        board = board | ((uint256)(M_SET | F_H | R_8) << (B_R_H * 8));
+
+        board = board | ((uint256)(M_SET | F_A | R_7) << (B_P_A * 8));
+        board = board | ((uint256)(M_SET | F_B | R_7) << (B_P_B * 8));
+        board = board | ((uint256)(M_SET | F_C | R_7) << (B_P_C * 8));
+        board = board | ((uint256)(M_SET | F_D | R_7) << (B_P_D * 8));
+        board = board | ((uint256)(M_SET | F_E | R_7) << (B_P_E * 8));
+        board = board | ((uint256)(M_SET | F_F | R_7) << (B_P_F * 8));
+        board = board | ((uint256)(M_SET | F_G | R_7) << (B_P_G * 8));
+        board = board | ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
     }
 
 
