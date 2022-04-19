@@ -14,7 +14,7 @@ interface IChessTable {
     function activeGame() external view returns (uint);
     function lastMove() external view returns (uint16);
 
-    event PlayerMoved(address indexed player, uint16 move, uint8 state);
+    event PlayerMoved(address indexed player, uint8 piece, uint8 action);
     event GameStarted(address indexed white, address indexed black, uint8 meta);
     event GameEnded(bool isDraw, address indexed winner, address indexed log);
 

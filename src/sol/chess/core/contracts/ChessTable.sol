@@ -18,6 +18,7 @@ contract ChessTable is IChessTable{
     // maybe not needed
     uint8 public constant FILE_MASK = 0xF0;
     uint8 public constant RANK_MASK = 0x0F;
+    uint8 public constant COORD_MASK = 0x3F;
 
     // FILEs
     uint8 public constant F_A = 0x00 << 3;
@@ -123,45 +124,45 @@ contract ChessTable is IChessTable{
         // setting the board pieces
         // this is for clean coding
         // this part can be replaced with
-        // board = 57206024880500355210511422320168595472987210685811253910150542059381089396576
+        // board = 57206024880500355210511422320168595472987210685811253910150542059381089396576;
 
         // setting white pieces
-        board = board | ((uint256)(M_SET | F_A | R_1) << (W_R_A * 8));
-        board = board | ((uint256)(M_SET | F_B | R_1) << (W_N_B * 8));
-        board = board | ((uint256)(M_SET | F_C | R_1) << (W_B_C * 8));
-        board = board | ((uint256)(M_SET | F_D | R_1) << (W_Q * 8));
-        board = board | ((uint256)(M_SET | F_E | R_1) << (W_K * 8));
-        board = board | ((uint256)(M_SET | F_F | R_1) << (W_B_F * 8));
-        board = board | ((uint256)(M_SET | F_G | R_1) << (W_N_G * 8));
-        board = board | ((uint256)(M_SET | F_H | R_1) << (W_R_H * 8));
+        board |= ((uint256)(M_SET | F_A | R_1) << (W_R_A * 8));
+        board |= ((uint256)(M_SET | F_B | R_1) << (W_N_B * 8));
+        board |= ((uint256)(M_SET | F_C | R_1) << (W_B_C * 8));
+        board |= ((uint256)(M_SET | F_D | R_1) << (W_Q * 8));
+        board |= ((uint256)(M_SET | F_E | R_1) << (W_K * 8));
+        board |= ((uint256)(M_SET | F_F | R_1) << (W_B_F * 8));
+        board |= ((uint256)(M_SET | F_G | R_1) << (W_N_G * 8));
+        board |= ((uint256)(M_SET | F_H | R_1) << (W_R_H * 8));
 
-        board = board | ((uint256)(M_SET | F_A | R_2) << (W_P_A * 8));
-        board = board | ((uint256)(M_SET | F_B | R_2) << (W_P_B * 8));
-        board = board | ((uint256)(M_SET | F_C | R_2) << (W_P_C * 8));
-        board = board | ((uint256)(M_SET | F_D | R_2) << (W_P_D * 8));
-        board = board | ((uint256)(M_SET | F_E | R_2) << (W_P_E * 8));
-        board = board | ((uint256)(M_SET | F_F | R_2) << (W_P_F * 8));
-        board = board | ((uint256)(M_SET | F_G | R_2) << (W_P_G * 8));
-        board = board | ((uint256)(M_SET | F_H | R_2) << (W_P_H * 8));
+        board |= ((uint256)(M_SET | F_A | R_2) << (W_P_A * 8));
+        board |= ((uint256)(M_SET | F_B | R_2) << (W_P_B * 8));
+        board |= ((uint256)(M_SET | F_C | R_2) << (W_P_C * 8));
+        board |= ((uint256)(M_SET | F_D | R_2) << (W_P_D * 8));
+        board |= ((uint256)(M_SET | F_E | R_2) << (W_P_E * 8));
+        board |= ((uint256)(M_SET | F_F | R_2) << (W_P_F * 8));
+        board |= ((uint256)(M_SET | F_G | R_2) << (W_P_G * 8));
+        board |= ((uint256)(M_SET | F_H | R_2) << (W_P_H * 8));
 
         // setting black pieces
-        board = board | ((uint256)(M_SET | F_A | R_8) << (B_R_A * 8));
-        board = board | ((uint256)(M_SET | F_B | R_8) << (B_N_B * 8));
-        board = board | ((uint256)(M_SET | F_C | R_8) << (B_B_C * 8));
-        board = board | ((uint256)(M_SET | F_D | R_8) << (B_Q * 8));
-        board = board | ((uint256)(M_SET | F_E | R_8) << (B_K * 8));
-        board = board | ((uint256)(M_SET | F_F | R_8) << (B_B_F * 8));
-        board = board | ((uint256)(M_SET | F_G | R_8) << (B_N_G * 8));
-        board = board | ((uint256)(M_SET | F_H | R_8) << (B_R_H * 8));
+        board |= ((uint256)(M_SET | F_A | R_8) << (B_R_A * 8));
+        board |= ((uint256)(M_SET | F_B | R_8) << (B_N_B * 8));
+        board |= ((uint256)(M_SET | F_C | R_8) << (B_B_C * 8));
+        board |= ((uint256)(M_SET | F_D | R_8) << (B_Q * 8));
+        board |= ((uint256)(M_SET | F_E | R_8) << (B_K * 8));
+        board |= ((uint256)(M_SET | F_F | R_8) << (B_B_F * 8));
+        board |= ((uint256)(M_SET | F_G | R_8) << (B_N_G * 8));
+        board |= ((uint256)(M_SET | F_H | R_8) << (B_R_H * 8));
 
-        board = board | ((uint256)(M_SET | F_A | R_7) << (B_P_A * 8));
-        board = board | ((uint256)(M_SET | F_B | R_7) << (B_P_B * 8));
-        board = board | ((uint256)(M_SET | F_C | R_7) << (B_P_C * 8));
-        board = board | ((uint256)(M_SET | F_D | R_7) << (B_P_D * 8));
-        board = board | ((uint256)(M_SET | F_E | R_7) << (B_P_E * 8));
-        board = board | ((uint256)(M_SET | F_F | R_7) << (B_P_F * 8));
-        board = board | ((uint256)(M_SET | F_G | R_7) << (B_P_G * 8));
-        board = board | ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
+        board |= ((uint256)(M_SET | F_A | R_7) << (B_P_A * 8));
+        board |= ((uint256)(M_SET | F_B | R_7) << (B_P_B * 8));
+        board |= ((uint256)(M_SET | F_C | R_7) << (B_P_C * 8));
+        board |= ((uint256)(M_SET | F_D | R_7) << (B_P_D * 8));
+        board |= ((uint256)(M_SET | F_E | R_7) << (B_P_E * 8));
+        board |= ((uint256)(M_SET | F_F | R_7) << (B_P_F * 8));
+        board |= ((uint256)(M_SET | F_G | R_7) << (B_P_G * 8));
+        board |= ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
     }
 
 
@@ -177,21 +178,24 @@ contract ChessTable is IChessTable{
 
     function _logic(uint8 _piece, uint8 _action) private {
         // 
-
+        uint256 temp = 0xFF;
+        uint256 mask = (temp << (_piece * 8));
+        uint256 newPieceState = ((uint256)(M_SET | (COORD_MASK & _action)) << (_piece * 8));
+        board &= (~mask);// clean previous piece state
+        board |= newPieceState;
         // board[][]
     }
 
-    function _move(address _player, uint8 _piece, uint8 _action) private{   
-
-
+    function _move(address _player, uint8 _piece, uint8 _action) private{
         _logic(_piece, _action);
-        lastMove = _piece << 8 | _action; 
-        moves.push(lastMove);
+        // lastMove = _piece << 8 | _action; 
+        // moves.push(lastMove);
 
+        // Changing the turn
         // TODO:: it can be done through flipping the addresses too.
         turn = moves.length % 2 == 0 ? white : black;
 
-        emit PlayerMoved(_player, lastMove, state);
+        emit PlayerMoved(_player, _piece, _action);
     }
 
     function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {

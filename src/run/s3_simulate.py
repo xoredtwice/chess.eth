@@ -3,7 +3,7 @@ import os
 import brownie
 from src.utils.utils import get_brownie_provider, load_web3_environment
 from src.utils.logger import lprint, lsection, lexcept
-from src.utils.chess_utils import parse_board
+from src.utils.chess_utils import parse_board, print_board, PIECE_IDS
 from pprint import pprint
 #*******************************************************************************
 #*******************************************************************************
@@ -141,28 +141,34 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     # ################################################################################
     table_path = os.path.join(build_path, "chess", "core", "build", "contracts", "ChessTable.json")
     p1_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p1_address)
-
+    p2_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p2_address)
     try:
         lsection("[PLAYER1 reads the board]", 1)
-        board = p1_table_provider.board();
+        board = p1_table_provider.board()
         pieces, view = parse_board(board)
+        white_address = p1_table_provider.white()
+        black_address = p1_table_provider.black()
         lprint(f"board value: {board}")
         lprint(f"parsed pieces:{pieces}")
-        pprint(view)
+        lprint(f"White:{white_address}")
+        lprint(f"Black:{black_address}")
+        print_board(view)
     except Exception as ex:
-        lprint(f"Exception in sending table.getBoard() by {p1_address}")
+        lprint(f"Exception in reading public variables by {p1_address}")
         lexcept(ex, True)
 
+    white_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, white_address)
+    black_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, black_address)
+
     ###############################################################################
-    # player2 sends move -> [REVERT EXPECTED]
+    # player2 sends e5 -> [REVERT EXPECTED]
     ################################################################################
-    # p2_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p2_address)
     # try:
-    #     lsection("[PLAYER1 sends e4]", 1)
-    #     p2_il_tx = p1_table_provider.move( 0xC2, 0x00);
+    #     lsection("[PLAYER2 sends e5]", 1)
+    #     p2_il_tx = p2_table_provider.move( PIECE_IDS['B_P_E'], 0x02);
     #     lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(p2_il_tx.events['PlayerMoved']), indent=4)}")
     # except Exception as ex:
-    #     lprint(f"Exception in sending move() by {p1_address}")
+    #     lprint(f"Exception in sending move() by {p2_address}")
     #     lexcept(ex, True)
 
     ###############################################################################
@@ -174,9 +180,25 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     ################################################################################
 
     ###############################################################################
-    # player1 sends [e4]
+    # white sends [e4]
     ################################################################################
-
+    try:
+        lsection("[WHITE sends e4]", 1)
+        wh_e4_tx = white_provider.move(PIECE_IDS['W_P_E'], 0x23);
+        lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(wh_e4_tx.events['PlayerMoved']), indent=4)}")
+    except Exception as ex:
+        lprint(f"Exception in sending move() by {white_address}")
+        lexcept(ex, True)
+    try:
+        lsection("[PLAYER2 reads the board]", 1)
+        board = p2_table_provider.board();
+        pieces, view = parse_board(board)
+        lprint(f"board value: {board}")
+        lprint(f"parsed pieces:{pieces}")
+        print_board(view)
+    except Exception as ex:
+        lprint(f"Exception in sending table.getBoard() by {p1_address}")
+        lexcept(ex, True)
 def s3_simulate_chess(root_path, conf):
     ###############################################################################
     # Preparing environment
