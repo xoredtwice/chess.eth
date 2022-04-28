@@ -8,6 +8,11 @@ import '../interfaces/IChessTable.sol';
 contract ChessTable is IChessTable{
     using SafeMath  for uint;
 
+    // action encoding
+    // pawns need 7 moves, two forward + two cross takes + two enpasse + one improvement
+    // knights need 8 moves
+    // bishop needs 4 takes
+
     // The longest tournament chess game (in terms of moves) is 269 moves 
     // (Nikolic-Arsovic, Belgrade 1989). The game ended in a draw after 
     // over 20 hours of play. 10 games have been 200 moves or over in 
@@ -16,8 +21,8 @@ contract ChessTable is IChessTable{
     uint16 public constant MAX_MOVES = 400;
 
     // maybe not needed
-    uint8 public constant FILE_MASK = 0xF0;
-    uint8 public constant RANK_MASK = 0x0F;
+    uint8 public constant FILE_MASK = 0x38;
+    uint8 public constant RANK_MASK = 0x07;
     uint8 public constant COORD_MASK = 0x3F;
 
     // FILEs
@@ -32,6 +37,7 @@ contract ChessTable is IChessTable{
 
     // RANKs
     uint8 public constant R_1 = 0x00;
+
     uint8 public constant R_2 = 0x01;
     uint8 public constant R_3 = 0x02;
     uint8 public constant R_4 = 0x03;
@@ -98,14 +104,12 @@ contract ChessTable is IChessTable{
 
     uint256 public board;
     
-    // square to squares
-    mapping (uint8 => uint8[]) public paths;
 
-    // square to squares
-    mapping (uint8 => uint8[]) public enemies;
+    // piece to vis_state
+    mapping (uint8 => uint64) public visibility;
 
-    // square to squares
-    mapping (uint8 => uint8) public allies;
+    // piece to piece
+    mapping (uint8 => uint32) public engagements;
 
     uint private unlocked = 1;
     uint16[] private moves;
@@ -173,17 +177,57 @@ contract ChessTable is IChessTable{
         turn = white;
         state = 0x10;
         emit GameStarted(white, black, meta);
-
     }
 
     function _logic(uint8 _piece, uint8 _action) private {
-        // 
-        uint256 temp = 0xFF;
-        uint256 mask = (temp << (_piece * 8));
-        uint256 newPieceState = ((uint256)(M_SET | (COORD_MASK & _action)) << (_piece * 8));
-        board &= (~mask);// clean previous piece state
-        board |= newPieceState;
-        // board[][]
+
+        // How logic works:
+        // 1. Find piece location
+        //      1.1. trivial from board
+        // 2. Remove it from visibility
+        //      vis must encode whether each piece can move to a particular square or not
+        //      so vis would be 32 bits for pieces *
+        //      5 bits to select the piece and 64 bits for square visibility
+        //      engagements: 5-bits * 32-bits  
+        // 3. From engagements find pieces that their visibility would be affected
+        // 4. Update engagements
+        // 5. Update visibility
+
+        uint256 piece_mask = (0xFF << (_piece * 8));
+        uint8 to_sq = _action & COORD_MASK;
+
+        // is the square visible to the pieces?
+        require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+
+        // update visibility, engagement and board
+        // TODO:: still naive
+        // TODO:: add 32 as PIECE_COUNT constant
+        uint32 temp = engagements[_piece];
+        uint32 new_engagement = 0x00;
+        uint8 i_piece = 1;
+        while(temp){
+            if(temp % 2){// is it an engaged piece with moved piece
+                // the visibility of that piece must be updated
+
+                // the engagements must be updated
+                // if i_piece can see to_sq
+                if((visibility[i_piece] >> to_sq) % 2 == 1){
+                    // update engagement
+                    new_engagement |= 1;
+                }
+            }
+            temp = temp >> 1;
+            new_engagement = new_engagement << 1;
+            i_piece++;
+        }
+        engagements[_piece] = new_engagement;
+
+        uint256 newPieceState = ((uint256)(M_SET | to_sq) << (_piece * 8));
+
+        board &= (~piece_mask);// clean previous piece state
+        board |= newPieceState; // shoving the modified piece byte in
+        // modifying other affected pieces
+
     }
 
     function _move(address _player, uint8 _piece, uint8 _action) private{
