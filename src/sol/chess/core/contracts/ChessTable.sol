@@ -37,7 +37,6 @@ contract ChessTable is IChessTable{
 
     // RANKs
     uint8 public constant R_1 = 0x00;
-
     uint8 public constant R_2 = 0x01;
     uint8 public constant R_3 = 0x02;
     uint8 public constant R_4 = 0x03;
@@ -51,7 +50,6 @@ contract ChessTable is IChessTable{
     uint8 public constant M_SET = 0x01 << 6;
     uint8 public constant M_PINNED = 0x02 << 6;
     uint8 public constant M_IMP = 0x03 << 6;
-
 
     uint8 public constant W_K = 0;
     uint8 public constant B_K = 1;
@@ -105,11 +103,11 @@ contract ChessTable is IChessTable{
     uint256 public board;
     
 
-    // piece to vis_state
-    mapping (uint8 => uint64) public visibility;
+    // piece to squares
+    uint64[] public visibility;
 
-    // piece to piece
-    mapping (uint8 => uint32) public engagements;
+    // piece to pieces
+    uint32[] public engagements;
 
     uint private unlocked = 1;
     uint16[] private moves;
@@ -196,39 +194,48 @@ contract ChessTable is IChessTable{
         uint256 piece_mask = (0xFF << (_piece * 8));
         uint8 to_sq = _action & COORD_MASK;
 
-        // is the square visible to the pieces?
+        // is the square visible to the moved piece?
         require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+
+        // updating the board partially
+        // TODO:: update DEAD pieces
+        uint256 newPieceState = ((uint256)(M_SET | to_sq) << (_piece * 8));
+        board &= (~piece_mask);// clean previous piece state
+        board |= newPieceState; // shoving the modified piece byte in
 
         // update visibility, engagement and board
         // TODO:: still naive
         // TODO:: add 32 as PIECE_COUNT constant
-        uint32 temp = engagements[_piece];
         uint32 new_engagement = 0x00;
-        uint8 i_piece = 1;
-        while(temp){
-            if(temp % 2){// is it an engaged piece with moved piece
-                // the visibility of that piece must be updated
+        uint8 i_piece = 31;
+        while(i_piece >= 0){
 
-                // the engagements must be updated
-                // if i_piece can see to_sq
-                if((visibility[i_piece] >> to_sq) % 2 == 1){
-                    // update engagement
-                    new_engagement |= 1;
-                }
+            // Finding previously engaged pieces
+            if((engagements[i_piece] >> _piece) % 2){
+                // the visibility of that piece must be updated
+                _updateVisibility(i_piece);
+
             }
-            temp = temp >> 1;
+
+            // Finding newly engaged pieces
+            if((visibility[i_piece] >> to_sq) % 2 == 1){
+                // update engagement
+                new_engagement |= 1;
+                engagements[i_piece] |= (1 << _piece);
+            }
+
             new_engagement = new_engagement << 1;
-            i_piece++;
+            i_piece--;
         }
+        // setting engagements of the moved piece
         engagements[_piece] = new_engagement;
 
-        uint256 newPieceState = ((uint256)(M_SET | to_sq) << (_piece * 8));
-
-        board &= (~piece_mask);// clean previous piece state
-        board |= newPieceState; // shoving the modified piece byte in
-        // modifying other affected pieces
-
     }
+
+    function _updateVisibility(uint8 _piece) private{
+
+    }    
+
 
     function _move(address _player, uint8 _piece, uint8 _action) private{
         _logic(_piece, _action);
