@@ -8,11 +8,6 @@ import '../interfaces/IChessTable.sol';
 contract ChessTable is IChessTable{
     using SafeMath  for uint;
 
-    // action encoding
-    // pawns need 7 moves, two forward + two cross takes + two enpasse + one improvement
-    // knights need 8 moves
-    // bishop needs 4 takes
-
     // The longest tournament chess game (in terms of moves) is 269 moves 
     // (Nikolic-Arsovic, Belgrade 1989). The game ended in a draw after 
     // over 20 hours of play. 10 games have been 200 moves or over in 
@@ -25,6 +20,9 @@ contract ChessTable is IChessTable{
     uint8 public constant RANK_MASK = 0x07;
     uint8 public constant COORD_MASK = 0x3F;
 
+    //uint8 public constant = ;
+    uint64[32] public MASKS;
+    
     // FILEs
     uint8 public constant F_A = 0x00 << 3;
     uint8 public constant F_B = 0x01 << 3;
@@ -107,6 +105,9 @@ contract ChessTable is IChessTable{
     // piece to pieces
     uint32[] public engagements;
 
+    // showing whether a square is filled or not!
+    uint64 public map;
+
     uint private unlocked = 1;
     uint16[] private moves;
 
@@ -122,9 +123,10 @@ contract ChessTable is IChessTable{
         name = "gary";
     
         // setting the board pieces
-        // this is for clean coding
+
         // this part can be replaced with
         // board = 57206024880500355210511422320168595472987210685811253910150542059381089396576;
+        // map =;
 
         // setting white pieces
         board |= ((uint256)(M_SET | F_A | R_1) << (W_R_A * 8));
@@ -163,6 +165,25 @@ contract ChessTable is IChessTable{
         board |= ((uint256)(M_SET | F_F | R_7) << (B_P_F * 8));
         board |= ((uint256)(M_SET | F_G | R_7) << (B_P_G * 8));
         board |= ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
+
+        map |= (1 << F_A | R_1); map |= (1 << F_A | R_2);
+        map |= (1 << F_B | R_1); map |= (1 << F_B | R_2);
+        map |= (1 << F_C | R_1); map |= (1 << F_C | R_2);
+        map |= (1 << F_D | R_1); map |= (1 << F_D | R_2);
+        map |= (1 << F_E | R_1); map |= (1 << F_E | R_2);
+        map |= (1 << F_F | R_1); map |= (1 << F_F | R_2);
+        map |= (1 << F_G | R_1); map |= (1 << F_G | R_2);
+        map |= (1 << F_H | R_1); map |= (1 << F_H | R_2);
+
+        map |= (1 << F_A | R_7); map |= (1 << F_A | R_8);
+        map |= (1 << F_B | R_7); map |= (1 << F_B | R_8);
+        map |= (1 << F_C | R_7); map |= (1 << F_C | R_8);
+        map |= (1 << F_D | R_7); map |= (1 << F_D | R_8);
+        map |= (1 << F_E | R_7); map |= (1 << F_E | R_8);
+        map |= (1 << F_F | R_7); map |= (1 << F_F | R_8);
+        map |= (1 << F_G | R_7); map |= (1 << F_G | R_8);
+        map |= (1 << F_H | R_7); map |= (1 << F_H | R_8);
+
     }
 
 
@@ -198,7 +219,8 @@ contract ChessTable is IChessTable{
 
             // Finding pre-move engaged pieces
             if(i_piece != _piece && (engagements[i_piece] >> _piece) % 2){
-                _updateVisibility(i_piece, from_sq);
+                // Making squares beyond from_sq visible to i_piece
+                _updateVisibility(i_piece, from_sq, true);
             }
 
             // Finding post-move engaged pieces
@@ -207,7 +229,8 @@ contract ChessTable is IChessTable{
                 new_engagement |= 1;
                 engagements[i_piece] |= (1 << _piece);
 
-                _updateVisibility(i_piece, to_sq);
+                // Making squares beyond to_sq invisible to i_piece
+                _updateVisibility(i_piece, to_sq, false);
 
             }
 
@@ -225,26 +248,41 @@ contract ChessTable is IChessTable{
         uint8 file_diff = (((p_square & FILE_MASK) >> 3) - ((_square & FILE_MASK) >> 3)) % 8;
         uint8 rank_diff = ((p_square & RANK_MASK) - (_square & RANK_MASK)) % 8;
 
+        int8 step = 0;
         if(_piece < PIECE_COUNT){
             
             if(_piece < W_Q){           // KINGS
-                if(file_diff == 1 || rank_diff == 1){
-                    visibility[_piece] |= _newBit << _square;
-                }
-
+                visibility[_piece] |= (_newBit?1:0) << _square;
+            
             } else if(_piece < W_R_A){  // QUEENS
+            
+                if(file_diff != 0 && rank_diff == 0){step = 1;}
+                else if(file_diff == 0 && rank_diff != 0){step = 8;}
+                else if(rank_diff == file_diff){step = 9;}
+                else{step = -9;}
+
             } else if(_piece < W_B_C){  // ROCKS
+
+                if(rank_diff){step = 1;}
+                else{step = 8;}
+
             } else if(_piece < W_N_B){  // BISHOPS
+                
+                if(rank_diff == file_diff){step = 9;}
+                else{step = -9;}
+
             } else if(_piece < W_P_A){  // KNIGHTS
+                
+                visibility[_piece] |= (_newBit?1:0) << _square;
+            
             }else{                      // POOR PAWNs
-                // is it in the same file?
-                if(file_diff == 0){
+            
+                visibility[_piece] |= (_newBit?1:0) << _square;
+            
+            }
 
-                }
-                else{
-
-                }
-
+            if(step){
+                
             }
         }else{
             // TODO:: log here later to avoid undetectable bugs
