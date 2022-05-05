@@ -19,8 +19,8 @@ contract ChessTable is IChessTable{
     // tournament play. In theory, the longest chess game can go up to 
     // 5,949 moves.
     uint16 public constant MAX_MOVES = 400;
+    uint8 public constant PIECE_COUNT = 32;
 
-    // maybe not needed
     uint8 public constant FILE_MASK = 0x38;
     uint8 public constant RANK_MASK = 0x07;
     uint8 public constant COORD_MASK = 0x3F;
@@ -59,7 +59,6 @@ contract ChessTable is IChessTable{
 
     uint8 public constant W_R_A = 4;
     uint8 public constant B_R_A = 5;
-
     uint8 public constant W_R_H = 6;
     uint8 public constant B_R_H = 7;
 
@@ -101,7 +100,6 @@ contract ChessTable is IChessTable{
     uint8 public state;
 
     uint256 public board;
-    
 
     // piece to squares
     uint64[] public visibility;
@@ -179,49 +177,38 @@ contract ChessTable is IChessTable{
 
     function _logic(uint8 _piece, uint8 _action) private {
 
-        // How logic works:
-        // 1. Find piece location
-        //      1.1. trivial from board
-        // 2. Remove it from visibility
-        //      vis must encode whether each piece can move to a particular square or not
-        //      so vis would be 32 bits for pieces *
-        //      5 bits to select the piece and 64 bits for square visibility
-        //      engagements: 5-bits * 32-bits  
-        // 3. From engagements find pieces that their visibility would be affected
-        // 4. Update engagements
-        // 5. Update visibility
-
-        uint256 piece_mask = (0xFF << (_piece * 8));
+        uint8 from_sq = ((uint8)(board >> (_piece * 8))) & COORD_MASK;
         uint8 to_sq = _action & COORD_MASK;
 
         // is the square visible to the moved piece?
         require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
 
         // updating the board partially
-        // TODO:: update DEAD pieces
         uint256 newPieceState = ((uint256)(M_SET | to_sq) << (_piece * 8));
+        uint256 piece_mask = (0xFF << (_piece * 8));
         board &= (~piece_mask);// clean previous piece state
         board |= newPieceState; // shoving the modified piece byte in
 
-        // update visibility, engagement and board
-        // TODO:: still naive
-        // TODO:: add 32 as PIECE_COUNT constant
+        // TODO:: update DEAD pieces
+
+        // update engagements and visibility
         uint32 new_engagement = 0x00;
-        uint8 i_piece = 31;
-        while(i_piece >= 0){
+        uint8 i_piece = PIECE_COUNT - 1;
+        while(i_piece >= 0 && i_piece <= PIECE_COUNT - 1){
 
-            // Finding previously engaged pieces
-            if((engagements[i_piece] >> _piece) % 2){
-                // the visibility of that piece must be updated
-                _updateVisibility(i_piece);
-
+            // Finding pre-move engaged pieces
+            if(i_piece != _piece && (engagements[i_piece] >> _piece) % 2){
+                _updateVisibility(i_piece, from_sq);
             }
 
-            // Finding newly engaged pieces
+            // Finding post-move engaged pieces
             if((visibility[i_piece] >> to_sq) % 2 == 1){
                 // update engagement
                 new_engagement |= 1;
                 engagements[i_piece] |= (1 << _piece);
+
+                _updateVisibility(i_piece, to_sq);
+
             }
 
             new_engagement = new_engagement << 1;
@@ -232,8 +219,36 @@ contract ChessTable is IChessTable{
 
     }
 
-    function _updateVisibility(uint8 _piece) private{
+    function _updateVisibility(uint8 _piece, uint8 _square, bool _newBit) private{
+        uint8 p_square = ((uint8)(board >> (_piece * 8))) & COORD_MASK;
+        
+        uint8 file_diff = (((p_square & FILE_MASK) >> 3) - ((_square & FILE_MASK) >> 3)) % 8;
+        uint8 rank_diff = ((p_square & RANK_MASK) - (_square & RANK_MASK)) % 8;
 
+        if(_piece < PIECE_COUNT){
+            
+            if(_piece < W_Q){           // KINGS
+                if(file_diff == 1 || rank_diff == 1){
+                    visibility[_piece] |= _newBit << _square;
+                }
+
+            } else if(_piece < W_R_A){  // QUEENS
+            } else if(_piece < W_B_C){  // ROCKS
+            } else if(_piece < W_N_B){  // BISHOPS
+            } else if(_piece < W_P_A){  // KNIGHTS
+            }else{                      // POOR PAWNs
+                // is it in the same file?
+                if(file_diff == 0){
+
+                }
+                else{
+
+                }
+
+            }
+        }else{
+            // TODO:: log here later to avoid undetectable bugs
+        }
     }    
 
 
