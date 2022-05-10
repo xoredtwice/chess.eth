@@ -80,11 +80,14 @@ contract ChessTable is IChessTable{
     uint8 public constant PC_COORD_MASK = 0x3F;
     //-----------------------------------------------------------------
     // MASKS64 for visibility updates
-    uint8 public constant I_FILE = 0;
-    uint8 public constant I_RANK = 1;
-    uint8 public constant I_DI_P = 2;
-    uint8 public constant I_DI_N = 3;
-    uint64[4] public MASKS64;
+    uint8 public constant MASK_MESH = 0;
+    uint8 public constant MASK_KING_CASTLE = 1;
+    uint8 public constant MASK_ROOK = 2;
+    uint8 public constant MASK_BISHOP = 3;
+    uint8 public constant MASK_KNIGHT = 4;
+    uint8 public constant MASK_PAWN_WHITE = 7;
+    uint8 public constant MASK_PAWN_BLACK = 8;
+    uint64[9] public MASKS64;
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -360,11 +363,6 @@ contract ChessTable is IChessTable{
         }
     }    
 
-    //-----------------------------------------------------------------
-    //-----------------------------------------------------------------
-    //-----------------------------------------------------------------
-    //                      [[PUBLIC FUNCTION]]
-    //-----------------------------------------------------------------
     function _move(address _player, uint8 _piece, uint8 _action) private{
         _logic(_piece, _action);
         // lastMove = _piece << 8 | _action; 
@@ -376,6 +374,12 @@ contract ChessTable is IChessTable{
 
         emit PlayerMoved(_player, _piece, _action);
     }
+
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    //                      [[PUBLIC FUNCTION]]
+    //-----------------------------------------------------------------
 
     function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {
         require(msg.sender == lobby, 'ChessTable: NOT_AUTHORIZED');

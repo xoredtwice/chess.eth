@@ -1,4 +1,14 @@
 
+SQUARE_IDS = {
+	'A8':0X07, 'B8':0X0F, 'C8':0X17, 'D8':0X1F, 'E8':0X27, 'F8':0X2F, 'G8':0X37, 'H8':0X3F,
+	'A7':0X06, 'B7':0X0E, 'C7':0X16, 'D7':0X1E, 'E7':0X26, 'F7':0X2E, 'G7':0X36, 'H7':0X3E,
+	'A6':0X05, 'B6':0X0D, 'C6':0X15, 'D6':0X1D, 'E6':0X25, 'F6':0X2D, 'G6':0X35, 'H6':0X3D,
+	'A5':0X04, 'B5':0X0C, 'C5':0X14, 'D5':0X1C, 'E5':0X24, 'F5':0X2C, 'G5':0X34, 'H5':0X3C,
+	'A4':0X03, 'B4':0X0B, 'C4':0X13, 'D4':0X1B, 'E4':0X23, 'F4':0X2B, 'G4':0X33, 'H4':0X3B,
+	'A3':0X02, 'B3':0X0A, 'C3':0X12, 'D3':0X1A, 'E3':0X22, 'F3':0X2A, 'G3':0X32, 'H3':0X3A,
+	'A2':0X01, 'B2':0X09, 'C2':0X11, 'D2':0X19, 'E2':0X21, 'F2':0X29, 'G2':0X31, 'H2':0X39,
+	'A1':0X00, 'B1':0X08, 'C1':0X10, 'D1':0X18, 'E1':0X20, 'F1':0X28, 'G1':0X30, 'H1':0X38
+}
 PIECE_CODES =[
 	'W_K',
 	'B_K',
@@ -127,3 +137,65 @@ def print_board(view):
 		i = i - 1
 	print("  a b c d e f g h ")
 	print("******************")
+
+def shift_visibility(vis, direction):
+	shifted = vis
+	if direction == "L":
+		shifted = shifted 
+	elif direction == "R":
+		shifted = shifted 
+	elif direction == "U":
+		shifted = shifted 
+	elif direction == "D":
+		shifted = shifted
+
+def build_mask(squares):
+	mask = 0x0000000000000000
+	for sq in squares:
+		if sq in SQUARE_IDS.keys():
+			mask = mask | (1 << SQUARE_IDS[sq])
+	return mask
+
+# def generate_visibility(board64, piece_id, from_sq, to_sq, from_vis):
+# 	to_vis = from_vis
+# 	if piece_id in PIECE_IDS.keys():
+# 		if piece_id[2] == "K":
+
+# 	return to_vis
+
+def parse_visibility(vis):
+	view = 	[[" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "],
+			 [" "," "," "," "," "," "," "," "]]
+
+	i = 0
+	while vis != 0 and i < 64:
+		sq_state = vis % 2
+		vis = vis // 2
+		sq_rank = i % 8
+		sq_file = i // 8
+		if sq_state != 0 :
+			view[7-sq_rank][sq_file] = "X"
+		i = i + 1
+	return view
+
+rook_vis = 0xFF80808080808080
+
+
+# Testing rank change
+print_board(parse_visibility(build_mask(["A1", "E4"])))
+# print_board(parse_visibility(rook_vis << 1))
+
+# Testing rank change
+# print_board(parse_visibility(rook_vis >> 8))
+# print_board(parse_visibility(rook_vis << 8))
+
+# print("Rook Visibility")
+# print_board(parse_visibility(rook_vis))
+
+
