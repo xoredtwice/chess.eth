@@ -91,7 +91,8 @@ PIECE_UNICODES = {
 	"W_N": "\u265E",
 	"W_P": "\u265F"
 }
-
+RANKS = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7}
+FILES = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7}
 RANK_CODES = ['1','2','3','4','5','6','7','8']
 FILE_CODES = ['A','B','C','D','E','F','G','H']
 
@@ -149,6 +150,76 @@ def shift_visibility(vis, direction):
 	elif direction == "D":
 		shifted = shifted
 
+def pawn_white(sq):
+	squares = []
+	f_code = sq[0]
+	r_code = sq[1]
+	print(f"Visibility of WHITE PAWN in File:{f_code}, Rank:{r_code}")
+	r = RANKS[r_code]
+	f = FILES[f_code]
+	
+	r1 = r + 1
+	r2 = r + 2
+	
+	f1 = f + 1
+	f_1 = f - 1
+	
+	if r1 % 8 == r1:
+		if f_1 % 8 == f_1 :
+			squares.append(FILE_CODES[f_1] + RANK_CODES[r1])
+
+		squares.append(FILE_CODES[f] + RANK_CODES[r1])
+		
+		if f1 % 8 == f1 :
+			squares.append(FILE_CODES[f1] + RANK_CODES[r1])
+
+	if r == 1 :
+		squares.append(FILE_CODES[f] + RANK_CODES[3])
+
+	return squares
+
+def king(sq):
+	squares = []
+	f_code = sq[0]
+	r_code = sq[1]
+	print(f"Visibility of KING in File:{f_code}, Rank:{r_code}")
+	r = RANKS[r_code]
+	f = FILES[f_code]
+	
+	r1 = r + 1
+	r_1 = r - 1
+	
+	f1 = f + 1
+	f_1 = f - 1
+	
+	if r_1 % 8 == r_1:
+		if f_1 % 8 == f_1 :
+			squares.append(FILE_CODES[f_1] + RANK_CODES[r_1])
+		
+		squares.append(FILE_CODES[f] + RANK_CODES[r_1])
+
+		if f1 % 8 == f1 :
+			squares.append(FILE_CODES[f1] + RANK_CODES[r_1])
+
+	if f_1 % 8 == f_1 :
+		squares.append(FILE_CODES[f_1] + RANK_CODES[r])
+
+	if f1 % 8 == f1 :
+		squares.append(FILE_CODES[f1] + RANK_CODES[r])
+
+	if r1 % 8 == r1:
+		if f_1 % 8 == f_1 :
+			squares.append(FILE_CODES[f_1] + RANK_CODES[r1])
+		
+		squares.append(FILE_CODES[f] + RANK_CODES[r1])
+
+		if f1 % 8 == f1 :
+			squares.append(FILE_CODES[f1] + RANK_CODES[r1])
+
+
+	return squares
+
+
 def build_mask(squares):
 	mask = 0x0000000000000000
 	for sq in squares:
@@ -188,7 +259,11 @@ rook_vis = 0xFF80808080808080
 
 
 # Testing rank change
-print_board(parse_visibility(build_mask(["A1", "E4"])))
+print_board(parse_visibility(build_mask(king("E4"))))
+print_board(parse_visibility(build_mask(king("H8"))))
+print_board(parse_visibility(build_mask(pawn_white("H2"))))
+print_board(parse_visibility(build_mask(pawn_white("E3"))))
+print_board(parse_visibility(build_mask(pawn_white("D2"))))
 # print_board(parse_visibility(rook_vis << 1))
 
 # Testing rank change

@@ -103,7 +103,7 @@ contract ChessTable is IChessTable{
     uint16 public lastMove;
     uint8 public state;
 
-    uint256 public board;
+    uint256 public pieces;
 
     // piece to squares
     uint64[] public visibility;
@@ -112,7 +112,8 @@ contract ChessTable is IChessTable{
     uint32[] public engagements;
 
     // showing whether a square is filled or not
-    uint64 public map;
+    uint64 public whiteOnBoard;
+    uint64 public blackOnBoard;
 
     uint private unlocked = 1;
     uint16[] private moves;
@@ -140,65 +141,70 @@ contract ChessTable is IChessTable{
         // setting the board pieces
 
         // this part can be replaced with
-        // board = 57206024880500355210511422320168595472987210685811253910150542059381089396576;
+        // pieces = 57206024880500355210511422320168595472987210685811253910150542059381089396576;
 
         // setting white pieces
-        board |= ((uint256)(M_SET | F_A | R_1) << (W_R_A * 8));
-        board |= ((uint256)(M_SET | F_B | R_1) << (W_N_B * 8));
-        board |= ((uint256)(M_SET | F_C | R_1) << (W_B_C * 8));
-        board |= ((uint256)(M_SET | F_D | R_1) << (W_Q   * 8));
-        board |= ((uint256)(M_SET | F_E | R_1) << (W_K   * 8));
-        board |= ((uint256)(M_SET | F_F | R_1) << (W_B_F * 8));
-        board |= ((uint256)(M_SET | F_G | R_1) << (W_N_G * 8));
-        board |= ((uint256)(M_SET | F_H | R_1) << (W_R_H * 8));
+        pieces |= ((uint256)(M_SET | F_A | R_1) << (W_R_A * 8));
+        pieces |= ((uint256)(M_SET | F_B | R_1) << (W_N_B * 8));
+        pieces |= ((uint256)(M_SET | F_C | R_1) << (W_B_C * 8));
+        pieces |= ((uint256)(M_SET | F_D | R_1) << (W_Q   * 8));
+        pieces |= ((uint256)(M_SET | F_E | R_1) << (W_K   * 8));
+        pieces |= ((uint256)(M_SET | F_F | R_1) << (W_B_F * 8));
+        pieces |= ((uint256)(M_SET | F_G | R_1) << (W_N_G * 8));
+        pieces |= ((uint256)(M_SET | F_H | R_1) << (W_R_H * 8));
 
-        board |= ((uint256)(M_SET | F_A | R_2) << (W_P_A * 8));
-        board |= ((uint256)(M_SET | F_B | R_2) << (W_P_B * 8));
-        board |= ((uint256)(M_SET | F_C | R_2) << (W_P_C * 8));
-        board |= ((uint256)(M_SET | F_D | R_2) << (W_P_D * 8));
-        board |= ((uint256)(M_SET | F_E | R_2) << (W_P_E * 8));
-        board |= ((uint256)(M_SET | F_F | R_2) << (W_P_F * 8));
-        board |= ((uint256)(M_SET | F_G | R_2) << (W_P_G * 8));
-        board |= ((uint256)(M_SET | F_H | R_2) << (W_P_H * 8));
+        pieces |= ((uint256)(M_SET | F_A | R_2) << (W_P_A * 8));
+        pieces |= ((uint256)(M_SET | F_B | R_2) << (W_P_B * 8));
+        pieces |= ((uint256)(M_SET | F_C | R_2) << (W_P_C * 8));
+        pieces |= ((uint256)(M_SET | F_D | R_2) << (W_P_D * 8));
+        pieces |= ((uint256)(M_SET | F_E | R_2) << (W_P_E * 8));
+        pieces |= ((uint256)(M_SET | F_F | R_2) << (W_P_F * 8));
+        pieces |= ((uint256)(M_SET | F_G | R_2) << (W_P_G * 8));
+        pieces |= ((uint256)(M_SET | F_H | R_2) << (W_P_H * 8));
 
         // setting black pieces
-        board |= ((uint256)(M_SET | F_A | R_8) << (B_R_A * 8));
-        board |= ((uint256)(M_SET | F_B | R_8) << (B_N_B * 8));
-        board |= ((uint256)(M_SET | F_C | R_8) << (B_B_C * 8));
-        board |= ((uint256)(M_SET | F_D | R_8) << (B_Q   * 8));
-        board |= ((uint256)(M_SET | F_E | R_8) << (B_K   * 8));
-        board |= ((uint256)(M_SET | F_F | R_8) << (B_B_F * 8));
-        board |= ((uint256)(M_SET | F_G | R_8) << (B_N_G * 8));
-        board |= ((uint256)(M_SET | F_H | R_8) << (B_R_H * 8));
+        pieces |= ((uint256)(M_SET | F_A | R_8) << (B_R_A * 8));
+        pieces |= ((uint256)(M_SET | F_B | R_8) << (B_N_B * 8));
+        pieces |= ((uint256)(M_SET | F_C | R_8) << (B_B_C * 8));
+        pieces |= ((uint256)(M_SET | F_D | R_8) << (B_Q   * 8));
+        pieces |= ((uint256)(M_SET | F_E | R_8) << (B_K   * 8));
+        pieces |= ((uint256)(M_SET | F_F | R_8) << (B_B_F * 8));
+        pieces |= ((uint256)(M_SET | F_G | R_8) << (B_N_G * 8));
+        pieces |= ((uint256)(M_SET | F_H | R_8) << (B_R_H * 8));
 
-        board |= ((uint256)(M_SET | F_A | R_7) << (B_P_A * 8));
-        board |= ((uint256)(M_SET | F_B | R_7) << (B_P_B * 8));
-        board |= ((uint256)(M_SET | F_C | R_7) << (B_P_C * 8));
-        board |= ((uint256)(M_SET | F_D | R_7) << (B_P_D * 8));
-        board |= ((uint256)(M_SET | F_E | R_7) << (B_P_E * 8));
-        board |= ((uint256)(M_SET | F_F | R_7) << (B_P_F * 8));
-        board |= ((uint256)(M_SET | F_G | R_7) << (B_P_G * 8));
-        board |= ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
+        pieces |= ((uint256)(M_SET | F_A | R_7) << (B_P_A * 8));
+        pieces |= ((uint256)(M_SET | F_B | R_7) << (B_P_B * 8));
+        pieces |= ((uint256)(M_SET | F_C | R_7) << (B_P_C * 8));
+        pieces |= ((uint256)(M_SET | F_D | R_7) << (B_P_D * 8));
+        pieces |= ((uint256)(M_SET | F_E | R_7) << (B_P_E * 8));
+        pieces |= ((uint256)(M_SET | F_F | R_7) << (B_P_F * 8));
+        pieces |= ((uint256)(M_SET | F_G | R_7) << (B_P_G * 8));
+        pieces |= ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
 
-        // setting up the map
-        // map =
-        map |= (1 << F_A | R_1); map |= (1 << F_A | R_2);
-        map |= (1 << F_B | R_1); map |= (1 << F_B | R_2);
-        map |= (1 << F_C | R_1); map |= (1 << F_C | R_2);
-        map |= (1 << F_D | R_1); map |= (1 << F_D | R_2);
-        map |= (1 << F_E | R_1); map |= (1 << F_E | R_2);
-        map |= (1 << F_F | R_1); map |= (1 << F_F | R_2);
-        map |= (1 << F_G | R_1); map |= (1 << F_G | R_2);
-        map |= (1 << F_H | R_1); map |= (1 << F_H | R_2);
+        // setting up the board through two variables
+        // whiteOnBoard 64bit, each bit shows whether a white piece fills a square or not
+        // same for black
+        // board = whiteOnBoard + blackOnBoard;
 
-        map |= (1 << F_A | R_7); map |= (1 << F_A | R_8);
-        map |= (1 << F_B | R_7); map |= (1 << F_B | R_8);
-        map |= (1 << F_C | R_7); map |= (1 << F_C | R_8);
-        map |= (1 << F_D | R_7); map |= (1 << F_D | R_8);
-        map |= (1 << F_E | R_7); map |= (1 << F_E | R_8);
-        map |= (1 << F_F | R_7); map |= (1 << F_F | R_8);
-        map |= (1 << F_G | R_7); map |= (1 << F_G | R_8);
-        map |= (1 << F_H | R_7); map |= (1 << F_H | R_8);
+        // whiteOnBoard =
+        whiteOnBoard |= (1 << F_A | R_1); whiteOnBoard |= (1 << F_A | R_2);
+        whiteOnBoard |= (1 << F_B | R_1); whiteOnBoard |= (1 << F_B | R_2);
+        whiteOnBoard |= (1 << F_C | R_1); whiteOnBoard |= (1 << F_C | R_2);
+        whiteOnBoard |= (1 << F_D | R_1); whiteOnBoard |= (1 << F_D | R_2);
+        whiteOnBoard |= (1 << F_E | R_1); whiteOnBoard |= (1 << F_E | R_2);
+        whiteOnBoard |= (1 << F_F | R_1); whiteOnBoard |= (1 << F_F | R_2);
+        whiteOnBoard |= (1 << F_G | R_1); whiteOnBoard |= (1 << F_G | R_2);
+        whiteOnBoard |= (1 << F_H | R_1); whiteOnBoard |= (1 << F_H | R_2);
+
+        // blackOnBoard =
+        blackOnBoard |= (1 << F_A | R_7); blackOnBoard |= (1 << F_A | R_8);
+        blackOnBoard |= (1 << F_B | R_7); blackOnBoard |= (1 << F_B | R_8);
+        blackOnBoard |= (1 << F_C | R_7); blackOnBoard |= (1 << F_C | R_8);
+        blackOnBoard |= (1 << F_D | R_7); blackOnBoard |= (1 << F_D | R_8);
+        blackOnBoard |= (1 << F_E | R_7); blackOnBoard |= (1 << F_E | R_8);
+        blackOnBoard |= (1 << F_F | R_7); blackOnBoard |= (1 << F_F | R_8);
+        blackOnBoard |= (1 << F_G | R_7); blackOnBoard |= (1 << F_G | R_8);
+        blackOnBoard |= (1 << F_H | R_7); blackOnBoard |= (1 << F_H | R_8);
 
         MASKS64[I_FILE] = 0x0000000F;
         MASKS64[I_RANK] = 0x11111111;
