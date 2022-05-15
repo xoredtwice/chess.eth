@@ -140,28 +140,6 @@ def parse_board(board):
 
 	return pieces, view
 
-def print_board(view):
-	i = 8
-	print("******************")
-	for rank in view:
-		s = str(i) + "|" 
-		for sq in rank:
-			s = s + sq + "|"
-		print(s)
-		i = i - 1
-	print("  a b c d e f g h ")
-	print("******************")
-
-def shift_visibility(vis, direction):
-	shifted = vis
-	if direction == "L":
-		shifted = shifted 
-	elif direction == "R":
-		shifted = shifted 
-	elif direction == "U":
-		shifted = shifted 
-	elif direction == "D":
-		shifted = shifted
 
 def pawn_white(sq):
 	squares = []
@@ -224,7 +202,7 @@ MASKS = {
 	'+13': 0x2040800000000000,
 	'+14': 0x4080000000000000,
 	'+15': 0x8000000000000000,
-	'-1' : 0x8000000000000000,
+	'-1' : 0x0100000000000000,
 	'-2' : 0x0201000000000000,
 	'-3' : 0x0402010000000000,
 	'-4' : 0x0804020100000000,
@@ -238,27 +216,36 @@ MASKS = {
 	'-12': 0x0000000080402010,
 	'-13': 0x0000000000804020,
 	'-14': 0x0000000000008040,
-	'-15': 0x0000000000000080
+	'-15': 0x0000000000000080,
+	'*A1' : 0x302,
+	'*A2' : 0x705,
+	'*A8' : 0xc040,
+	'*B8' : 0xc040c0,
+	'*H8' : 0x40c0000000000000,
+	'*H2' : 0x507000000000000,
+	'*H1' : 0x203000000000000,
+	'*B1' : 0x30203,
+	'*B2' : 0x70507,
 }
 
 
 
-# def mesh1(sq):
-# 	f_code = sq[0]
-# 	r_code = sq[1]
-# 	if RANKS[r_code] == 0:
-# 		if FILES[f_code] == 0:
-			
-# 		elif FILES[f_code] == 7:
-# 		else:
-# 	elif RANKS[r_code] == 7:
-# 		if FILES[f_code] == 0:
-# 		elif FILES[f_code] == 7:
-# 		else:
-# 	else:
-# 		if FILES[f_code] == 0:
-# 		elif FILES[f_code] == 7:
-# 		else:
+def mesh1(sq):
+	f_code = sq[0]
+	r_code = sq[1]
+	if f"*{f_code}{r_code}" in MASKS.keys():
+		return MASKS[f"*{f_code}{r_code}"]
+	else:
+		if RANKS[r_code] == 0:
+			return MASKS["*B1"] << (8 * (FILES[f_code] - 1))
+		elif RANKS[r_code] == 7:
+			return MASKS["*B8"] << (8 * (FILES[f_code] - 1))
+		elif FILES[f_code] == 0:
+			return MASKS["*A2"] << (RANKS[r_code] - 1)
+		elif FILES[f_code] == 7:
+			return MASKS["*H2"] << (RANKS[r_code] - 1)
+		else:
+			return MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))
 
 def rook(sq):
 	f_code = sq[0]
@@ -279,7 +266,7 @@ def queen(sq):
 	return bishop(sq) ^ rook(sq)
 
 def king(sq):
-	return queen(sq) & mesh1(sq)
+	return mesh1(sq)
 
 def build_mask(squares):
 	mask = 0x0000000000000000
@@ -319,6 +306,21 @@ def parse_visibility(vis):
 	return view
 
 
+def print_board(view):
+	# combining parse_v9isibility with print_board for easier coding
+	if not isinstance(view, list):
+		view = parse_visibility(view)
+	i = 8
+	print("******************")
+	for rank in view:
+		s = str(i) + "|" 
+		for sq in rank:
+			s = s + sq + "|"
+		print(s)
+		i = i - 1
+	print("  a b c d e f g h ")
+	print("******************")
+
 def build_diagonal_masks():
 	d1 = build_mask(["A1"])
 	# print_board(parse_visibility(d1))
@@ -356,19 +358,86 @@ def build_diagonal_masks():
 		print(f"'-{di}': {hex(d2)},")
 		di = di + 1
 
+def build_mesh1_masks():
+	# A1
+	mask = build_mask(["A2", "B2", "B1"])
+	# print_board(parse_visibility(mask))
+	print(f"'*A1' : {hex(mask)},")
 
+	# A2
+	mask = build_mask(["A1", "B1", "B2", "B3", "A3"])
+	# print_board(parse_visibility(mask))
+	print(f"'*A2' : {hex(mask)},")
+
+	# A8
+	mask = build_mask(["A7", "B7", "B8"])
+	# print_board(parse_visibility(mask))
+	print(f"'*A8' : {hex(mask)},")
+
+	# B8
+	mask = build_mask(["A8", "A7", "B7", "C7", "C8"])
+	# print_board(parse_visibility(mask))
+	print(f"'*B8' : {hex(mask)},")
+
+	# H8
+	mask = build_mask(["H7", "G7", "G8"])
+	# print_board(parse_visibility(mask))
+	print(f"'*H8' : {hex(mask)},")
+
+	# H2
+	mask = build_mask(["H1", "G1", "G2", "G3", "H3"])
+	# print_board(parse_visibility(mask))
+	print(f"'*H2' : {hex(mask)},")
+
+	# H1
+	mask = build_mask(["H2", "G2", "G1"])
+	# print_board(parse_visibility(mask))
+	print(f"'*H1' : {hex(mask)},")
+
+	# B1
+	mask = build_mask(["A1", "A2", "B2", "C2", "C1"])
+	# print_board(parse_visibility(mask))
+	print(f"'*B1' : {hex(mask)},")
+
+
+	# B2
+	mask = build_mask(["A1", "A2", "A3", "B3", "C3", "C2", "C1", "B1"])
+	# print_board(parse_visibility(mask))
+	print(f"'*B2' : {hex(mask)},")
 # build_diagonal_masks()
 # Testing rank change
 # print_board(parse_visibility(king("E4")))
 # print_board(parse_visibility(king("H8")))
 # print_board(parse_visibility(pawn_white("H2")))
 # print_board(parse_visibility(pawn_white("E3")))
-print_board(parse_visibility(queen("A7")))
+# print_board(parse_visibility(queen("H1")))
 
 # print_board(parse_visibility(rook("D2")))
+print_board(king("A4"))
+print_board(king("A5"))
+print_board(king("A7"))
+print_board(king("A8"))
+print_board(king("B8"))
+print_board(king("C8"))
+print_board(king("D8"))
+print_board(king("F8"))
+print_board(king("G8"))
+print_board(king("H8"))
+print_board(king("H7"))
+print_board(king("H6"))
+print_board(king("H3"))
+print_board(king("H2"))
+print_board(king("H1"))
+print_board(king("G1"))
+print_board(king("F1"))
+print_board(king("C1"))
+print_board(king("B1"))
 
-
-
+print_board(king("B2"))
+print_board(king("D4"))
+print_board(king("E4"))
+print_board(king("G6"))
+# build_mesh1_masks()
 # d1 = build_mask(["H1"])
 # print_board(parse_visibility(d1))
 # print(hex(d1))
@@ -380,12 +449,3 @@ print_board(parse_visibility(queen("A7")))
 # d1 = build_mask(["A1"])
 # print_board(parse_visibility(d1))
 # print(d1)
-
-# Testing rank change
-# print_board(parse_visibility(rook_vis >> 8))
-# print_board(parse_visibility(rook_vis << 8))
-
-# print("Rook Visibility")
-# print_board(parse_visibility(rook_vis))
-
-
