@@ -9,6 +9,19 @@ SQUARE_IDS = {
 	'A2':0X01, 'B2':0X09, 'C2':0X11, 'D2':0X19, 'E2':0X21, 'F2':0X29, 'G2':0X31, 'H2':0X39,
 	'A1':0X00, 'B1':0X08, 'C1':0X10, 'D1':0X18, 'E1':0X20, 'F1':0X28, 'G1':0X30, 'H1':0X38
 }
+
+
+SQUARE_DIAGS = {
+	'A8':0XF8, 'B8':0XE9, 'C8':0XDA, 'D8':0XCB, 'E8':0XBC, 'F8':0XAD, 'G8':0X9E, 'H8':0X8F,
+	'A7':0XE7, 'B7':0XD8, 'C7':0XC9, 'D7':0XBA, 'E7':0XAB, 'F7':0X9C, 'G7':0X8D, 'H7':0X7E,
+	'A6':0XD6, 'B6':0XC7, 'C6':0XB8, 'D6':0XA9, 'E6':0X9A, 'F6':0X8B, 'G6':0X7C, 'H6':0X6D,
+	'A5':0XC5, 'B5':0XB6, 'C5':0XA7, 'D5':0X98, 'E5':0X89, 'F5':0X7A, 'G5':0X6B, 'H5':0X5C,
+	'A4':0XB4, 'B4':0XA5, 'C4':0X96, 'D4':0X87, 'E4':0X78, 'F4':0X69, 'G4':0X5A, 'H4':0X4B,
+	'A3':0XA3, 'B3':0X94, 'C3':0X85, 'D3':0X76, 'E3':0X67, 'F3':0X58, 'G3':0X49, 'H3':0X3A,
+	'A2':0X92, 'B2':0X83, 'C2':0X74, 'D2':0X65, 'E2':0X56, 'F2':0X47, 'G2':0X38, 'H2':0X29,
+	'A1':0X81, 'B1':0X72, 'C1':0X63, 'D1':0X54, 'E1':0X45, 'F1':0X36, 'G1':0X27, 'H1':0X18
+}
+
 PIECE_CODES =[
 	'W_K',
 	'B_K',
@@ -176,49 +189,97 @@ def pawn_white(sq):
 	if r == 1 :
 		squares.append(FILE_CODES[f] + RANK_CODES[3])
 
-	return squares
+	return build_mask(squares)
 
-def king(sq):
-	squares = []
+
+MASKS = {
+	"A"  : 0x00000000000000FF,
+	"B"  : 0x000000000000FF00,
+	"C"  : 0x0000000000FF0000,
+	"D"  : 0x00000000FF000000,
+	"E"  : 0x000000FF00000000,
+	"F"  : 0x0000FF0000000000,
+	"G"  : 0x00FF000000000000,
+	"H"  : 0xFF00000000000000,
+	"1"  : 0x0101010101010101,
+	"2"  : 0x0202020202020202,
+	"3"  : 0x0404040404040404,
+	"4"  : 0x0808080808080808,
+	"5"  : 0x1010101010101010,
+	"6"  : 0x2020202020202020,
+	"7"  : 0x4040404040404040,
+	"8"  : 0x8080808080808080,
+	'+1' : 0x0000000000000001,
+	'+2' : 0x0000000000000102,
+	'+3' : 0x0000000000010204,
+	'+4' : 0x0000000001020408,
+	'+5' : 0x0000000102040810,
+	'+6' : 0x0000010204081020,
+	'+7' : 0x0001020408102040,
+	'+8' : 0x0102040810204080,
+	'+9' : 0x0204081020408000,
+	'+10': 0x0408102040800000,
+	'+11': 0x0810204080000000,
+	'+12': 0x1020408000000000,
+	'+13': 0x2040800000000000,
+	'+14': 0x4080000000000000,
+	'+15': 0x8000000000000000,
+	'-1' : 0x8000000000000000,
+	'-2' : 0x0201000000000000,
+	'-3' : 0x0402010000000000,
+	'-4' : 0x0804020100000000,
+	'-5' : 0x1008040201000000,
+	'-6' : 0x2010080402010000,
+	'-7' : 0x4020100804020100,
+	'-8' : 0x8040201008040201,
+	'-9' : 0x0080402010080402,
+	'-10': 0x0000804020100804,
+	'-11': 0x0000008040201008,
+	'-12': 0x0000000080402010,
+	'-13': 0x0000000000804020,
+	'-14': 0x0000000000008040,
+	'-15': 0x0000000000000080
+}
+
+
+
+# def mesh1(sq):
+# 	f_code = sq[0]
+# 	r_code = sq[1]
+# 	if RANKS[r_code] == 0:
+# 		if FILES[f_code] == 0:
+			
+# 		elif FILES[f_code] == 7:
+# 		else:
+# 	elif RANKS[r_code] == 7:
+# 		if FILES[f_code] == 0:
+# 		elif FILES[f_code] == 7:
+# 		else:
+# 	else:
+# 		if FILES[f_code] == 0:
+# 		elif FILES[f_code] == 7:
+# 		else:
+
+def rook(sq):
 	f_code = sq[0]
 	r_code = sq[1]
-	print(f"Visibility of KING in File:{f_code}, Rank:{r_code}")
-	r = RANKS[r_code]
-	f = FILES[f_code]
-	
-	r1 = r + 1
-	r_1 = r - 1
-	
-	f1 = f + 1
-	f_1 = f - 1
-	
-	if r_1 % 8 == r_1:
-		if f_1 % 8 == f_1 :
-			squares.append(FILE_CODES[f_1] + RANK_CODES[r_1])
-		
-		squares.append(FILE_CODES[f] + RANK_CODES[r_1])
+	print(f"Visibility of ROOK in File:{f_code}, Rank:{r_code}")
 
-		if f1 % 8 == f1 :
-			squares.append(FILE_CODES[f1] + RANK_CODES[r_1])
+	return MASKS[r_code] ^ MASKS[f_code]
 
-	if f_1 % 8 == f_1 :
-		squares.append(FILE_CODES[f_1] + RANK_CODES[r])
+def bishop(sq):
+	d_codes = SQUARE_DIAGS[sq]
+	d1_code = f"+{(d_codes % 16)}"
+	d2_code = f"-{(d_codes // 16)}"
+	print(f"Visibility of Bishop in D+:{d1_code}, D-:{d2_code}")
 
-	if f1 % 8 == f1 :
-		squares.append(FILE_CODES[f1] + RANK_CODES[r])
+	return MASKS[d1_code] ^ MASKS[d2_code]
 
-	if r1 % 8 == r1:
-		if f_1 % 8 == f_1 :
-			squares.append(FILE_CODES[f_1] + RANK_CODES[r1])
-		
-		squares.append(FILE_CODES[f] + RANK_CODES[r1])
+def queen(sq):
+	return bishop(sq) ^ rook(sq)
 
-		if f1 % 8 == f1 :
-			squares.append(FILE_CODES[f1] + RANK_CODES[r1])
-
-
-	return squares
-
+def king(sq):
+	return queen(sq) & mesh1(sq)
 
 def build_mask(squares):
 	mask = 0x0000000000000000
@@ -226,6 +287,8 @@ def build_mask(squares):
 		if sq in SQUARE_IDS.keys():
 			mask = mask | (1 << SQUARE_IDS[sq])
 	return mask
+
+
 
 # def generate_visibility(board64, piece_id, from_sq, to_sq, from_vis):
 # 	to_vis = from_vis
@@ -255,16 +318,68 @@ def parse_visibility(vis):
 		i = i + 1
 	return view
 
-rook_vis = 0xFF80808080808080
+
+def build_diagonal_masks():
+	d1 = build_mask(["A1"])
+	# print_board(parse_visibility(d1))
+	print(f"'+1' : {hex(d1)},")
+
+	d2 = d1
+	di = 2
+	for i in range(7):
+		d2 = (d2 | (0x80 << (i*8))) << 1
+		# print_board(parse_visibility(d2))
+		print(f"'+{di}' : {hex(d2)},")
+		di = di + 1
+
+	for i in range(7):
+		d2 = (d2 & ~(0x80 << (i*8))) << 1
+		# print_board(parse_visibility(d2))
+		print(f"'+{di}' : {hex(d2)},")
+		di = di + 1
+
+	d16 = build_mask(["H1"])
+	# print_board(parse_visibility(d16))
+	print(f"'-1': {hex(d2)},")
+
+	d2 = d16
+	di = 2
+	for i in range(7):
+		d2 = (d2  << 1) | (0x01 << ((6-i)*8))
+		# print_board(parse_visibility(d2))
+		print(f"'-{di}': {hex(d2)},")
+		di = di + 1
+
+	for i in range(7):
+		d2 = (d2 << 1) & ~(0x101010101010101)
+		# print_board(parse_visibility(d2))
+		print(f"'-{di}': {hex(d2)},")
+		di = di + 1
 
 
+# build_diagonal_masks()
 # Testing rank change
-print_board(parse_visibility(build_mask(king("E4"))))
-print_board(parse_visibility(build_mask(king("H8"))))
-print_board(parse_visibility(build_mask(pawn_white("H2"))))
-print_board(parse_visibility(build_mask(pawn_white("E3"))))
-print_board(parse_visibility(build_mask(pawn_white("D2"))))
-# print_board(parse_visibility(rook_vis << 1))
+# print_board(parse_visibility(king("E4")))
+# print_board(parse_visibility(king("H8")))
+# print_board(parse_visibility(pawn_white("H2")))
+# print_board(parse_visibility(pawn_white("E3")))
+print_board(parse_visibility(queen("A7")))
+
+# print_board(parse_visibility(rook("D2")))
+
+
+
+# d1 = build_mask(["H1"])
+# print_board(parse_visibility(d1))
+# print(hex(d1))
+
+# d1 = build_mask(["A1", ""])
+# print_board(parse_visibility(d1))
+# print(d1)
+
+# d1 = build_mask(["A1"])
+# print_board(parse_visibility(d1))
+# print(d1)
 
 # Testing rank change
 # print_board(parse_visibility(rook_vis >> 8))
