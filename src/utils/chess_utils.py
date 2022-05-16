@@ -217,15 +217,15 @@ MASKS = {
 	'-13': 0x0000000000804020,
 	'-14': 0x0000000000008040,
 	'-15': 0x0000000000000080,
-	'*A1' : 0x302,
-	'*A2' : 0x705,
-	'*A8' : 0xc040,
-	'*B8' : 0xc040c0,
-	'*H8' : 0x40c0000000000000,
-	'*H2' : 0x507000000000000,
-	'*H1' : 0x203000000000000,
-	'*B1' : 0x30203,
-	'*B2' : 0x70507,
+	'*A1': 0x0000000000000302,
+	'*A2': 0x0000000000000705,
+	'*A8': 0x000000000000c040,
+	'*B8': 0x0000000000c040c0,
+	'*H8': 0x40c0000000000000,
+	'*H2': 0x0507000000000000,
+	'*H1': 0x0203000000000000,
+	'*B1': 0x0000000000030203,
+	'*B2': 0x0000000000070507,
 }
 
 
@@ -247,12 +247,40 @@ def mesh1(sq):
 		else:
 			return MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))
 
+def mesh_n(sq, n):
+	f = FILES[sq[0]]
+	r = RANKS[sq[1]]
+	if (f-n) % 8 == (f-n) :
+		left = MASKS[FILE_CODES[f-n]]
+	else:
+		left = 0x00
+		
+	if (f+n) % 8 == (f+n) :
+		right = MASKS[FILE_CODES[f+n]]
+	else:
+		right = 0x00
+		
+	if (r-n) % 8 == (r-n) :
+		down = MASKS[RANK_CODES[r-n]]
+	else:
+		down = 0x00
+		
+	if (r+n) % 8 == (r+n) :
+		up = MASKS[RANK_CODES[r+n]]
+	else:
+		up = 0x00
+		
+	return left | right | up | down
+
 def rook(sq):
 	f_code = sq[0]
 	r_code = sq[1]
 	print(f"Visibility of ROOK in File:{f_code}, Rank:{r_code}")
 
 	return MASKS[r_code] ^ MASKS[f_code]
+
+def rook_n(sq, n):
+	return rook(sq) & mesh_n(sq, n)
 
 def bishop(sq):
 	d_codes = SQUARE_DIAGS[sq]
@@ -262,8 +290,15 @@ def bishop(sq):
 
 	return MASKS[d1_code] ^ MASKS[d2_code]
 
+def bishop_n(sq, n):
+	return bishop(sq) & mesh_n(sq, n)
+
 def queen(sq):
 	return bishop(sq) ^ rook(sq)
+
+
+def queen_n(sq, n):
+	return (bishop(sq) ^ rook(sq)) & mesh_n(sq, n)
 
 def king(sq):
 	return mesh1(sq)
@@ -405,47 +440,34 @@ def build_mesh1_masks():
 	# print_board(parse_visibility(mask))
 	print(f"'*B2' : {hex(mask)},")
 # build_diagonal_masks()
-# Testing rank change
-# print_board(parse_visibility(king("E4")))
-# print_board(parse_visibility(king("H8")))
-# print_board(parse_visibility(pawn_white("H2")))
-# print_board(parse_visibility(pawn_white("E3")))
-# print_board(parse_visibility(queen("H1")))
-
-# print_board(parse_visibility(rook("D2")))
-print_board(king("A4"))
-print_board(king("A5"))
-print_board(king("A7"))
-print_board(king("A8"))
-print_board(king("B8"))
-print_board(king("C8"))
-print_board(king("D8"))
-print_board(king("F8"))
-print_board(king("G8"))
-print_board(king("H8"))
-print_board(king("H7"))
-print_board(king("H6"))
-print_board(king("H3"))
-print_board(king("H2"))
-print_board(king("H1"))
-print_board(king("G1"))
-print_board(king("F1"))
-print_board(king("C1"))
-print_board(king("B1"))
-
-print_board(king("B2"))
-print_board(king("D4"))
-print_board(king("E4"))
-print_board(king("G6"))
 # build_mesh1_masks()
-# d1 = build_mask(["H1"])
-# print_board(parse_visibility(d1))
-# print(hex(d1))
 
-# d1 = build_mask(["A1", ""])
-# print_board(parse_visibility(d1))
-# print(d1)
+def king_tests():
+	print_board(king("A4"))
+	print_board(king("A5"))
+	print_board(king("A7"))
+	print_board(king("A8"))
+	print_board(king("B8"))
+	print_board(king("C8"))
+	print_board(king("D8"))
+	print_board(king("F8"))
+	print_board(king("G8"))
+	print_board(king("H8"))
+	print_board(king("H7"))
+	print_board(king("H6"))
+	print_board(king("H3"))
+	print_board(king("H2"))
+	print_board(king("H1"))
+	print_board(king("G1"))
+	print_board(king("F1"))
+	print_board(king("C1"))
+	print_board(king("B1"))
 
-# d1 = build_mask(["A1"])
-# print_board(parse_visibility(d1))
-# print(d1)
+	print_board(king("B2"))
+	print_board(king("D4"))
+	print_board(king("E4"))
+	print_board(king("G6"))
+
+print_board(bishop_n("D2",4))
+print_board(rook_n("D2",4))
+print_board(queen_n("G6",3))
