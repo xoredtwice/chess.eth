@@ -296,12 +296,43 @@ def bishop_n(sq, n):
 def queen(sq):
 	return bishop(sq) ^ rook(sq)
 
-
 def queen_n(sq, n):
-	return (bishop(sq) ^ rook(sq)) & mesh_n(sq, n)
+	return bishop_n(sq, n) | rook_n(sq, n)
 
 def king(sq):
-	return mesh1(sq)
+	return bishop_n(sq, 1) | rook_n(sq, 1)
+
+def knight(sq):
+	# return mesh_n(sq, 2) & (~(queen_n(sq, 2)))
+	f_code = sq[0]
+	r_code = sq[1]
+	mask = 0x0000000000000000
+
+	if RANKS[r_code] - 1 == (RANKS[r_code] - 1) % 8  and FILES[f_code] - 2 == (FILES[f_code] - 2) % 8:
+		mask = mask | (1 << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 2))))
+
+	if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] - 2 == (FILES[f_code] - 2) % 8:
+		mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] - 2))))
+
+	if RANKS[r_code] - 1 == (RANKS[r_code] - 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
+		mask = mask | (1 << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] + 2))))
+
+	if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
+		mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] + 2))))
+
+	if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
+		mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] - 1))))
+
+	if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
+		mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] - 1))))
+
+	if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
+		mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] + 1))))
+
+	if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
+		mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] + 1))))
+
+	return mask
 
 def build_mask(squares):
 	mask = 0x0000000000000000
@@ -468,6 +499,39 @@ def king_tests():
 	print_board(king("E4"))
 	print_board(king("G6"))
 
-print_board(bishop_n("D2",4))
-print_board(rook_n("D2",4))
-print_board(queen_n("G6",3))
+def knight_tests():
+	print("A4")
+	print_board(knight("A4"))
+	print("A5")
+	print_board(knight("A5"))
+	print("A7")
+	print_board(knight("A7"))
+	print("A8")
+	print_board(knight("A8"))
+	print("B8")
+	print_board(knight("B8"))
+	print("C8")
+	print_board(knight("C8"))
+	print("D8")
+	print_board(knight("D8"))
+	print("F8")
+	print_board(knight("F8"))
+	print("G8")
+	print_board(knight("G8"))
+	print("H8")
+	print_board(knight("H8"))
+	print("H7")
+	print_board(knight("H7"))
+	print("H6")
+	print_board(knight("H6"))
+	print("H3")
+	print_board(knight("H3"))
+	print("H2")
+	print_board(knight("H2"))
+	print("H1")
+	print_board(knight("H1"))
+
+# print_board(bishop_n("D2",4))
+# print_board(rook_n("D2",4))
+# print_board(queen_n("G6",3))
+knight_tests()
