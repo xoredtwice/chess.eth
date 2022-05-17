@@ -531,7 +531,29 @@ def knight_tests():
 	print("H1")
 	print_board(knight("H1"))
 
-# print_board(bishop_n("D2",4))
-# print_board(rook_n("D2",4))
-# print_board(queen_n("G6",3))
-knight_tests()
+def move(board64, board128, engagements, visibilities, updated_piece, updated_state):
+	print("not implemented")
+	return board64, board128, engagements, visibilities
+
+def set_initial_board():
+	visibilities = [0x00] * 32
+	engagements = [0x00] * 32
+	board64 = 0x00
+	board128 = 0x00
+
+	# setting 32 pieces one by one and updating the states and testing
+	
+	# setting white pawns
+	for i in range(8):
+		updated_piece = PIECE_IDS[f'W_P_{FILE_CODES[i]}']
+		updated_state = generate_state(f"{FILE_CODES[i]}2")
+		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
+
+	# setting black pawns
+	for i in range(8):
+		updated_piece = PIECE_IDS[f'B_P_{FILE_CODES[i]}']
+		updated_state = generate_state(f"{FILE_CODES[i]}7")
+		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
+
+
+set_initial_board()
