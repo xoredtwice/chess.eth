@@ -341,7 +341,10 @@ def build_mask(squares):
 			mask = mask | (1 << SQUARE_IDS[sq])
 	return mask
 
-
+def build_state(sq):
+	f_code = sq[0]
+	r_code = sq[1]
+	return (FILES[f_code] << 3) + RANKS[r_code]
 
 # def generate_visibility(board64, piece_id, from_sq, to_sq, from_vis):
 # 	to_vis = from_vis
@@ -531,9 +534,76 @@ def knight_tests():
 	print("H1")
 	print_board(knight("H1"))
 
-def move(board64, board128, engagements, visibilities, updated_piece, updated_state):
-	print("not implemented")
-	return board64, board128, engagements, visibilities
+
+PC_FILE_MASK = 0x38
+PC_RANK_MASK = 0x07
+PC_COORD_MASK = 0x3F
+M_DEAD = 0x00 << 6
+M_SET = 0x01 << 6
+M_PINNED = 0x02 << 6
+M_IMP = 0x03 << 6
+PIECE_COUNT = 32
+
+def _reloadVisibility(board64, board128, i_piece):
+	new_vis = 0x000000000000000
+	print("Not implemented")
+	return new_vis
+
+def move(board64, board128, engagements, visibility, _piece, _action):
+	
+	# parsing from and to squares 
+
+    from_sq = (board128 >> (piece * 8)) & MASK128_POSITION
+    to_sq = _action & PC_COORD_MASK
+
+    # is the square visible to the moved piece?
+    # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+    if (visibility[_piece] >> to_sq) % 2 != 1:
+    	raise Exception("ILLEGAL_MOVE")
+
+
+    # updating the board partially
+    new_state = ((uint256)(M_SET | to_sq) << (_piece * 8))
+    piece_mask = (0xFF << (_piece * 8))
+    board128 &= (~piece_mask) # clean previous piece state
+    board |= newPieceState # shoving the modified piece byte in
+
+    # TODO:: update DEAD pieces
+
+    # update engagements and visibility
+    new_engagement = 0x00
+    i_piece = PIECE_COUNT - 1
+    while(i_piece >= 0 && i_piece <= PIECE_COUNT - 1){
+
+        # Finding pre-move engaged pieces
+        if(i_piece != _piece && (engagements[i_piece] >> _piece) % 2){
+            # Making squares beyond from_sq visible to i_piece
+            # _updateVisibility(i_piece, from_sq, true)
+            visibility[i_piece] = _reloadVisibility(board64, board128,i_piece)
+        }
+
+        # Finding post-move engaged pieces
+        if((visibility[i_piece] >> to_sq) % 2 == 1){
+            # update engagement
+            new_engagement = new_engagement | 1
+            engagements[i_piece] = engagements[i_piece] | (1 << _piece)
+
+            # Making squares beyond to_sq invisible to i_piece
+            # _updateVisibility(i_piece, to_sq, false)
+            visibility[i_piece] = _reloadVisibility(board64, board128,i_piece)
+        }
+
+        new_engagement = new_engagement << 1
+        i_piece = i_piece - 1;
+    }
+    # setting engagements of the moved piece
+    engagements[_piece] = new_engagement
+
+    # Reloading the visibility of the moved piece
+    _reloadVisibility(board64, board128,_piece);
+
+
+	return board64, board128, engagements, visibility
 
 def set_initial_board():
 	visibilities = [0x00] * 32
@@ -546,13 +616,13 @@ def set_initial_board():
 	# setting white pawns
 	for i in range(8):
 		updated_piece = PIECE_IDS[f'W_P_{FILE_CODES[i]}']
-		updated_state = generate_state(f"{FILE_CODES[i]}2")
+		updated_state = build_state(f"{FILE_CODES[i]}2")
 		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
 
 	# setting black pawns
 	for i in range(8):
 		updated_piece = PIECE_IDS[f'B_P_{FILE_CODES[i]}']
-		updated_state = generate_state(f"{FILE_CODES[i]}7")
+		updated_state = build_state(f"{FILE_CODES[i]}7")
 		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
 
 
