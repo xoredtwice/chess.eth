@@ -544,8 +544,32 @@ M_PINNED = 0x02 << 6
 M_IMP = 0x03 << 6
 PIECE_COUNT = 32
 
-def _reloadVisibility(board64, board128, i_piece):
+def _reloadVisibility(board64, board128, _piece, _position):
+	
+	if _piece >= PIECE_IDS['W_P_A']:
+		if _piece % 2 == 0 :
+			raw_vis = pawn_white(_position) & (~(board64)) # buggy for RANK2
+		else:
+			raw_vis = pawn_black(_position) & (~(board64)) # buggy for RANK7
+	elif _piece >= PIECE_IDS['W_N_B']:
+		raw_vis = knight(_position) & (~(board64))
+	elif _piece >= PIECE_IDS['W_B_C']:
+		raw_vis = 0x000000000000000
+		for i in range(8):
+			raw_vis = raw_vis | ( bishop_n(i+1))
+
+	elif _piece >= PIECE_IDS['W_R_A']:
+		raw_vis = rook(_position)
+	elif _piece >= PIECE_IDS['W_Q_A']:
+		raw_vis = queen(_position)
+	else:
+		raw_vis = king(_position) & (~(board64))
+
 	new_vis = 0x000000000000000
+
+
+	
+
 	print("Not implemented")
 	return new_vis
 
@@ -594,13 +618,13 @@ def move(board64, board128, engagements, visibility, _piece, _action):
         }
 
         new_engagement = new_engagement << 1
-        i_piece = i_piece - 1;
+        i_piece = i_piece - 1
     }
     # setting engagements of the moved piece
     engagements[_piece] = new_engagement
 
     # Reloading the visibility of the moved piece
-    _reloadVisibility(board64, board128,_piece);
+    _reloadVisibility(board64, board128,_piece)
 
 
 	return board64, board128, engagements, visibility
