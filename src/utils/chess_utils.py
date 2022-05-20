@@ -227,7 +227,528 @@ MASKS = {
 	'*B1': 0x0000000000030203,
 	'*B2': 0x0000000000070507,
 }
+MASK = {}
+MASK['W'] = {}
+MASK["E"] = {}
+MASK["N"] = {}
+MASK["S"] = {}
+MASK["NE"]= {}
+MASK["SE"]= {}
+MASK["NW"]= {}
+MASK["SW"]= {}
 
+MASK['W']['A8'] = 0x0
+MASK['E']['A8'] = 0x8080808080808000
+MASK['S']['A8'] = 0x7f
+MASK['N']['A8'] = 0x0
+MASK['NW']['A8'] = 0x0
+MASK['SE']['A8'] = 0x102040810204000
+MASK['SW']['A8'] = 0x0
+MASK['NE']['A8'] = 0x0
+MASK['W']['B8'] = 0x80
+MASK['E']['B8'] = 0x8080808080800000
+MASK['S']['B8'] = 0x7f00
+MASK['N']['B8'] = 0x0
+MASK['NW']['B8'] = 0x0
+MASK['SE']['B8'] = 0x204081020400000
+MASK['SW']['B8'] = 0x40
+MASK['NE']['B8'] = 0x0
+MASK['W']['C8'] = 0x8080
+MASK['E']['C8'] = 0x8080808080000000
+MASK['S']['C8'] = 0x7f0000
+MASK['N']['C8'] = 0x0
+MASK['NW']['C8'] = 0x0
+MASK['SE']['C8'] = 0x408102040000000
+MASK['SW']['C8'] = 0x4020
+MASK['NE']['C8'] = 0x0
+MASK['W']['D8'] = 0x808080
+MASK['E']['D8'] = 0x8080808000000000
+MASK['S']['D8'] = 0x7f000000
+MASK['N']['D8'] = 0x0
+MASK['NW']['D8'] = 0x0
+MASK['SE']['D8'] = 0x810204000000000
+MASK['SW']['D8'] = 0x402010
+MASK['NE']['D8'] = 0x0
+MASK['W']['E8'] = 0x80808080
+MASK['E']['E8'] = 0x8080800000000000
+MASK['S']['E8'] = 0x7f00000000
+MASK['N']['E8'] = 0x0
+MASK['NW']['E8'] = 0x0
+MASK['SE']['E8'] = 0x1020400000000000
+MASK['SW']['E8'] = 0x40201008
+MASK['NE']['E8'] = 0x0
+MASK['W']['F8'] = 0x8080808080
+MASK['E']['F8'] = 0x8080000000000000
+MASK['S']['F8'] = 0x7f0000000000
+MASK['N']['F8'] = 0x0
+MASK['NW']['F8'] = 0x0
+MASK['SE']['F8'] = 0x2040000000000000
+MASK['SW']['F8'] = 0x4020100804
+MASK['NE']['F8'] = 0x0
+MASK['W']['G8'] = 0x808080808080
+MASK['E']['G8'] = 0x8000000000000000
+MASK['S']['G8'] = 0x7f000000000000
+MASK['N']['G8'] = 0x0
+MASK['NW']['G8'] = 0x0
+MASK['SE']['G8'] = 0x4000000000000000
+MASK['SW']['G8'] = 0x402010080402
+MASK['NE']['G8'] = 0x0
+MASK['W']['H8'] = 0x80808080808080
+MASK['E']['H8'] = 0x0
+MASK['S']['H8'] = 0x7f00000000000000
+MASK['N']['H8'] = 0x0
+MASK['NW']['H8'] = 0x0
+MASK['SE']['H8'] = 0x0
+MASK['SW']['H8'] = 0x40201008040201
+MASK['NE']['H8'] = 0x0
+MASK['W']['A7'] = 0x0
+MASK['E']['A7'] = 0x4040404040404000
+MASK['S']['A7'] = 0x3f
+MASK['N']['A7'] = 0x80
+MASK['NW']['A7'] = 0x0
+MASK['SE']['A7'] = 0x1020408102000
+MASK['SW']['A7'] = 0x0
+MASK['NE']['A7'] = 0x8000
+MASK['W']['B7'] = 0x40
+MASK['E']['B7'] = 0x4040404040400000
+MASK['S']['B7'] = 0x3f00
+MASK['N']['B7'] = 0x8000
+MASK['NW']['B7'] = 0x80
+MASK['SE']['B7'] = 0x102040810200000
+MASK['SW']['B7'] = 0x20
+MASK['NE']['B7'] = 0x800000
+MASK['W']['C7'] = 0x4040
+MASK['E']['C7'] = 0x4040404040000000
+MASK['S']['C7'] = 0x3f0000
+MASK['N']['C7'] = 0x800000
+MASK['NW']['C7'] = 0x8000
+MASK['SE']['C7'] = 0x204081020000000
+MASK['SW']['C7'] = 0x2010
+MASK['NE']['C7'] = 0x80000000
+MASK['W']['D7'] = 0x404040
+MASK['E']['D7'] = 0x4040404000000000
+MASK['S']['D7'] = 0x3f000000
+MASK['N']['D7'] = 0x80000000
+MASK['NW']['D7'] = 0x800000
+MASK['SE']['D7'] = 0x408102000000000
+MASK['SW']['D7'] = 0x201008
+MASK['NE']['D7'] = 0x8000000000
+MASK['W']['E7'] = 0x40404040
+MASK['E']['E7'] = 0x4040400000000000
+MASK['S']['E7'] = 0x3f00000000
+MASK['N']['E7'] = 0x8000000000
+MASK['NW']['E7'] = 0x80000000
+MASK['SE']['E7'] = 0x810200000000000
+MASK['SW']['E7'] = 0x20100804
+MASK['NE']['E7'] = 0x800000000000
+MASK['W']['F7'] = 0x4040404040
+MASK['E']['F7'] = 0x4040000000000000
+MASK['S']['F7'] = 0x3f0000000000
+MASK['N']['F7'] = 0x800000000000
+MASK['NW']['F7'] = 0x8000000000
+MASK['SE']['F7'] = 0x1020000000000000
+MASK['SW']['F7'] = 0x2010080402
+MASK['NE']['F7'] = 0x80000000000000
+MASK['W']['G7'] = 0x404040404040
+MASK['E']['G7'] = 0x4000000000000000
+MASK['S']['G7'] = 0x3f000000000000
+MASK['N']['G7'] = 0x80000000000000
+MASK['NW']['G7'] = 0x800000000000
+MASK['SE']['G7'] = 0x2000000000000000
+MASK['SW']['G7'] = 0x201008040201
+MASK['NE']['G7'] = 0x8000000000000000
+MASK['W']['H7'] = 0x40404040404040
+MASK['E']['H7'] = 0x0
+MASK['S']['H7'] = 0x3f00000000000000
+MASK['N']['H7'] = 0x8000000000000000
+MASK['NW']['H7'] = 0x80000000000000
+MASK['SE']['H7'] = 0x0
+MASK['SW']['H7'] = 0x20100804020100
+MASK['NE']['H7'] = 0x0
+MASK['W']['A6'] = 0x0
+MASK['E']['A6'] = 0x2020202020202000
+MASK['S']['A6'] = 0x1f
+MASK['N']['A6'] = 0xc0
+MASK['NW']['A6'] = 0x0
+MASK['SE']['A6'] = 0x10204081000
+MASK['SW']['A6'] = 0x0
+MASK['NE']['A6'] = 0x804000
+MASK['W']['B6'] = 0x20
+MASK['E']['B6'] = 0x2020202020200000
+MASK['S']['B6'] = 0x1f00
+MASK['N']['B6'] = 0xc000
+MASK['NW']['B6'] = 0x40
+MASK['SE']['B6'] = 0x1020408100000
+MASK['SW']['B6'] = 0x10
+MASK['NE']['B6'] = 0x80400000
+MASK['W']['C6'] = 0x2020
+MASK['E']['C6'] = 0x2020202020000000
+MASK['S']['C6'] = 0x1f0000
+MASK['N']['C6'] = 0xc00000
+MASK['NW']['C6'] = 0x4080
+MASK['SE']['C6'] = 0x102040810000000
+MASK['SW']['C6'] = 0x1008
+MASK['NE']['C6'] = 0x8040000000
+MASK['W']['D6'] = 0x202020
+MASK['E']['D6'] = 0x2020202000000000
+MASK['S']['D6'] = 0x1f000000
+MASK['N']['D6'] = 0xc0000000
+MASK['NW']['D6'] = 0x408000
+MASK['SE']['D6'] = 0x204081000000000
+MASK['SW']['D6'] = 0x100804
+MASK['NE']['D6'] = 0x804000000000
+MASK['W']['E6'] = 0x20202020
+MASK['E']['E6'] = 0x2020200000000000
+MASK['S']['E6'] = 0x1f00000000
+MASK['N']['E6'] = 0xc000000000
+MASK['NW']['E6'] = 0x40800000
+MASK['SE']['E6'] = 0x408100000000000
+MASK['SW']['E6'] = 0x10080402
+MASK['NE']['E6'] = 0x80400000000000
+MASK['W']['F6'] = 0x2020202020
+MASK['E']['F6'] = 0x2020000000000000
+MASK['S']['F6'] = 0x1f0000000000
+MASK['N']['F6'] = 0xc00000000000
+MASK['NW']['F6'] = 0x4080000000
+MASK['SE']['F6'] = 0x810000000000000
+MASK['SW']['F6'] = 0x1008040201
+MASK['NE']['F6'] = 0x8040000000000000
+MASK['W']['G6'] = 0x202020202020
+MASK['E']['G6'] = 0x2000000000000000
+MASK['S']['G6'] = 0x1f000000000000
+MASK['N']['G6'] = 0xc0000000000000
+MASK['NW']['G6'] = 0x408000000000
+MASK['SE']['G6'] = 0x1000000000000000
+MASK['SW']['G6'] = 0x100804020100
+MASK['NE']['G6'] = 0x4000000000000000
+MASK['W']['H6'] = 0x20202020202020
+MASK['E']['H6'] = 0x0
+MASK['S']['H6'] = 0x1f00000000000000
+MASK['N']['H6'] = 0xc000000000000000
+MASK['NW']['H6'] = 0x40800000000000
+MASK['SE']['H6'] = 0x0
+MASK['SW']['H6'] = 0x10080402010000
+MASK['NE']['H6'] = 0x0
+MASK['W']['A5'] = 0x0
+MASK['E']['A5'] = 0x1010101010101000
+MASK['S']['A5'] = 0xf
+MASK['N']['A5'] = 0xe0
+MASK['NW']['A5'] = 0x0
+MASK['SE']['A5'] = 0x102040800
+MASK['SW']['A5'] = 0x0
+MASK['NE']['A5'] = 0x80402000
+MASK['W']['B5'] = 0x10
+MASK['E']['B5'] = 0x1010101010100000
+MASK['S']['B5'] = 0xf00
+MASK['N']['B5'] = 0xe000
+MASK['NW']['B5'] = 0x20
+MASK['SE']['B5'] = 0x10204080000
+MASK['SW']['B5'] = 0x8
+MASK['NE']['B5'] = 0x8040200000
+MASK['W']['C5'] = 0x1010
+MASK['E']['C5'] = 0x1010101010000000
+MASK['S']['C5'] = 0xf0000
+MASK['N']['C5'] = 0xe00000
+MASK['NW']['C5'] = 0x2040
+MASK['SE']['C5'] = 0x1020408000000
+MASK['SW']['C5'] = 0x804
+MASK['NE']['C5'] = 0x804020000000
+MASK['W']['D5'] = 0x101010
+MASK['E']['D5'] = 0x1010101000000000
+MASK['S']['D5'] = 0xf000000
+MASK['N']['D5'] = 0xe0000000
+MASK['NW']['D5'] = 0x204080
+MASK['SE']['D5'] = 0x102040800000000
+MASK['SW']['D5'] = 0x80402
+MASK['NE']['D5'] = 0x80402000000000
+MASK['W']['E5'] = 0x10101010
+MASK['E']['E5'] = 0x1010100000000000
+MASK['S']['E5'] = 0xf00000000
+MASK['N']['E5'] = 0xe000000000
+MASK['NW']['E5'] = 0x20408000
+MASK['SE']['E5'] = 0x204080000000000
+MASK['SW']['E5'] = 0x8040201
+MASK['NE']['E5'] = 0x8040200000000000
+MASK['W']['F5'] = 0x1010101010
+MASK['E']['F5'] = 0x1010000000000000
+MASK['S']['F5'] = 0xf0000000000
+MASK['N']['F5'] = 0xe00000000000
+MASK['NW']['F5'] = 0x2040800000
+MASK['SE']['F5'] = 0x408000000000000
+MASK['SW']['F5'] = 0x804020100
+MASK['NE']['F5'] = 0x4020000000000000
+MASK['W']['G5'] = 0x101010101010
+MASK['E']['G5'] = 0x1000000000000000
+MASK['S']['G5'] = 0xf000000000000
+MASK['N']['G5'] = 0xe0000000000000
+MASK['NW']['G5'] = 0x204080000000
+MASK['SE']['G5'] = 0x800000000000000
+MASK['SW']['G5'] = 0x80402010000
+MASK['NE']['G5'] = 0x2000000000000000
+MASK['W']['H5'] = 0x10101010101010
+MASK['E']['H5'] = 0x0
+MASK['S']['H5'] = 0xf00000000000000
+MASK['N']['H5'] = 0xe000000000000000
+MASK['NW']['H5'] = 0x20408000000000
+MASK['SE']['H5'] = 0x0
+MASK['SW']['H5'] = 0x8040201000000
+MASK['NE']['H5'] = 0x0
+MASK['W']['A4'] = 0x0
+MASK['E']['A4'] = 0x808080808080800
+MASK['S']['A4'] = 0x7
+MASK['N']['A4'] = 0xf0
+MASK['NW']['A4'] = 0x0
+MASK['SE']['A4'] = 0x1020400
+MASK['SW']['A4'] = 0x0
+MASK['NE']['A4'] = 0x8040201000
+MASK['W']['B4'] = 0x8
+MASK['E']['B4'] = 0x808080808080000
+MASK['S']['B4'] = 0x700
+MASK['N']['B4'] = 0xf000
+MASK['NW']['B4'] = 0x10
+MASK['SE']['B4'] = 0x102040000
+MASK['SW']['B4'] = 0x4
+MASK['NE']['B4'] = 0x804020100000
+MASK['W']['C4'] = 0x808
+MASK['E']['C4'] = 0x808080808000000
+MASK['S']['C4'] = 0x70000
+MASK['N']['C4'] = 0xf00000
+MASK['NW']['C4'] = 0x1020
+MASK['SE']['C4'] = 0x10204000000
+MASK['SW']['C4'] = 0x402
+MASK['NE']['C4'] = 0x80402010000000
+MASK['W']['D4'] = 0x80808
+MASK['E']['D4'] = 0x808080800000000
+MASK['S']['D4'] = 0x7000000
+MASK['N']['D4'] = 0xf0000000
+MASK['NW']['D4'] = 0x102040
+MASK['SE']['D4'] = 0x1020400000000
+MASK['SW']['D4'] = 0x40201
+MASK['NE']['D4'] = 0x8040201000000000
+MASK['W']['E4'] = 0x8080808
+MASK['E']['E4'] = 0x808080000000000
+MASK['S']['E4'] = 0x700000000
+MASK['N']['E4'] = 0xf000000000
+MASK['NW']['E4'] = 0x10204080
+MASK['SE']['E4'] = 0x102040000000000
+MASK['SW']['E4'] = 0x4020100
+MASK['NE']['E4'] = 0x4020100000000000
+MASK['W']['F4'] = 0x808080808
+MASK['E']['F4'] = 0x808000000000000
+MASK['S']['F4'] = 0x70000000000
+MASK['N']['F4'] = 0xf00000000000
+MASK['NW']['F4'] = 0x1020408000
+MASK['SE']['F4'] = 0x204000000000000
+MASK['SW']['F4'] = 0x402010000
+MASK['NE']['F4'] = 0x2010000000000000
+MASK['W']['G4'] = 0x80808080808
+MASK['E']['G4'] = 0x800000000000000
+MASK['S']['G4'] = 0x7000000000000
+MASK['N']['G4'] = 0xf0000000000000
+MASK['NW']['G4'] = 0x102040800000
+MASK['SE']['G4'] = 0x400000000000000
+MASK['SW']['G4'] = 0x40201000000
+MASK['NE']['G4'] = 0x1000000000000000
+MASK['W']['H4'] = 0x8080808080808
+MASK['E']['H4'] = 0x0
+MASK['S']['H4'] = 0x700000000000000
+MASK['N']['H4'] = 0xf000000000000000
+MASK['NW']['H4'] = 0x10204080000000
+MASK['SE']['H4'] = 0x0
+MASK['SW']['H4'] = 0x4020100000000
+MASK['NE']['H4'] = 0x0
+MASK['W']['A3'] = 0x0
+MASK['E']['A3'] = 0x404040404040400
+MASK['S']['A3'] = 0x3
+MASK['N']['A3'] = 0xf8
+MASK['NW']['A3'] = 0x0
+MASK['SE']['A3'] = 0x10200
+MASK['SW']['A3'] = 0x0
+MASK['NE']['A3'] = 0x804020100800
+MASK['W']['B3'] = 0x4
+MASK['E']['B3'] = 0x404040404040000
+MASK['S']['B3'] = 0x300
+MASK['N']['B3'] = 0xf800
+MASK['NW']['B3'] = 0x8
+MASK['SE']['B3'] = 0x1020000
+MASK['SW']['B3'] = 0x2
+MASK['NE']['B3'] = 0x80402010080000
+MASK['W']['C3'] = 0x404
+MASK['E']['C3'] = 0x404040404000000
+MASK['S']['C3'] = 0x30000
+MASK['N']['C3'] = 0xf80000
+MASK['NW']['C3'] = 0x810
+MASK['SE']['C3'] = 0x102000000
+MASK['SW']['C3'] = 0x201
+MASK['NE']['C3'] = 0x8040201008000000
+MASK['W']['D3'] = 0x40404
+MASK['E']['D3'] = 0x404040400000000
+MASK['S']['D3'] = 0x3000000
+MASK['N']['D3'] = 0xf8000000
+MASK['NW']['D3'] = 0x81020
+MASK['SE']['D3'] = 0x10200000000
+MASK['SW']['D3'] = 0x20100
+MASK['NE']['D3'] = 0x4020100800000000
+MASK['W']['E3'] = 0x4040404
+MASK['E']['E3'] = 0x404040000000000
+MASK['S']['E3'] = 0x300000000
+MASK['N']['E3'] = 0xf800000000
+MASK['NW']['E3'] = 0x8102040
+MASK['SE']['E3'] = 0x1020000000000
+MASK['SW']['E3'] = 0x2010000
+MASK['NE']['E3'] = 0x2010080000000000
+MASK['W']['F3'] = 0x404040404
+MASK['E']['F3'] = 0x404000000000000
+MASK['S']['F3'] = 0x30000000000
+MASK['N']['F3'] = 0xf80000000000
+MASK['NW']['F3'] = 0x810204080
+MASK['SE']['F3'] = 0x102000000000000
+MASK['SW']['F3'] = 0x201000000
+MASK['NE']['F3'] = 0x1008000000000000
+MASK['W']['G3'] = 0x40404040404
+MASK['E']['G3'] = 0x400000000000000
+MASK['S']['G3'] = 0x3000000000000
+MASK['N']['G3'] = 0xf8000000000000
+MASK['NW']['G3'] = 0x81020408000
+MASK['SE']['G3'] = 0x200000000000000
+MASK['SW']['G3'] = 0x20100000000
+MASK['NE']['G3'] = 0x800000000000000
+MASK['W']['H3'] = 0x4040404040404
+MASK['E']['H3'] = 0x0
+MASK['S']['H3'] = 0x300000000000000
+MASK['N']['H3'] = 0xf800000000000000
+MASK['NW']['H3'] = 0x8102040800000
+MASK['SE']['H3'] = 0x0
+MASK['SW']['H3'] = 0x2010000000000
+MASK['NE']['H3'] = 0x0
+MASK['W']['A2'] = 0x0
+MASK['E']['A2'] = 0x202020202020200
+MASK['S']['A2'] = 0x1
+MASK['N']['A2'] = 0xfc
+MASK['NW']['A2'] = 0x0
+MASK['SE']['A2'] = 0x100
+MASK['SW']['A2'] = 0x0
+MASK['NE']['A2'] = 0x80402010080400
+MASK['W']['B2'] = 0x2
+MASK['E']['B2'] = 0x202020202020000
+MASK['S']['B2'] = 0x100
+MASK['N']['B2'] = 0xfc00
+MASK['NW']['B2'] = 0x4
+MASK['SE']['B2'] = 0x10000
+MASK['SW']['B2'] = 0x1
+MASK['NE']['B2'] = 0x8040201008040000
+MASK['W']['C2'] = 0x202
+MASK['E']['C2'] = 0x202020202000000
+MASK['S']['C2'] = 0x10000
+MASK['N']['C2'] = 0xfc0000
+MASK['NW']['C2'] = 0x408
+MASK['SE']['C2'] = 0x1000000
+MASK['SW']['C2'] = 0x100
+MASK['NE']['C2'] = 0x4020100804000000
+MASK['W']['D2'] = 0x20202
+MASK['E']['D2'] = 0x202020200000000
+MASK['S']['D2'] = 0x1000000
+MASK['N']['D2'] = 0xfc000000
+MASK['NW']['D2'] = 0x40810
+MASK['SE']['D2'] = 0x100000000
+MASK['SW']['D2'] = 0x10000
+MASK['NE']['D2'] = 0x2010080400000000
+MASK['W']['E2'] = 0x2020202
+MASK['E']['E2'] = 0x202020000000000
+MASK['S']['E2'] = 0x100000000
+MASK['N']['E2'] = 0xfc00000000
+MASK['NW']['E2'] = 0x4081020
+MASK['SE']['E2'] = 0x10000000000
+MASK['SW']['E2'] = 0x1000000
+MASK['NE']['E2'] = 0x1008040000000000
+MASK['W']['F2'] = 0x202020202
+MASK['E']['F2'] = 0x202000000000000
+MASK['S']['F2'] = 0x10000000000
+MASK['N']['F2'] = 0xfc0000000000
+MASK['NW']['F2'] = 0x408102040
+MASK['SE']['F2'] = 0x1000000000000
+MASK['SW']['F2'] = 0x100000000
+MASK['NE']['F2'] = 0x804000000000000
+MASK['W']['G2'] = 0x20202020202
+MASK['E']['G2'] = 0x200000000000000
+MASK['S']['G2'] = 0x1000000000000
+MASK['N']['G2'] = 0xfc000000000000
+MASK['NW']['G2'] = 0x40810204080
+MASK['SE']['G2'] = 0x100000000000000
+MASK['SW']['G2'] = 0x10000000000
+MASK['NE']['G2'] = 0x400000000000000
+MASK['W']['H2'] = 0x2020202020202
+MASK['E']['H2'] = 0x0
+MASK['S']['H2'] = 0x100000000000000
+MASK['N']['H2'] = 0xfc00000000000000
+MASK['NW']['H2'] = 0x4081020408000
+MASK['SE']['H2'] = 0x0
+MASK['SW']['H2'] = 0x1000000000000
+MASK['NE']['H2'] = 0x0
+MASK['W']['A1'] = 0x0
+MASK['E']['A1'] = 0x101010101010100
+MASK['S']['A1'] = 0x0
+MASK['N']['A1'] = 0xfe
+MASK['NW']['A1'] = 0x0
+MASK['SE']['A1'] = 0x0
+MASK['SW']['A1'] = 0x0
+MASK['NE']['A1'] = 0x8040201008040200
+MASK['W']['B1'] = 0x1
+MASK['E']['B1'] = 0x101010101010000
+MASK['S']['B1'] = 0x0
+MASK['N']['B1'] = 0xfe00
+MASK['NW']['B1'] = 0x2
+MASK['SE']['B1'] = 0x0
+MASK['SW']['B1'] = 0x0
+MASK['NE']['B1'] = 0x4020100804020000
+MASK['W']['C1'] = 0x101
+MASK['E']['C1'] = 0x101010101000000
+MASK['S']['C1'] = 0x0
+MASK['N']['C1'] = 0xfe0000
+MASK['NW']['C1'] = 0x204
+MASK['SE']['C1'] = 0x0
+MASK['SW']['C1'] = 0x0
+MASK['NE']['C1'] = 0x2010080402000000
+MASK['W']['D1'] = 0x10101
+MASK['E']['D1'] = 0x101010100000000
+MASK['S']['D1'] = 0x0
+MASK['N']['D1'] = 0xfe000000
+MASK['NW']['D1'] = 0x20408
+MASK['SE']['D1'] = 0x0
+MASK['SW']['D1'] = 0x0
+MASK['NE']['D1'] = 0x1008040200000000
+MASK['W']['E1'] = 0x1010101
+MASK['E']['E1'] = 0x101010000000000
+MASK['S']['E1'] = 0x0
+MASK['N']['E1'] = 0xfe00000000
+MASK['NW']['E1'] = 0x2040810
+MASK['SE']['E1'] = 0x0
+MASK['SW']['E1'] = 0x0
+MASK['NE']['E1'] = 0x804020000000000
+MASK['W']['F1'] = 0x101010101
+MASK['E']['F1'] = 0x101000000000000
+MASK['S']['F1'] = 0x0
+MASK['N']['F1'] = 0xfe0000000000
+MASK['NW']['F1'] = 0x204081020
+MASK['SE']['F1'] = 0x0
+MASK['SW']['F1'] = 0x0
+MASK['NE']['F1'] = 0x402000000000000
+MASK['W']['G1'] = 0x10101010101
+MASK['E']['G1'] = 0x100000000000000
+MASK['S']['G1'] = 0x0
+MASK['N']['G1'] = 0xfe000000000000
+MASK['NW']['G1'] = 0x20408102040
+MASK['SE']['G1'] = 0x0
+MASK['SW']['G1'] = 0x0
+MASK['NE']['G1'] = 0x200000000000000
+MASK['W']['H1'] = 0x1010101010101
+MASK['E']['H1'] = 0x0
+MASK['S']['H1'] = 0x0
+MASK['N']['H1'] = 0xfe00000000000000
+MASK['NW']['H1'] = 0x2040810204080
+MASK['SE']['H1'] = 0x0
+MASK['SW']['H1'] = 0x0
+MASK['NE']['H1'] = 0x0
 
 
 def mesh1(sq):
@@ -273,22 +794,15 @@ def mesh_n(sq, n):
 	return left | right | up | down
 
 def rook(sq):
-	f_code = sq[0]
-	r_code = sq[1]
-	print(f"Visibility of ROOK in File:{f_code}, Rank:{r_code}")
-
-	return MASKS[r_code] ^ MASKS[f_code]
+	print(f"ROOK in:{sq}")
+	return MASK["N"][sq] | MASK["S"][sq] | MASK["W"][sq] | MASK["E"][sq]
 
 def rook_n(sq, n):
 	return rook(sq) & mesh_n(sq, n)
 
 def bishop(sq):
-	d_codes = SQUARE_DIAGS[sq]
-	d1_code = f"+{(d_codes % 16)}"
-	d2_code = f"-{(d_codes // 16)}"
-	print(f"Visibility of Bishop in D+:{d1_code}, D-:{d2_code}")
-
-	return MASKS[d1_code] ^ MASKS[d2_code]
+	print(f"ROOK in:{sq}")
+	return MASK["NE"][sq] | MASK["SW"][sq] | MASK["NW"][sq] | MASK["SE"][sq]
 
 def bishop_n(sq, n):
 	return bishop(sq) & mesh_n(sq, n)
@@ -334,6 +848,34 @@ def knight(sq):
 
 	return mask
 
+def build_8way_masks():
+	for sq in SQUARE_IDS.keys():
+		f_code = sq[0]
+		r_code = sq[1]
+		d_codes = SQUARE_DIAGS[sq]
+		d1_code = f"+{(d_codes % 16)}"
+		d2_code = f"-{(d_codes // 16)}"		
+		# print(f"Visibility of File:{f_code}, Rank:{r_code}")
+		# print(f"Visibility of  D+:{d1_code}, D-:{d2_code}")
+
+		m = {}
+		sqm = build_mask([sq])
+		m["W"] = MASKS[r_code] & ((1 << SQUARE_IDS[sq]) - 1 )
+		m["E"] = MASKS[r_code] & (~m["W"]) & (~sqm)
+
+		m["S"] = MASKS[f_code] & ((1 << SQUARE_IDS[sq]) - 1 )
+		m["N"] = MASKS[f_code] & (~m["S"]) & (~sqm)
+
+		m["NW"] = MASKS[d1_code] & ((1 << SQUARE_IDS[sq]) - 1 )
+		m["SE"] = MASKS[d1_code] & (~m["NW"]) & (~sqm)
+
+		m["SW"] = MASKS[d2_code] & ((1 << SQUARE_IDS[sq]) - 1 )
+		m["NE"] = MASKS[d2_code] & (~m["SW"]) & (~sqm)
+		for direction in m.keys():
+			print(f"MASK['{direction}']['{sq}'] = {hex(m[direction])}")
+			# print_board(m[direction])
+
+
 def build_mask(squares):
 	mask = 0x0000000000000000
 	for sq in squares:
@@ -345,13 +887,6 @@ def build_state(sq):
 	f_code = sq[0]
 	r_code = sq[1]
 	return (FILES[f_code] << 3) + RANKS[r_code]
-
-# def generate_visibility(board64, piece_id, from_sq, to_sq, from_vis):
-# 	to_vis = from_vis
-# 	if piece_id in PIECE_IDS.keys():
-# 		if piece_id[2] == "K":
-
-# 	return to_vis
 
 def parse_visibility(vis):
 	view = 	[[" "," "," "," "," "," "," "," "],
@@ -597,17 +1132,17 @@ def move(board64, board128, engagements, visibility, _piece, _action):
     # update engagements and visibility
     new_engagement = 0x00
     i_piece = PIECE_COUNT - 1
-    while(i_piece >= 0 && i_piece <= PIECE_COUNT - 1){
+    while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
 
         # Finding pre-move engaged pieces
-        if(i_piece != _piece && (engagements[i_piece] >> _piece) % 2){
+        if(i_piece != _piece and (engagements[i_piece] >> _piece) % 2):
             # Making squares beyond from_sq visible to i_piece
             # _updateVisibility(i_piece, from_sq, true)
             visibility[i_piece] = _reloadVisibility(board64, board128,i_piece)
-        }
+        
 
         # Finding post-move engaged pieces
-        if((visibility[i_piece] >> to_sq) % 2 == 1){
+        if((visibility[i_piece] >> to_sq) % 2 == 1):
             # update engagement
             new_engagement = new_engagement | 1
             engagements[i_piece] = engagements[i_piece] | (1 << _piece)
@@ -615,19 +1150,15 @@ def move(board64, board128, engagements, visibility, _piece, _action):
             # Making squares beyond to_sq invisible to i_piece
             # _updateVisibility(i_piece, to_sq, false)
             visibility[i_piece] = _reloadVisibility(board64, board128,i_piece)
-        }
 
         new_engagement = new_engagement << 1
         i_piece = i_piece - 1
-    }
     # setting engagements of the moved piece
     engagements[_piece] = new_engagement
 
     # Reloading the visibility of the moved piece
     _reloadVisibility(board64, board128,_piece)
-
-
-	return board64, board128, engagements, visibility
+    return board64, board128, engagements, visibility
 
 def set_initial_board():
 	visibilities = [0x00] * 32
@@ -650,4 +1181,10 @@ def set_initial_board():
 		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
 
 
-set_initial_board()
+
+#set_initial_board()
+# build_8way_masks()
+
+print_board(bishop("F5"))
+print_board(rook("B3"))
+print_board(queen("D7"))
