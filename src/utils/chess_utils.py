@@ -793,15 +793,15 @@ def mesh_n(sq, n):
 		
 	return left | right | up | down
 
-def rook(sq):
-	print(f"ROOK in:{sq}")
-	return MASK["N"][sq] | MASK["S"][sq] | MASK["W"][sq] | MASK["E"][sq]
+def rook(board64, _sq):
+	print(f"ROOK in:{_sq}")
+	return MASK["N"][_sq] | MASK["S"][_sq] | MASK["W"][_sq] | MASK["E"][_sq]
 
 def rook_n(sq, n):
 	return rook(sq) & mesh_n(sq, n)
 
 def bishop(sq):
-	print(f"ROOK in:{sq}")
+	print(f"BISHOP in:{sq}")
 	return MASK["NE"][sq] | MASK["SW"][sq] | MASK["NW"][sq] | MASK["SE"][sq]
 
 def bishop_n(sq, n):
