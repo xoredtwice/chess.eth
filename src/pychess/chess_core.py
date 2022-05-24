@@ -1,9 +1,22 @@
 from src.utils.chess_contants import PC_FILE_MASK, PC_RANK_MASK, PC_COORD_MASK
-from src.utils.chess_contants import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS 
+from src.utils.chess_contants import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
 from src.utils.chess_contants import PIECE_CODES
 ##########################################################
 def is_power_of_two(n):
     return (n != 0) and (n & (n-1) == 0)
+##########################################################
+def find_blockage_in_direction(direction, block_points):
+	result = []
+	binary = bin(block_points)[:1:-1]
+	for x in range(len(binary)):
+		if int(binary[x]):
+			result.append(2**x)
+
+	blockage = 0x0000000000000000
+	for i in result:
+		blockage = blockage | MASK[direction][SQUARE_ARRAY[i]]
+
+	return blockage
 ##########################################################
 def build_mask(squares):
 	mask = 0x0000000000000000
@@ -169,23 +182,25 @@ def rook(board64, _sq):
 	if north_obs == 0x00:
 		north = MASK["N"][_sq]
 	else:
-		if is_power_of_two(north_obs): 
-			north = MASK["N"][_sq] & (~ MASK["N"][north_obs])
-		else:
-			north =
+		north = MASK["N"][_sq] & (~ find_blockage_in_direction("N", north_obs))
 
-
+	south_obs = board64 & MASK["S"][_sq]
 	if board64 & MASK["S"][_sq] == 0x00:
 		south = MASK["S"][_sq]
 	else:
+		south = MASK["S"][_sq] & (~ find_blockage_in_direction("S", south_obs))
 
+	east_obs = board64 & MASK["E"][_sq]
 	if board64 & MASK["E"][_sq] == 0x00:
 		east = MASK["E"][_sq]
 	else:
+		east = MASK["E"][_sq] & (~ find_blockage_in_direction("E", east_obs))
 
+	west_obs = board64 & MASK["W"][_sq]
 	if board64 & MASK["W"][_sq] == 0x00:
 		west = MASK["W"][_sq]
 	else:
+		west = MASK["W"][_sq] & (~ find_blockage_in_direction("W", west_obs))
 
 
 	return north | south | east | west
@@ -346,6 +361,6 @@ def set_initial_board():
 #set_initial_board()
 # build_8way_masks()
 
-print_board(bishop("F5"))
-print_board(rook("B3"))
-print_board(queen("D7"))
+# print_board(bishop("F5"))
+
+# print_board(queen("D7"))
