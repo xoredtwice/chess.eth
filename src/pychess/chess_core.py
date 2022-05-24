@@ -1,6 +1,6 @@
-from src.utils.chess_contants import PC_FILE_MASK, PC_RANK_MASK, PC_COORD_MASK
-from src.utils.chess_contants import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
-from src.utils.chess_contants import PIECE_CODES
+from src.pychess.chess_consts import PC_FILE_MASK, PC_RANK_MASK, PC_COORD_MASK, MASK
+from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
+from src.pychess.chess_consts import PIECE_CODES
 ##########################################################
 def is_power_of_two(n):
     return (n != 0) and (n & (n-1) == 0)
@@ -8,10 +8,11 @@ def is_power_of_two(n):
 def find_blockage_in_direction(direction, block_points):
 	result = []
 	binary = bin(block_points)[:1:-1]
+	i = 0
 	for x in range(len(binary)):
 		if int(binary[x]):
-			result.append(2**x)
-
+			result.append(i)
+		i = i + 1
 	blockage = 0x0000000000000000
 	for i in result:
 		blockage = blockage | MASK[direction][SQUARE_ARRAY[i]]
@@ -171,6 +172,8 @@ def pawn_white(sq):
 ##########################################################
 def rook(board64, _sq):
 	print(f"ROOK in:{_sq}")
+	print("Board state: ")
+	print_board(board64)
 
 	# if the is no piece detected in vis
 	north = 0x00
@@ -208,15 +211,49 @@ def rook(board64, _sq):
 def rook_n(sq, n):
 	return rook(sq) & mesh_n(sq, n)
 ##########################################################
-def bishop(sq):
-	print(f"BISHOP in:{sq}")
-	return MASK["NE"][sq] | MASK["SW"][sq] | MASK["NW"][sq] | MASK["SE"][sq]
+def bishop(board64, _sq):
+	print(f"BISHOP in:{_sq}")
+	print("Board state: ")
+	print_board(board64)
+
+	# if the is no piece detected in vis
+	ne = 0x00
+	nw = 0x00
+	se = 0x00
+	sw = 0x00
+
+	ne_obs = board64 & MASK["NE"][_sq]
+	if ne_obs == 0x00:
+		ne = MASK["NE"][_sq]
+	else:
+		ne = MASK["NE"][_sq] & (~ find_blockage_in_direction("NE", ne_obs))
+
+	nw_obs = board64 & MASK["S"][_sq]
+	if board64 & MASK["NW"][_sq] == 0x00:
+		nw = MASK["NW"][_sq]
+	else:
+		nw = MASK["NW"][_sq] & (~ find_blockage_in_direction("NW", nw_obs))
+
+	se_obs = board64 & MASK["SE"][_sq]
+	if board64 & MASK["SE"][_sq] == 0x00:
+		se = MASK["SE"][_sq]
+	else:
+		se = MASK["SE"][_sq] & (~ find_blockage_in_direction("SE", se_obs))
+
+	sw_obs = board64 & MASK["SW"][_sq]
+	if board64 & MASK["SW"][_sq] == 0x00:
+		sw = MASK["SW"][_sq]
+	else:
+		sw = MASK["SW"][_sq] & (~ find_blockage_in_direction("SW", sw_obs))
+
+
+	return ne | nw | se | sw
 ##########################################################
 def bishop_n(sq, n):
 	return bishop(sq) & mesh_n(sq, n)
 ##########################################################
-def queen(sq):
-	return bishop(sq) ^ rook(sq)
+def queen(board64, _sq):
+	return bishop(board64, _sq) ^ rook(board64, _sq)
 ##########################################################
 def queen_n(sq, n):
 	return bishop_n(sq, n) | rook_n(sq, n)

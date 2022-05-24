@@ -6,7 +6,7 @@ import json
 
 from src.utils.logger import setup_logger, lprint, lsection
 from src.utils.yaml_wrapper import load_configuration
-from src.pychess.chess_core import rook
+from src.pychess.chess_core import rook, bishop, print_board, build_mask
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())
@@ -27,7 +27,10 @@ if not os.path.exists(log_path):
 	os.makedirs(log_path)
 setup_logger(log_path, conf["id"])
 
-if "'rook'" in args.commands or "'all'" in args.commands:
+if "'rook'" in args.commands:
 	lsection("[[ROOK TEST]]")
-	print_board(rook("B3", 0))
+	print_board(rook( build_mask(["F3"]), "B3"))
+if "'bishop'" in args.commands:
+	lsection("[[BISHOP TEST]]")
+	print_board(bishop( build_mask(["F3", "C4"]), "B3"))
 ############################################################################33
