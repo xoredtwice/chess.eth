@@ -12,14 +12,30 @@ def ffs(x):
     """
     return (x & -x).bit_length() - 1
 ##########################################################
+def msb32(x):
+    bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4 ]
+
+    base = 0
+    if (x and 0xFFFF0000): 
+    	base = base + (32/2)
+    	x = x >> 16 #(32/2)
+    if (x and 0x0000FF00):
+    	base = base + 8 #(32/4)
+    	x = x >> 8 #(32/4)
+    if (x and 0x000000F0):
+    	base = base + 4 #32/8
+    	x = x >> 4 #32/8
+    return base + bval[x]
+##########################################################
 def mask_direction(square, direction, block64):
 	lsb = ffs(block64)
 	if MASK[direction][square] > MASK[direction][SQUARE_ARRAY[lsb]] :
 		# directions: NorthWest, West, SouthWest, South
-		lsb = ffs(MASK[direction][square] - MASK[direction][SQUARE_ARRAY[lsb]])
-		return MASK[direction][SQUARE_ARRAY[lsb]]		
+		msb = msb32(block64)
+		return MASK[direction][SQUARE_ARRAY[msb]]		
 	else:
 		# directions: SouthEast, East, NorthEast, North
+
 		return MASK[direction][SQUARE_ARRAY[lsb]]
 ##########################################################
 def mesh_n(sq, n):
