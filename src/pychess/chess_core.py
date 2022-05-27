@@ -1,121 +1,26 @@
 from src.pychess.chess_consts import PC_FILE_MASK, PC_RANK_MASK, PC_COORD_MASK, MASK
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
 from src.pychess.chess_consts import PIECE_CODES
+from src.pychess.chess_utils import print_board, build_mask
 ##########################################################
 def is_power_of_two(n):
     return (n != 0) and (n & (n-1) == 0)
 ##########################################################
-def find_blockage_in_direction(direction, block_points):
-	result = []
-	binary = bin(block_points)[:1:-1]
-	i = 0
-	for x in range(len(binary)):
-		if int(binary[x]):
-			result.append(i)
-		i = i + 1
-	blockage = 0x0000000000000000
-	for i in result:
-		blockage = blockage | MASK[direction][SQUARE_ARRAY[i]]
-
-	return blockage
+def ffs(x):
+    """Returns the index, counting from 0, of the
+    least significant set bit in `x`.
+    """
+    return (x & -x).bit_length() - 1
 ##########################################################
-def build_mask(squares):
-	mask = 0x0000000000000000
-	for sq in squares:
-		if sq in SQUARE_IDS.keys():
-			mask = mask | (1 << SQUARE_IDS[sq])
-	return mask
-##########################################################
-def build_state(sq):
-	f_code = sq[0]
-	r_code = sq[1]
-	return (FILES[f_code] << 3) + RANKS[r_code]
-##########################################################
-def parse_visibility(vis):
-	view = 	[[" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "]]
-
-	i = 0
-	while vis != 0 and i < 64:
-		sq_state = vis % 2
-		vis = vis // 2
-		sq_rank = i % 8
-		sq_file = i // 8
-		if sq_state != 0 :
-			view[7-sq_rank][sq_file] = "X"
-		i = i + 1
-	return view
-
-##########################################################
-def print_board(view):
-	# combining parse_v9isibility with print_board for easier coding
-	if not isinstance(view, list):
-		view = parse_visibility(view)
-	i = 8
-	print("******************")
-	for rank in view:
-		s = str(i) + "|" 
-		for sq in rank:
-			s = s + sq + "|"
-		print(s)
-		i = i - 1
-	print("  a b c d e f g h ")
-	print("******************")
-
-##########################################################
-def parse_board(board):
-	pieces = {}
-	view = 	[[" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "],
-			 [" "," "," "," "," "," "," "," "]]
-
-	for i in range(len(PIECE_CODES)):
-		sq = board % 256
-		r = sq % 8
-		sq = sq >> 3 
-		f = sq % 8
-		m = sq >> 3 
-		if m != 0 :
-			pieces[PIECE_CODES[i]] = FILE_CODES[f] + RANK_CODES[r]
-			print(i)
-			print(PIECE_CODES[i][:3])
-			print(PIECE_UNICODES[PIECE_CODES[i][:3]])
-			print(PIECE_UNICODES["B_P"])
-			print()
-			view[7-r][f] = PIECE_UNICODES[PIECE_CODES[i][:3]]
-		else :
-			pieces[PIECE_CODES[i]] = "X"
-		board = board >> 8;
-
-	return pieces, view
-##########################################################
-def mesh1(sq):
-	f_code = sq[0]
-	r_code = sq[1]
-	if f"*{f_code}{r_code}" in MASKS.keys():
-		return MASKS[f"*{f_code}{r_code}"]
+def mask_direction(square, direction, block64):
+	lsb = ffs(block64)
+	if MASK[direction][square] > MASK[direction][SQUARE_ARRAY[lsb]] :
+		# directions: NorthWest, West, SouthWest, South
+		lsb = ffs(MASK[direction][square] - MASK[direction][SQUARE_ARRAY[lsb]])
+		return MASK[direction][SQUARE_ARRAY[lsb]]		
 	else:
-		if RANKS[r_code] == 0:
-			return MASKS["*B1"] << (8 * (FILES[f_code] - 1))
-		elif RANKS[r_code] == 7:
-			return MASKS["*B8"] << (8 * (FILES[f_code] - 1))
-		elif FILES[f_code] == 0:
-			return MASKS["*A2"] << (RANKS[r_code] - 1)
-		elif FILES[f_code] == 7:
-			return MASKS["*H2"] << (RANKS[r_code] - 1)
-		else:
-			return MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))
+		# directions: SouthEast, East, NorthEast, North
+		return MASK[direction][SQUARE_ARRAY[lsb]]
 ##########################################################
 def mesh_n(sq, n):
 	f = FILES[sq[0]]
@@ -180,30 +85,31 @@ def rook(board64, _sq):
 	south = 0x00
 	west = 0x00
 	east = 0x00
+	sq_id = SQUARE_IDS[_sq]
 
 	north_obs = board64 & MASK["N"][_sq]
 	if north_obs == 0x00:
 		north = MASK["N"][_sq]
 	else:
-		north = MASK["N"][_sq] & (~ find_blockage_in_direction("N", north_obs))
+		north = MASK["N"][_sq] & (~ mask_direction(_sq, "N", north_obs))
 
 	south_obs = board64 & MASK["S"][_sq]
 	if board64 & MASK["S"][_sq] == 0x00:
 		south = MASK["S"][_sq]
 	else:
-		south = MASK["S"][_sq] & (~ find_blockage_in_direction("S", south_obs))
+		south = MASK["S"][_sq] & (~ mask_direction(_sq, "S", south_obs))
 
 	east_obs = board64 & MASK["E"][_sq]
 	if board64 & MASK["E"][_sq] == 0x00:
 		east = MASK["E"][_sq]
 	else:
-		east = MASK["E"][_sq] & (~ find_blockage_in_direction("E", east_obs))
+		east = MASK["E"][_sq] & (~ mask_direction(_sq, "E", east_obs))
 
 	west_obs = board64 & MASK["W"][_sq]
 	if board64 & MASK["W"][_sq] == 0x00:
 		west = MASK["W"][_sq]
 	else:
-		west = MASK["W"][_sq] & (~ find_blockage_in_direction("W", west_obs))
+		west = MASK["W"][_sq] & (~ mask_direction(_sq, "W", west_obs))
 
 
 	return north | south | east | west
@@ -215,6 +121,7 @@ def bishop(board64, _sq):
 	print(f"BISHOP in:{_sq}")
 	print("Board state: ")
 	print_board(board64)
+	sq_id = SQUARE_IDS[_sq]
 
 	# if the is no piece detected in vis
 	ne = 0x00
@@ -226,25 +133,25 @@ def bishop(board64, _sq):
 	if ne_obs == 0x00:
 		ne = MASK["NE"][_sq]
 	else:
-		ne = MASK["NE"][_sq] & (~ find_blockage_in_direction("NE", ne_obs))
+		ne = MASK["NE"][_sq] & (~ mask_direction(_sq, "NE", ne_obs))
 
 	nw_obs = board64 & MASK["S"][_sq]
 	if board64 & MASK["NW"][_sq] == 0x00:
 		nw = MASK["NW"][_sq]
 	else:
-		nw = MASK["NW"][_sq] & (~ find_blockage_in_direction("NW", nw_obs))
+		nw = MASK["NW"][_sq] & (~ mask_direction(_sq, "NW", nw_obs))
 
 	se_obs = board64 & MASK["SE"][_sq]
 	if board64 & MASK["SE"][_sq] == 0x00:
 		se = MASK["SE"][_sq]
 	else:
-		se = MASK["SE"][_sq] & (~ find_blockage_in_direction("SE", se_obs))
+		se = MASK["SE"][_sq] & (~ mask_direction(_sq, "SE", se_obs))
 
 	sw_obs = board64 & MASK["SW"][_sq]
 	if board64 & MASK["SW"][_sq] == 0x00:
 		sw = MASK["SW"][_sq]
 	else:
-		sw = MASK["SW"][_sq] & (~ find_blockage_in_direction("SW", sw_obs))
+		sw = MASK["SW"][_sq] & (~ mask_direction(_sq, "SW", sw_obs))
 
 
 	return ne | nw | se | sw
@@ -258,10 +165,28 @@ def queen(board64, _sq):
 def queen_n(sq, n):
 	return bishop_n(sq, n) | rook_n(sq, n)
 ##########################################################
-def king(sq):
-	return bishop_n(sq, 1) | rook_n(sq, 1)
+def king(board64, sq):
+	print(f"KING in:{_sq}")
+	print("Board state: ")
+	print_board(board64)
+
+	f_code = sq[0]
+	r_code = sq[1]
+	if f"*{f_code}{r_code}" in MASKS.keys():
+		return MASKS[f"*{f_code}{r_code}"]
+	else:
+		if RANKS[r_code] == 0:
+			return (MASKS["*B1"] << (8 * (FILES[f_code] - 1))) & (~board64)
+		elif RANKS[r_code] == 7:
+			return (MASKS["*B8"] << (8 * (FILES[f_code] - 1))) & (~board64)
+		elif FILES[f_code] == 0:
+			return (MASKS["*A2"] << (RANKS[r_code] - 1)) & (~board64)
+		elif FILES[f_code] == 7:
+			return (MASKS["*H2"] << (RANKS[r_code] - 1)) & (~board64)
+		else:
+			return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))) & (~board64)
 ##########################################################
-def knight(sq):
+def knight(board64, sq):
 	# return mesh_n(sq, 2) & (~(queen_n(sq, 2)))
 	f_code = sq[0]
 	r_code = sq[1]
@@ -288,7 +213,7 @@ def knight(sq):
 	if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
 		mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] + 1))))
 
-	return mask
+	return mask & ~board64
 ##########################################################
 def _reloadVisibility(board64, board128, _piece, _position):
 	
@@ -371,33 +296,3 @@ def move(board64, board128, engagements, visibility, _piece, _action):
     _reloadVisibility(board64, board128,_piece)
     return board64, board128, engagements, visibility
 ##########################################################
-def set_initial_board():
-	visibilities = [0x00] * 32
-	engagements = [0x00] * 32
-	board64 = 0x00
-	board128 = 0x00
-
-	# setting 32 pieces one by one and updating the states and testing
-	
-	# setting white pawns
-	for i in range(8):
-		updated_piece = PIECE_IDS[f'W_P_{FILE_CODES[i]}']
-		updated_state = build_state(f"{FILE_CODES[i]}2")
-		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
-
-	# setting black pawns
-	for i in range(8):
-		updated_piece = PIECE_IDS[f'B_P_{FILE_CODES[i]}']
-		updated_state = build_state(f"{FILE_CODES[i]}7")
-		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
-
-##########################################################
-# TEST SCRIPTS
-
-
-#set_initial_board()
-# build_8way_masks()
-
-# print_board(bishop("F5"))
-
-# print_board(queen("D7"))

@@ -1,4 +1,24 @@
+##########################################################
+def set_initial_board():
+	visibilities = [0x00] * 32
+	engagements = [0x00] * 32
+	board64 = 0x00
+	board128 = 0x00
 
+	# setting 32 pieces one by one and updating the states and testing
+	
+	# setting white pawns
+	for i in range(8):
+		updated_piece = PIECE_IDS[f'W_P_{FILE_CODES[i]}']
+		updated_state = build_state(f"{FILE_CODES[i]}2")
+		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
+
+	# setting black pawns
+	for i in range(8):
+		updated_piece = PIECE_IDS[f'B_P_{FILE_CODES[i]}']
+		updated_state = build_state(f"{FILE_CODES[i]}7")
+		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
+##########################################################
 def king_tests():
 	print_board(king("A4"))
 	print_board(king("A5"))
@@ -24,7 +44,7 @@ def king_tests():
 	print_board(king("D4"))
 	print_board(king("E4"))
 	print_board(king("G6"))
-
+##########################################################
 def knight_tests():
 	print("A4")
 	print_board(knight("A4"))
@@ -56,8 +76,7 @@ def knight_tests():
 	print_board(knight("H2"))
 	print("H1")
 	print_board(knight("H1"))
-
-
+##########################################################
 def build_mesh1_masks():
 	# A1
 	mask = build_mask(["A2", "B2", "B1"])
@@ -104,70 +123,4 @@ def build_mesh1_masks():
 	mask = build_mask(["A1", "A2", "A3", "B3", "C3", "C2", "C1", "B1"])
 	# print_board(parse_visibility(mask))
 	print(f"'*B2' : {hex(mask)},")
-# build_diagonal_masks()
-# build_mesh1_masks()
-
-
-def build_8way_masks():
-	for sq in SQUARE_IDS.keys():
-		f_code = sq[0]
-		r_code = sq[1]
-		d_codes = SQUARE_DIAGS[sq]
-		d1_code = f"+{(d_codes % 16)}"
-		d2_code = f"-{(d_codes // 16)}"		
-		# print(f"Visibility of File:{f_code}, Rank:{r_code}")
-		# print(f"Visibility of  D+:{d1_code}, D-:{d2_code}")
-
-		m = {}
-		sqm = build_mask([sq])
-		m["W"] = MASKS[r_code] & ((1 << SQUARE_IDS[sq]) - 1 )
-		m["E"] = MASKS[r_code] & (~m["W"]) & (~sqm)
-
-		m["S"] = MASKS[f_code] & ((1 << SQUARE_IDS[sq]) - 1 )
-		m["N"] = MASKS[f_code] & (~m["S"]) & (~sqm)
-
-		m["NW"] = MASKS[d1_code] & ((1 << SQUARE_IDS[sq]) - 1 )
-		m["SE"] = MASKS[d1_code] & (~m["NW"]) & (~sqm)
-
-		m["SW"] = MASKS[d2_code] & ((1 << SQUARE_IDS[sq]) - 1 )
-		m["NE"] = MASKS[d2_code] & (~m["SW"]) & (~sqm)
-		for direction in m.keys():
-			print(f"MASK['{direction}']['{sq}'] = {hex(m[direction])}")
-			# print_board(m[direction])
-
-def build_diagonal_masks():
-	d1 = build_mask(["A1"])
-	# print_board(parse_visibility(d1))
-	print(f"'+1' : {hex(d1)},")
-
-	d2 = d1
-	di = 2
-	for i in range(7):
-		d2 = (d2 | (0x80 << (i*8))) << 1
-		# print_board(parse_visibility(d2))
-		print(f"'+{di}' : {hex(d2)},")
-		di = di + 1
-
-	for i in range(7):
-		d2 = (d2 & ~(0x80 << (i*8))) << 1
-		# print_board(parse_visibility(d2))
-		print(f"'+{di}' : {hex(d2)},")
-		di = di + 1
-
-	d16 = build_mask(["H1"])
-	# print_board(parse_visibility(d16))
-	print(f"'-1': {hex(d2)},")
-
-	d2 = d16
-	di = 2
-	for i in range(7):
-		d2 = (d2  << 1) | (0x01 << ((6-i)*8))
-		# print_board(parse_visibility(d2))
-		print(f"'-{di}': {hex(d2)},")
-		di = di + 1
-
-	for i in range(7):
-		d2 = (d2 << 1) & ~(0x101010101010101)
-		# print_board(parse_visibility(d2))
-		print(f"'-{di}': {hex(d2)},")
-		di = di + 1
+##########################################################

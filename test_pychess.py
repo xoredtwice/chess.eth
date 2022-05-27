@@ -6,7 +6,8 @@ import json
 
 from src.utils.logger import setup_logger, lprint, lsection
 from src.utils.yaml_wrapper import load_configuration
-from src.pychess.chess_core import rook, bishop, print_board, build_mask
+from src.pychess.chess_core import rook, bishop
+from src.pychess.chess_utils import print_board, build_mask
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())
