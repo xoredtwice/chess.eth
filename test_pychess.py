@@ -6,8 +6,8 @@ import json
 
 from src.utils.logger import setup_logger, lprint, lsection
 from src.utils.yaml_wrapper import load_configuration
-from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black
-from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state
+from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black, move
+from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())
@@ -60,10 +60,19 @@ if "'visibility'" in args.test:
 elif "'move'" in args.test:
 	board64, board128, engagements, visibility = load_game_state()
 
+	lsection(f"[[Testing Move of {args.piece} to {args.square}]]")
+
+	piece_id = piece_to_piece_id(args.piece[1:-1])
+	state = build_state(args.square[1:-1])
+	print(f"piece_id:{piece_id}, state:{state}")
 	print("Pre-move board64")
 	print_board(board64)
+	print("Pre-move board128")
+	pieces, view = parse_board(board128)
+	print_board(view)
 
-	board64, board128, engagements, visibility = move(board64, board128, engagements, visibility, piece, state)
+
+	board64, board128, engagements, visibility = move(board64, board128, engagements, visibility, piece_id, state)
 
 	print("post-move board64")
 	print_board(board64)
