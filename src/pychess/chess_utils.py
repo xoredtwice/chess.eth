@@ -1,6 +1,35 @@
 # isolating helper functions,
 # These functions are not needed on smart contract
 from src.pychess.chess_consts import SQUARE_IDS
+import pickle
+import os
+##########################################################
+def save_game_state(board64, board128, engagements, visibility)
+    print("saving game state")
+    game_state = {}
+    game_state["board64"] = board64
+    game_state["board128"] = board128
+    game_state["engagements"] = engagements
+    game_state["visibility"] = visibility
+    with open('game_state.pickle', 'wb') as f:
+        pickle.dump(game_state, f)
+##########################################################
+def load_game_state(pickle_path = 'game_state.pickle')
+    if os.path.exists(pickle_path):
+        print("loading game state")
+        with open(pickle_path) as f:
+            game_state = pickle.load(f)
+            board64 = game_state["board64"]
+            board128 = game_state["board128"]
+            engagements = game_state["engagements"]
+            visibility = game_state["visibility"]
+    else:
+        print("initiating game state")
+        board64 = 0x00
+        board128 = 0x00
+        engagements = {}
+        visibility = {}
+    return board64, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):
     mask = 0x0000000000000000

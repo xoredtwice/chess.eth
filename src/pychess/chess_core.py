@@ -135,10 +135,6 @@ def rook(board64, _sq):
 		south = MASK["S"][_sq] & (~ mask_direction(_sq, "S", south_obs))
 
 	east_obs = board64 & MASK["E"][_sq]
-	# print("east_obs")
-	# print_board(MASK["E"][_sq])
-	# print_board(east_obs)
-	# print_board(~ mask_direction(_sq, "E", east_obs))
 	if east_obs == 0x00:
 		east = MASK["E"][_sq]
 	else:
@@ -273,19 +269,18 @@ def move(board64, board128, engagements, visibility, _piece, _action):
 	# parsing from and to squares 
 
     from_sq = (board128 >> (piece * 8)) & MASK128_POSITION
-    to_sq = _action & PC_COORD_MASK
+    to_sq = _action & MASK128_POSITION
 
     # is the square visible to the moved piece?
     # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
     if (visibility[_piece] >> to_sq) % 2 != 1:
     	raise Exception("ILLEGAL_MOVE")
 
-
     # updating the board partially
     new_state = ((uint256)(M_SET | to_sq) << (_piece * 8))
     piece_mask = (0xFF << (_piece * 8))
-    board128 &= (~piece_mask) # clean previous piece state
-    board |= newPieceState # shoving the modified piece byte in
+    board128 = board128 & (~piece_mask) # clean previous piece state
+    board128 = board128 | newPieceState # shoving the modified piece byte in
 
     # TODO:: update DEAD pieces
 
