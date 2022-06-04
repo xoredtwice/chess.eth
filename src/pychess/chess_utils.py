@@ -3,6 +3,7 @@
 from src.pychess.chess_consts import SQUARE_IDS, M_SET
 import pickle
 import os
+from pprint import pprint
 ##########################################################
 
 RANKS = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7}
@@ -98,6 +99,14 @@ def piece_to_piece_id(piece):
         return PIECE_IDS[piece]
     else:
         return -1
+##########################################################
+def print_game_state(board64, board128, engagements, visibility):
+    print_board(board64)
+    pieces, view = parse_board(board128)
+    print_board(view)
+
+    print(engagements)
+
 ##########################################################
 def save_game_state(board64, board128, engagements, visibility):
     print("saving game state")

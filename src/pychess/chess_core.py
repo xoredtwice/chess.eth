@@ -219,10 +219,12 @@ def _reloadVisibility(board64, board128, _piece, _position):
 def move(board64, board128, engagements, visibility, _piece, _action):
 	
 	# parsing from and to squares 
+    # print(_piece)
 
     from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION
     to_sq = _action & MASK128_POSITION
-
+    print(from_sq)
+    print(to_sq)
     # is the square visible to the moved piece?
     # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
     if (visibility[_piece] >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
@@ -235,8 +237,11 @@ def move(board64, board128, engagements, visibility, _piece, _action):
     board128 = board128 | new_state # shoving the modified piece byte in
 
     # Updating board64
-    board64 = board64 & ~(1 << from_sq)
+    print(board64)
+    if from_sq != 0 : # TODO:: REMOVE, it is for testing
+	    board64 = board64 & ~(1 << from_sq)
     board64 = board64 | (1 << to_sq)
+    print(board64)
 
     # TODO:: update DEAD pieces
 

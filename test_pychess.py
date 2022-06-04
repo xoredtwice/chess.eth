@@ -7,7 +7,7 @@ import json
 from src.utils.logger import setup_logger, lprint, lsection
 from src.utils.yaml_wrapper import load_configuration
 from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black, move
-from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board
+from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board, print_game_state
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())
@@ -15,7 +15,7 @@ root_path = str(pathlib.Path(__file__).parent.resolve())
 parser = argparse.ArgumentParser(description='Testing Python version of chess.eth')
 parser.add_argument('-f', dest='conf_path', type=ascii, default=os.path.join(root_path, "conf", "00_default_configuration.yaml"),
                     help='configuration YAML file path')
-parser.add_argument('-t', dest='test', type=ascii, default='move',
+parser.add_argument('-c', dest='command', type=ascii, default='move',
                     help='list of tests used for engine developement')
 parser.add_argument('-p', dest='piece', type=ascii, default='queen',
                     help='the piece to move.')
@@ -32,7 +32,7 @@ setup_logger(log_path, conf["id"])
 
 square = args.square[1:-1]
 piece = args.piece[1:-1]
-if "'visibility'" in args.test:
+if "'visibility'" in args.command:
 	board64 = build_mask(["F3", "E3", "C5"])
 
 	lsection(f"[[Testing Visibility of {args.piece} in {args.square}]]")
@@ -57,7 +57,7 @@ if "'visibility'" in args.test:
 
 	print("Visibility: ")
 	print_board(vis64)
-elif "'move'" in args.test:
+elif "'move'" in args.command:
 	board64, board128, engagements, visibility = load_game_state()
 
 	lsection(f"[[Testing Move of {args.piece} to {args.square}]]")
@@ -65,21 +65,19 @@ elif "'move'" in args.test:
 	piece_id = piece_to_piece_id(args.piece[1:-1])
 	state = build_state(args.square[1:-1])
 	print(f"piece_id:{piece_id}, state:{state}")
-	print("Pre-move board64")
-	print_board(board64)
-	print("Pre-move board128")
-	pieces, view = parse_board(board128)
-	print_board(view)
 
+	print("Pre-move state")
+	print_game_state(board64, board128, engagements, visibility)
 
 	board64, board128, engagements, visibility = move(board64, board128, engagements, visibility, piece_id, state)
 
-	print("post-move board64")
-	print_board(board64)
-	print("post-move board128")
-	pieces, view = parse_board(board128)
-	print_board(view)
+	print("Post-move state")
+	print_game_state(board64, board128, engagements, visibility)
 
 	save_game_state(board64, board128, engagements, visibility)
+elif "'clear'" in args.command:
+	lsection(f"[[Clearing the state]]")
+	if os.path.exists(conf["pychess"]["state-file"]):
+		os.remove(conf["pychess"]["state-file"])
 
 ############################################################################33

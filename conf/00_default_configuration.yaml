@@ -46,3 +46,5 @@ chess:
     - {name: "Alice", account: "1", initial-token: 20000}
     - {name: "Bob", account: "2", initial-token: 30000}
 
+pychess:
+  state-file: "game_state.pickle"

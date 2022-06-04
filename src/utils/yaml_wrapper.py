@@ -10,6 +10,6 @@ def read_from_file(file_path):
 def load_configuration(configuration_path):
 	# we can add checks here later
 	conf = read_from_file(configuration_path)
-	print("Loaded configuration: ")
-	pprint(conf)
+	# print("Loaded configuration: ")
+	# pprint(conf)
 	return conf
