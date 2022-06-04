@@ -112,7 +112,7 @@ def save_game_state(board64, board128, engagements, visibility):
 def load_game_state(pickle_path = 'game_state.pickle'):
     if os.path.exists(pickle_path):
         print("loading game state")
-        with open(pickle_path) as f:
+        with open(pickle_path, "rb") as f:
             game_state = pickle.load(f)
             board64 = game_state["board64"]
             board128 = game_state["board128"]
@@ -123,7 +123,7 @@ def load_game_state(pickle_path = 'game_state.pickle'):
         board64 = 0x00
         board128 = 0x00
         engagements = [[]] * 32
-        visibility = [0xFFFFFFFFFFFFFFFF] * 32
+        visibility = [0x00] * 32
     return board64, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):

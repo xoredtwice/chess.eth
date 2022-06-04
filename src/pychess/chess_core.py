@@ -36,7 +36,7 @@ def msb64(x):
     return base + bval[x]
 ##########################################################
 def mask_direction(square, direction, block64):
-	square = SQUARE_ARRAY[square]
+	# square = SQUARE_ARRAY[square]
 	lsb = ffs(block64)
 	msb = msb64(block64)
 	if MASKS[direction][square] <= MASKS[direction][SQUARE_ARRAY[lsb]] :
@@ -47,8 +47,8 @@ def mask_direction(square, direction, block64):
 		return MASKS[direction][SQUARE_ARRAY[lsb]] ^ (1 << lsb)
 ##########################################################
 def pawn_white(board64, _sq):
-	r = (_sq % 8) + 1
-	f = (_sq // 8) + 1
+	r = (_sq % 8)
+	f = (_sq // 8)
 	mask = 0x00
 
 	if r == 0:
@@ -71,8 +71,8 @@ def pawn_white(board64, _sq):
 	return mask & (~board64)
 ##########################################################
 def pawn_black(board64, _sq):
-	f = (_sq // 8) + 1
-	r = (_sq % 8) + 1
+	f = (_sq // 8)
+	r = (_sq % 8)
 
 	mask = 0x00
 
@@ -149,8 +149,8 @@ def queen(board64, _sq):
 	return bishop(board64, _sq) | rook(board64, _sq)
 ##########################################################
 def king(board64, sq):
-	f_code = FILE_CODES[(sq // 8) + 1]
-	r_code = RANK_CODES[(sq % 8) + 1]
+	f_code = FILE_CODES[(sq // 8)]
+	r_code = RANK_CODES[(sq % 8)]
 	if f"*{f_code}{r_code}" in MASKS.keys():
 		return MASKS[f"*{f_code}{r_code}"]
 	else:
@@ -225,7 +225,7 @@ def move(board64, board128, engagements, visibility, _piece, _action):
 
     # is the square visible to the moved piece?
     # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
-    if (visibility[_piece] >> to_sq) % 2 != 1:
+    if (visibility[_piece] >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
     	raise Exception("ILLEGAL_MOVE")
 
     # updating board128
