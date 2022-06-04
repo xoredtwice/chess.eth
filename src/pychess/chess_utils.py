@@ -4,6 +4,7 @@ from src.pychess.chess_consts import SQUARE_IDS, M_SET
 import pickle
 import os
 from pprint import pprint
+from src.utils.logger import setup_logger, lprint, lsection
 ##########################################################
 
 RANKS = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7}
@@ -100,12 +101,26 @@ def piece_to_piece_id(piece):
     else:
         return -1
 ##########################################################
+def print_engagements(engagements):
+    s = "engagements: {\n"
+    for i in range(len(engagements)):
+        piece_unicode = PIECE_UNICODES[PIECE_CODES[i][:3]]
+        piece_code = PIECE_CODES[i]
+        s = s + f"\n{piece_unicode}({piece_code}) \t: ["
+        for j in range(len(engagements[i])):
+            j_unicode = PIECE_UNICODES[PIECE_CODES[engagements[i][j]][:3]]
+            j_code = PIECE_CODES[engagements[i][j]]
+            s = s + f"{j_unicode}({j_code}), "
+        s = s[:-2] + "]"
+    lprint(s)
+
+##########################################################
 def print_game_state(board64, board128, engagements, visibility):
     print_board(board64)
     pieces, view = parse_board(board128)
     print_board(view)
-
-    print(engagements)
+    # print(engagements)
+    print_engagements(engagements)
 
 ##########################################################
 def save_game_state(board64, board128, engagements, visibility):
@@ -173,15 +188,15 @@ def print_board(view):
     if not isinstance(view, list):
         view = parse_visibility(view)
     i = 8
-    print("******************")
+    lprint("******************")
     for rank in view:
         s = str(i) + "|" 
         for sq in rank:
             s = s + sq + "|"
-        print(s)
+        lprint(s)
         i = i - 1
-    print("  a b c d e f g h ")
-    print("******************")
+    lprint("  a b c d e f g h ")
+    lprint("******************")
 
 ##########################################################
 def parse_board(board):
@@ -239,42 +254,42 @@ def build_8way_masks():
         m["SW"] = MASKS[d2_code] & ((1 << SQUARE_IDS[sq]) - 1 )
         m["NE"] = MASKS[d2_code] & (~m["SW"]) & (~sqm)
         for direction in m.keys():
-            print(f"MASK['{direction}']['{sq}'] = {hex(m[direction])}")
+            lprint(f"MASK['{direction}']['{sq}'] = {hex(m[direction])}")
             # print_board(m[direction])
 ##########################################################
 def build_diagonal_masks():
     d1 = build_mask(["A1"])
     # print_board(parse_visibility(d1))
-    print(f"'+1' : {hex(d1)},")
+    lprint(f"'+1' : {hex(d1)},")
 
     d2 = d1
     di = 2
     for i in range(7):
         d2 = (d2 | (0x80 << (i*8))) << 1
         # print_board(parse_visibility(d2))
-        print(f"'+{di}' : {hex(d2)},")
+        lprint(f"'+{di}' : {hex(d2)},")
         di = di + 1
 
     for i in range(7):
         d2 = (d2 & ~(0x80 << (i*8))) << 1
         # print_board(parse_visibility(d2))
-        print(f"'+{di}' : {hex(d2)},")
+        lprint(f"'+{di}' : {hex(d2)},")
         di = di + 1
 
     d16 = build_mask(["H1"])
     # print_board(parse_visibility(d16))
-    print(f"'-1': {hex(d2)},")
+    lprint(f"'-1': {hex(d2)},")
 
     d2 = d16
     di = 2
     for i in range(7):
         d2 = (d2  << 1) | (0x01 << ((6-i)*8))
         # print_board(parse_visibility(d2))
-        print(f"'-{di}': {hex(d2)},")
+        lprint(f"'-{di}': {hex(d2)},")
         di = di + 1
 
     for i in range(7):
         d2 = (d2 << 1) & ~(0x101010101010101)
         # print_board(parse_visibility(d2))
-        print(f"'-{di}': {hex(d2)},")
+        lprint(f"'-{di}': {hex(d2)},")
         di = di + 1
