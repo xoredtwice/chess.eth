@@ -194,11 +194,11 @@ def parse_board(board):
         m = sq >> 3 
         if m != 0 :
             pieces[PIECE_CODES[i]] = FILE_CODES[f] + RANK_CODES[r]
-            print(i)
-            print(PIECE_CODES[i][:3])
-            print(PIECE_UNICODES[PIECE_CODES[i][:3]])
-            print(PIECE_UNICODES["B_P"])
-            print()
+            # print(i)
+            # print(PIECE_CODES[i][:3])
+            # print(PIECE_UNICODES[PIECE_CODES[i][:3]])
+            # print(PIECE_UNICODES["B_P"])
+            # print()
             view[7-r][f] = PIECE_UNICODES[PIECE_CODES[i][:3]]
         else :
             pieces[PIECE_CODES[i]] = "X"

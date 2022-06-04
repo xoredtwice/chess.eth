@@ -5,7 +5,7 @@ MASK128_POSITION = 0x3F
 
 from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASKS
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
-from src.pychess.chess_utils import print_board, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES
+from src.pychess.chess_utils import print_board, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 ##########################################################
 def is_power_of_two(n):
     return (n != 0) and (n & (n-1) == 0)
@@ -36,6 +36,7 @@ def msb64(x):
     return base + bval[x]
 ##########################################################
 def mask_direction(square, direction, block64):
+	square = SQUARE_ARRAY[square]
 	lsb = ffs(block64)
 	msb = msb64(block64)
 	if MASKS[direction][square] <= MASKS[direction][SQUARE_ARRAY[lsb]] :
@@ -46,8 +47,8 @@ def mask_direction(square, direction, block64):
 		return MASKS[direction][SQUARE_ARRAY[lsb]] ^ (1 << lsb)
 ##########################################################
 def pawn_white(board64, _sq):
-	r = RANKS[_sq[1]]
-	f = FILES[_sq[0]]
+	r = (_sq % 8) + 1
+	f = (_sq // 8) + 1
 	mask = 0x00
 
 	if r == 0:
@@ -70,8 +71,9 @@ def pawn_white(board64, _sq):
 	return mask & (~board64)
 ##########################################################
 def pawn_black(board64, _sq):
-	r = RANKS[_sq[1]]
-	f = FILES[_sq[0]]
+	f = (_sq // 8) + 1
+	r = (_sq % 8) + 1
+
 	mask = 0x00
 
 	if r == 7:
@@ -94,7 +96,7 @@ def pawn_black(board64, _sq):
 	return mask & (~board64)
 ##########################################################
 def rook(board64, _sq):
-	sq_id = SQUARE_IDS[_sq]
+	_sq = SQUARE_ARRAY[_sq]
 
 	north = MASKS["N"][_sq]
 	north_obs = board64 & north
@@ -119,7 +121,7 @@ def rook(board64, _sq):
 	return north | south | east | west
 ##########################################################
 def bishop(board64, _sq):
-	sq_id = SQUARE_IDS[_sq]
+	_sq = SQUARE_ARRAY[_sq]
 
 	ne = MASKS["NE"][_sq]
 	ne_obs = board64 & ne
@@ -147,8 +149,8 @@ def queen(board64, _sq):
 	return bishop(board64, _sq) | rook(board64, _sq)
 ##########################################################
 def king(board64, sq):
-	f_code = sq[0]
-	r_code = sq[1]
+	f_code = FILE_CODES[(sq // 8) + 1]
+	r_code = RANK_CODES[(sq % 8) + 1]
 	if f"*{f_code}{r_code}" in MASKS.keys():
 		return MASKS[f"*{f_code}{r_code}"]
 	else:
@@ -164,6 +166,7 @@ def king(board64, sq):
 			return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))) & (~board64)
 ##########################################################
 def knight(board64, _sq):
+	_sq = SQUARE_ARRAY[_sq]
 
 	f_code = _sq[0]
 	r_code = _sq[1]

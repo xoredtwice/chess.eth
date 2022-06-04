@@ -76,6 +76,9 @@ elif "'move'" in args.test:
 
 	print("post-move board64")
 	print_board(board64)
+	print("post-move board128")
+	pieces, view = parse_board(board128)
+	print_board(view)
 
 	save_game_state(board64, board128, engagements, visibility)
 
