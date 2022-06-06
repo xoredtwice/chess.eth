@@ -7,6 +7,7 @@ import json
 from src.utils.logger import setup_logger, lprint, lsection
 from src.utils.yaml_wrapper import load_configuration
 from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black, move
+from src.pychess.chess_consts import SQUARE_IDS
 from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board, print_game_state
 ############################################################################33
 
@@ -31,9 +32,10 @@ if not os.path.exists(log_path):
 setup_logger(log_path, conf["id"])
 
 square = args.square[1:-1]
+square = SQUARE_IDS[square]
 piece = args.piece[1:-1]
 if "'visibility'" in args.command:
-	board64 = build_mask(["F3", "E3", "C5"])
+	board64 = build_mask(["B1", "C1"])
 
 	lsection(f"[[Testing Visibility of {args.piece} in {args.square}]]")
 	print("Board state: ")

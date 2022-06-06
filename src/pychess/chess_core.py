@@ -21,30 +21,37 @@ def msb64(x):
 
     base = 0
     if (x and 0xFFFFFFFF00000000): 
-        base = base + 32 #(64/2)
+        base = base + 16 #(64/4)
         x = x >> 32 #(64/2)
     if (x and 0x00000000FFFF0000):
-        base = base + 16 #(64/4)
+        base = base + 8 #(64/8)
         x = x >> 16 #(64/4)
     if (x and 0x0000000000000FF00):
-        base = base + 8 #64/8
+        base = base + 4 #(64/16)
         x = x >> 8 #64/8
     if (x and 0x000000000000000F0):
-        base = base + 4 #64/16
+        base = base + 2 #(64/32)
         x = x >> 4 #64/16
 
-    return base + bval[x]
+    return (base + bval[x])
 ##########################################################
 def mask_direction(square, direction, block64):
     # square = SQUARE_ARRAY[square]
     lsb = ffs(block64)
     msb = msb64(block64)
-    if MASKS[direction][square] <= MASKS[direction][SQUARE_ARRAY[lsb]] :
+    # print(lsb)
+    # print(msb)
+    # print_board(MASKS[direction][square])
+    # print_board(MASKS[direction][SQUARE_ARRAY[lsb]])
+    sq_id = SQUARE_IDS[square]
+    # print(sq_id)
+
+    if sq_id > msb :
         # directions: NorthWest, West, SouthWest, South    
-        return MASKS[direction][SQUARE_ARRAY[msb]] ^ (1 << msb)    
+        return MASKS[direction][SQUARE_ARRAY[msb]] #^ (1 << msb)    
     else:
         # directions: SouthEast, East, NorthEast, North
-        return MASKS[direction][SQUARE_ARRAY[lsb]] ^ (1 << lsb)
+        return MASKS[direction][SQUARE_ARRAY[lsb]] #^ (1 << lsb)
 ##########################################################
 def pawn_white(board64, _sq):
     r = (_sq % 8)
@@ -114,7 +121,9 @@ def rook(board64, _sq):
         east = east & (~ mask_direction(_sq, "E", east_obs))
 
     west = MASKS["W"][_sq]
+    # print_board(west)
     west_obs = board64 & west
+    # print_board(west_obs)
     if west_obs != 0x00:
         west = west & (~ mask_direction(_sq, "W", west_obs))
 
@@ -217,23 +226,36 @@ def _reloadVisibility(board64, board128, _piece, _position):
     return new_vis
 ##########################################################
 def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
-    
-
     # parsing from and to squares 
     # print(_piece)
+
     if _piece % 2 == 0:
-        board64 = board64W
+    	pc_board64 = board64W
     else:
-        board64 = board64B
+    	pc_board64 = board64B
+
     from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION
     to_sq = _action & MASK128_POSITION
-    print(from_sq)
-    print(to_sq)
+    # print(from_sq)
+    # print(to_sq)
     # is the square visible to the moved piece?
     # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
-    if (visibility[_piece] >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
+    if ((visibility[_piece] & (~pc_board64)) >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
         raise Exception("ILLEGAL_MOVE")
 
+    if _piece % 2 == 0:
+        if from_sq != 0 : # TODO:: REMOVE, it is for testing
+            board64W = board64W & ~(1 << from_sq)
+        board64W = board64W | (1 << to_sq)
+
+    else:
+        if from_sq != 0 : # TODO:: REMOVE, it is for testing
+            board64B = board64B & ~(1 << from_sq)
+        board64B = board64B | (1 << to_sq)
+    board64 = board64W | board64B
+    # Reloading the visibility of the moved piece
+    visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
+    print_board(visibility[_piece])
     # updating board128
     new_state = ((M_SET | to_sq) << (_piece * 8))
     piece_mask = (0xFF << (_piece * 8))
@@ -241,11 +263,9 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     board128 = board128 | new_state # shoving the modified piece byte in
 
     # Updating board64
-    print(board64)
-    if from_sq != 0 : # TODO:: REMOVE, it is for testing
-        board64 = board64 & ~(1 << from_sq)
-    board64 = board64 | (1 << to_sq)
-    print(board64)
+    # print(board64)
+
+    # print(board64)
 
     # TODO:: update DEAD pieces
 
@@ -254,36 +274,31 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
     # Making squares beyond from_sq visible to i_piece
     for pc in engagements[_piece]:
-        if pc % 2 == 0:
-            pc_board64 = board64W
-        else:
-            pc_board64 = board64B
         pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
-        visibility[pc] = _reloadVisibility(pc_board64, board128, pc, pc_sq)
+        visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
 
     engagements[_piece] = []
     i_piece = 0
     while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
+
         # Finding post-move engaged pieces
-        if((visibility[i_piece] >> to_sq) % 2 == 1):
+        if((visibility[i_piece]) >> to_sq)  % 2 == 1:
             # update engagement
             engagements[_piece].append(i_piece)
 
             # Making squares beyond to_sq invisible to i_piece
             i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
-            if i_piece % 2 == 0:
-                pc_board64 = board64W
-            else:
-                pc_board64 = board64B
-            visibility[i_piece] = _reloadVisibility(pc_board64, board128, i_piece, i_sq)
-
+            print("EE")
+            print(i_sq)
+            print("PRE")
+            print_board(pc_board64)
+            visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+            print_board(visibility[i_piece])
         ipc_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
-        if visibility[_piece] >> ipc_sq % 2 == 1:
+        print(ipc_sq)
+        if ((visibility[_piece]) >> ipc_sq) % 2 == 1:
             engagements[i_piece].append(_piece)
         i_piece = i_piece + 1
-
-    # Reloading the visibility of the moved piece
-    visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
 
     return board64W, board64B, board128, engagements, visibility
 ##########################################################
