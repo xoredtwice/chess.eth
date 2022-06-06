@@ -58,7 +58,7 @@ if "'visibility'" in args.command:
 	print("Visibility: ")
 	print_board(vis64)
 elif "'move'" in args.command:
-	board64, board128, engagements, visibility = load_game_state()
+	turn, board64W, board64B, board128, engagements, visibility = load_game_state()
 
 	lsection(f"[[Testing Move of {args.piece} to {args.square}]]")
 
@@ -66,15 +66,16 @@ elif "'move'" in args.command:
 	state = build_state(args.square[1:-1])
 	print(f"piece_id:{piece_id}, state:{state}")
 
-	print("Pre-move state")
-	print_game_state(board64, board128, engagements, visibility)
+	# print("Pre-move state")
+	# print_game_state(board64W, board64B, board128, engagements, visibility)
 
-	board64, board128, engagements, visibility = move(board64, board128, engagements, visibility, piece_id, state)
+	board64W, board64B, board128, engagements, visibility = move(board64W, board64B, board128, engagements, visibility, piece_id, state)
 
 	print("Post-move state")
-	print_game_state(board64, board128, engagements, visibility)
+	print_game_state(turn, board64W, board64B, board128, engagements, visibility)
 
-	save_game_state(board64, board128, engagements, visibility)
+	turn = ~ turn
+	save_game_state(turn, board64W, board64B, board128, engagements, visibility)
 elif "'clear'" in args.command:
 	lsection(f"[[Clearing the state]]")
 	if os.path.exists(conf["pychess"]["state-file"]):

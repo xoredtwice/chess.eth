@@ -115,18 +115,22 @@ def print_engagements(engagements):
     lprint(s)
 
 ##########################################################
-def print_game_state(board64, board128, engagements, visibility):
-    print_board(board64)
+def print_game_state(turn, board64W, board64B, board128, engagements, visibility):
+    print(f"Turn: {turn}")
+    print_board(board64W)
+    print_board(board64B)
     pieces, view = parse_board(board128)
     print_board(view)
     # print(engagements)
     print_engagements(engagements)
 
 ##########################################################
-def save_game_state(board64, board128, engagements, visibility):
+def save_game_state(turn, board64W, board64B, board128, engagements, visibility):
     print("saving game state")
     game_state = {}
-    game_state["board64"] = board64
+    game_state["turn"] = turn
+    game_state["board64W"] = board64W
+    game_state["board64B"] = board64B
     game_state["board128"] = board128
     game_state["engagements"] = engagements
     game_state["visibility"] = visibility
@@ -138,17 +142,21 @@ def load_game_state(pickle_path = 'game_state.pickle'):
         print("loading game state")
         with open(pickle_path, "rb") as f:
             game_state = pickle.load(f)
-            board64 = game_state["board64"]
+            turn = game_state["turn"]
+            board64W = game_state["board64W"]
+            board64B = game_state["board64B"]
             board128 = game_state["board128"]
             engagements = game_state["engagements"]
             visibility = game_state["visibility"]
     else:
         print("initiating game state")
-        board64 = 0x00
+        board64W = 0x00
+        board64B = 0x00
         board128 = 0x00
         engagements = [[]] * 32
         visibility = [0x00] * 32
-    return board64, board128, engagements, visibility
+        turn = 0
+    return turn, board64W, board64B, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):
     mask = 0x0000000000000000

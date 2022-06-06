@@ -21,206 +21,210 @@ def msb64(x):
 
     base = 0
     if (x and 0xFFFFFFFF00000000): 
-    	base = base + 32 #(64/2)
-    	x = x >> 32 #(64/2)
+        base = base + 32 #(64/2)
+        x = x >> 32 #(64/2)
     if (x and 0x00000000FFFF0000):
-    	base = base + 16 #(64/4)
-    	x = x >> 16 #(64/4)
+        base = base + 16 #(64/4)
+        x = x >> 16 #(64/4)
     if (x and 0x0000000000000FF00):
-    	base = base + 8 #64/8
-    	x = x >> 8 #64/8
+        base = base + 8 #64/8
+        x = x >> 8 #64/8
     if (x and 0x000000000000000F0):
-    	base = base + 4 #64/16
-    	x = x >> 4 #64/16
+        base = base + 4 #64/16
+        x = x >> 4 #64/16
 
     return base + bval[x]
 ##########################################################
 def mask_direction(square, direction, block64):
-	# square = SQUARE_ARRAY[square]
-	lsb = ffs(block64)
-	msb = msb64(block64)
-	if MASKS[direction][square] <= MASKS[direction][SQUARE_ARRAY[lsb]] :
-		# directions: NorthWest, West, SouthWest, South	
-		return MASKS[direction][SQUARE_ARRAY[msb]] ^ (1 << msb)	
-	else:
-		# directions: SouthEast, East, NorthEast, North
-		return MASKS[direction][SQUARE_ARRAY[lsb]] ^ (1 << lsb)
+    # square = SQUARE_ARRAY[square]
+    lsb = ffs(block64)
+    msb = msb64(block64)
+    if MASKS[direction][square] <= MASKS[direction][SQUARE_ARRAY[lsb]] :
+        # directions: NorthWest, West, SouthWest, South    
+        return MASKS[direction][SQUARE_ARRAY[msb]] ^ (1 << msb)    
+    else:
+        # directions: SouthEast, East, NorthEast, North
+        return MASKS[direction][SQUARE_ARRAY[lsb]] ^ (1 << lsb)
 ##########################################################
 def pawn_white(board64, _sq):
-	r = (_sq % 8)
-	f = (_sq // 8)
-	mask = 0x00
+    r = (_sq % 8)
+    f = (_sq // 8)
+    mask = 0x00
 
-	if r == 0:
-		raise Exception("White pawn on RANK#1")
-	elif r == 1:  
-		mask = mask | (0x03 << (((f) * 8) + (r + 1)))
-	elif r < 7:
-		mask = mask | (0x01 << (((f) * 8) + (r + 1)))
-	else:
-		print("White Pawn IMP not implemeted")	
+    if r == 0:
+        raise Exception("White pawn on RANK#1")
+    elif r == 1:  
+        mask = mask | (0x03 << (((f) * 8) + (r + 1)))
+    elif r < 7:
+        mask = mask | (0x01 << (((f) * 8) + (r + 1)))
+    else:
+        print("White Pawn IMP not implemeted")    
 
-	if f == 0 :
-		mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)))
-	elif f == 7:
-		mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)))
-	else:
-		mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)))
-		mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)))
+    if f == 0 :
+        mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)))
+    elif f == 7:
+        mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)))
+    else:
+        mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)))
+        mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)))
 
-	return mask & (~board64)
+    return mask & (~board64)
 ##########################################################
 def pawn_black(board64, _sq):
-	f = (_sq // 8)
-	r = (_sq % 8)
+    f = (_sq // 8)
+    r = (_sq % 8)
 
-	mask = 0x00
+    mask = 0x00
 
-	if r == 7:
-		raise Exception("Black pawn on RANK#8")
-	elif r == 6:  
-		mask = mask | (0x03 << (((f) * 8) + (r - 2)))
-	elif r > 0:
-		mask = mask | (0x01 << (((f) * 8) + (r - 1)))
-	else:
-		print("Black Pawn IMP not implemeted")	
+    if r == 7:
+        raise Exception("Black pawn on RANK#8")
+    elif r == 6:  
+        mask = mask | (0x03 << (((f) * 8) + (r - 2)))
+    elif r > 0:
+        mask = mask | (0x01 << (((f) * 8) + (r - 1)))
+    else:
+        print("Black Pawn IMP not implemeted")    
 
-	if f == 0 :
-		mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)))
-	elif f == 7:
-		mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)))
-	else:
-		mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)))
-		mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)))
+    if f == 0 :
+        mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)))
+    elif f == 7:
+        mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)))
+    else:
+        mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)))
+        mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)))
 
-	return mask & (~board64)
+    return mask & (~board64)
 ##########################################################
 def rook(board64, _sq):
-	_sq = SQUARE_ARRAY[_sq]
+    _sq = SQUARE_ARRAY[_sq]
 
-	north = MASKS["N"][_sq]
-	north_obs = board64 & north
-	if north_obs != 0x00:
-		north = north & (~ mask_direction(_sq, "N", north_obs))
+    north = MASKS["N"][_sq]
+    north_obs = board64 & north
+    if north_obs != 0x00:
+        north = north & (~ mask_direction(_sq, "N", north_obs))
 
-	south = MASKS["S"][_sq]
-	south_obs = board64 & south
-	if south_obs != 0x00:
-		south = south & (~ mask_direction(_sq, "S", south_obs))
+    south = MASKS["S"][_sq]
+    south_obs = board64 & south
+    if south_obs != 0x00:
+        south = south & (~ mask_direction(_sq, "S", south_obs))
 
-	east = MASKS["E"][_sq]
-	east_obs = board64 & east
-	if east_obs != 0x00:
-		east = east & (~ mask_direction(_sq, "E", east_obs))
+    east = MASKS["E"][_sq]
+    east_obs = board64 & east
+    if east_obs != 0x00:
+        east = east & (~ mask_direction(_sq, "E", east_obs))
 
-	west = MASKS["W"][_sq]
-	west_obs = board64 & west
-	if west_obs != 0x00:
-		west = west & (~ mask_direction(_sq, "W", west_obs))
+    west = MASKS["W"][_sq]
+    west_obs = board64 & west
+    if west_obs != 0x00:
+        west = west & (~ mask_direction(_sq, "W", west_obs))
 
-	return north | south | east | west
+    return north | south | east | west
 ##########################################################
 def bishop(board64, _sq):
-	_sq = SQUARE_ARRAY[_sq]
+    _sq = SQUARE_ARRAY[_sq]
 
-	ne = MASKS["NE"][_sq]
-	ne_obs = board64 & ne
-	if ne_obs != 0x00:
-		ne = ne & (~ mask_direction(_sq, "NE", ne_obs))
+    ne = MASKS["NE"][_sq]
+    ne_obs = board64 & ne
+    if ne_obs != 0x00:
+        ne = ne & (~ mask_direction(_sq, "NE", ne_obs))
 
-	nw = MASKS["NW"][_sq]
-	nw_obs = board64 & nw
-	if nw_obs != 0x00:
-		nw = nw & (~ mask_direction(_sq, "NW", nw_obs))
+    nw = MASKS["NW"][_sq]
+    nw_obs = board64 & nw
+    if nw_obs != 0x00:
+        nw = nw & (~ mask_direction(_sq, "NW", nw_obs))
 
-	se = MASKS["SE"][_sq]
-	se_obs = board64 & se
-	if se_obs != 0x00:
-		se = se & (~ mask_direction(_sq, "SE", se_obs))
+    se = MASKS["SE"][_sq]
+    se_obs = board64 & se
+    if se_obs != 0x00:
+        se = se & (~ mask_direction(_sq, "SE", se_obs))
 
-	sw = MASKS["SW"][_sq]
-	sw_obs = board64 & sw
-	if sw_obs != 0x00:
-		sw = sw & (~ mask_direction(_sq, "SW", sw_obs))
+    sw = MASKS["SW"][_sq]
+    sw_obs = board64 & sw
+    if sw_obs != 0x00:
+        sw = sw & (~ mask_direction(_sq, "SW", sw_obs))
 
-	return ne | nw | se | sw
+    return ne | nw | se | sw
 ##########################################################
 def queen(board64, _sq):
-	return bishop(board64, _sq) | rook(board64, _sq)
+    return bishop(board64, _sq) | rook(board64, _sq)
 ##########################################################
 def king(board64, sq):
-	f_code = FILE_CODES[(sq // 8)]
-	r_code = RANK_CODES[(sq % 8)]
-	if f"*{f_code}{r_code}" in MASKS.keys():
-		return MASKS[f"*{f_code}{r_code}"]
-	else:
-		if RANKS[r_code] == 0:
-			return (MASKS["*B1"] << (8 * (FILES[f_code] - 1))) & (~board64)
-		elif RANKS[r_code] == 7:
-			return (MASKS["*B8"] << (8 * (FILES[f_code] - 1))) & (~board64)
-		elif FILES[f_code] == 0:
-			return (MASKS["*A2"] << (RANKS[r_code] - 1)) & (~board64)
-		elif FILES[f_code] == 7:
-			return (MASKS["*H2"] << (RANKS[r_code] - 1)) & (~board64)
-		else:
-			return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))) & (~board64)
+    f_code = FILE_CODES[(sq // 8)]
+    r_code = RANK_CODES[(sq % 8)]
+    if f"*{f_code}{r_code}" in MASKS.keys():
+        return MASKS[f"*{f_code}{r_code}"]
+    else:
+        if RANKS[r_code] == 0:
+            return (MASKS["*B1"] << (8 * (FILES[f_code] - 1))) & (~board64)
+        elif RANKS[r_code] == 7:
+            return (MASKS["*B8"] << (8 * (FILES[f_code] - 1))) & (~board64)
+        elif FILES[f_code] == 0:
+            return (MASKS["*A2"] << (RANKS[r_code] - 1)) & (~board64)
+        elif FILES[f_code] == 7:
+            return (MASKS["*H2"] << (RANKS[r_code] - 1)) & (~board64)
+        else:
+            return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))) & (~board64)
 ##########################################################
 def knight(board64, _sq):
-	_sq = SQUARE_ARRAY[_sq]
+    _sq = SQUARE_ARRAY[_sq]
 
-	f_code = _sq[0]
-	r_code = _sq[1]
-	mask = 0x0000000000000000
+    f_code = _sq[0]
+    r_code = _sq[1]
+    mask = 0x0000000000000000
 
-	if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] - 2 == (FILES[f_code] - 2) % 8:
-		mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] - 2))))
+    if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] - 2 == (FILES[f_code] - 2) % 8:
+        mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] - 2))))
 
-	if RANKS[r_code] - 1 == (RANKS[r_code] - 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
-		mask = mask | (1 << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] + 2))))
+    if RANKS[r_code] - 1 == (RANKS[r_code] - 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
+        mask = mask | (1 << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] + 2))))
 
-	if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
-		mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] + 2))))
+    if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
+        mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] + 2))))
 
-	if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
-		mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] - 1))))
+    if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
+        mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] - 1))))
 
-	if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
-		mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] - 1))))
+    if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
+        mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] - 1))))
 
-	if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
-		mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] + 1))))
+    if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
+        mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] + 1))))
 
-	if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
-		mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] + 1))))
+    if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
+        mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] + 1))))
 
-	return mask & ~board64
+    return mask & ~board64
 ##########################################################
 def _reloadVisibility(board64, board128, _piece, _position):
 
-	new_vis = 0x000000000000000	
-	if _piece >= PIECE_IDS['W_P_A']:
-		if _piece % 2 == 0 :
-			new_vis = pawn_white(board64, _position)
-		else:
-			new_vis = pawn_black(board64, _position)
-	elif _piece >= PIECE_IDS['W_N_B']:
-		new_vis = knight(board64, _position)
-	elif _piece >= PIECE_IDS['W_B_C']:
-		new_vis = bishop(board64, _position)
-	elif _piece >= PIECE_IDS['W_R_A']:
-		new_vis = rook(board64, _position)
-	elif _piece >= PIECE_IDS['W_Q']:
-		new_vis = queen(board64, _position)
-	else:
-		new_vis = king(board64, _position)
+    new_vis = 0x000000000000000    
+    if _piece >= PIECE_IDS['W_P_A']:
+        if _piece % 2 == 0 :
+            new_vis = pawn_white(board64, _position)
+        else:
+            new_vis = pawn_black(board64, _position)
+    elif _piece >= PIECE_IDS['W_N_B']:
+        new_vis = knight(board64, _position)
+    elif _piece >= PIECE_IDS['W_B_C']:
+        new_vis = bishop(board64, _position)
+    elif _piece >= PIECE_IDS['W_R_A']:
+        new_vis = rook(board64, _position)
+    elif _piece >= PIECE_IDS['W_Q']:
+        new_vis = queen(board64, _position)
+    else:
+        new_vis = king(board64, _position)
 
-	return new_vis
+    return new_vis
 ##########################################################
-def move(board64, board128, engagements, visibility, _piece, _action):
-	
-	# parsing from and to squares 
-    # print(_piece)
+def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
+    
 
+    # parsing from and to squares 
+    # print(_piece)
+    if _piece % 2 == 0:
+        board64 = board64W
+    else:
+        board64 = board64B
     from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION
     to_sq = _action & MASK128_POSITION
     print(from_sq)
@@ -228,7 +232,7 @@ def move(board64, board128, engagements, visibility, _piece, _action):
     # is the square visible to the moved piece?
     # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
     if (visibility[_piece] >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
-    	raise Exception("ILLEGAL_MOVE")
+        raise Exception("ILLEGAL_MOVE")
 
     # updating board128
     new_state = ((M_SET | to_sq) << (_piece * 8))
@@ -239,7 +243,7 @@ def move(board64, board128, engagements, visibility, _piece, _action):
     # Updating board64
     print(board64)
     if from_sq != 0 : # TODO:: REMOVE, it is for testing
-	    board64 = board64 & ~(1 << from_sq)
+        board64 = board64 & ~(1 << from_sq)
     board64 = board64 | (1 << to_sq)
     print(board64)
 
@@ -250,8 +254,12 @@ def move(board64, board128, engagements, visibility, _piece, _action):
 
     # Making squares beyond from_sq visible to i_piece
     for pc in engagements[_piece]:
-    	pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
-    	visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
+        if pc % 2 == 0:
+            pc_board64 = board64W
+        else:
+            pc_board64 = board64B
+        pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
+        visibility[pc] = _reloadVisibility(pc_board64, board128, pc, pc_sq)
 
     engagements[_piece] = []
     i_piece = 0
@@ -263,12 +271,19 @@ def move(board64, board128, engagements, visibility, _piece, _action):
 
             # Making squares beyond to_sq invisible to i_piece
             i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
-            visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+            if i_piece % 2 == 0:
+                pc_board64 = board64W
+            else:
+                pc_board64 = board64B
+            visibility[i_piece] = _reloadVisibility(pc_board64, board128, i_piece, i_sq)
 
+        ipc_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
+        if visibility[_piece] >> ipc_sq % 2 == 1:
+            engagements[i_piece].append(_piece)
         i_piece = i_piece + 1
 
     # Reloading the visibility of the moved piece
     visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
 
-    return board64, board128, engagements, visibility
+    return board64W, board64B, board128, engagements, visibility
 ##########################################################
