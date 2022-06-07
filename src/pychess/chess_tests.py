@@ -1,24 +1,7 @@
-##########################################################
-def set_initial_board():
-	visibilities = [0x00] * 32
-	engagements = [0x00] * 32
-	board64 = 0x00
-	board128 = 0x00
 
-	# setting 32 pieces one by one and updating the states and testing
-	
-	# setting white pawns
-	for i in range(8):
-		updated_piece = PIECE_IDS[f'W_P_{FILE_CODES[i]}']
-		updated_state = build_state(f"{FILE_CODES[i]}2")
-		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
-
-	# setting black pawns
-	for i in range(8):
-		updated_piece = PIECE_IDS[f'B_P_{FILE_CODES[i]}']
-		updated_state = build_state(f"{FILE_CODES[i]}7")
-		board64, board128, engagements,visibilities = move(board64, board128, engagements,visibilities, updated_piece, updated_state)
-##########################################################
+def test_msb():
+	for i in range(1024):
+		print(f"{i}: {msb64(i)}")
 def king_tests():
 	print_board(king("A4"))
 	print_board(king("A5"))

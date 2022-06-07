@@ -1,9 +1,8 @@
-
 MASK128_FILE = 0x38
 MASK128_RANK = 0x07
 MASK128_POSITION = 0x3F
 
-from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASKS
+from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASK128_MODE, MASKS
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
 from src.pychess.chess_utils import print_board, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 ##########################################################
@@ -18,35 +17,35 @@ def ffs(x):
 ##########################################################
 def msb64(x):
     bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
-
+    # print(x)
+    # print(bin(x))
     base = 0
-    if (x and 0xFFFFFFFF00000000): 
-        base = base + 16 #(64/4)
+    if (x & 0xFFFFFFFF00000000 != 0): 
+        base = base + 32 #(64/4)
         x = x >> 32 #(64/2)
-    if (x and 0x00000000FFFF0000):
-        base = base + 8 #(64/8)
+    if (x & 0x00000000FFFF0000 != 0):
+        base = base + 16 #(64/8)
         x = x >> 16 #(64/4)
-    if (x and 0x0000000000000FF00):
-        base = base + 4 #(64/16)
+    if (x & 0x000000000000FF00 != 0):
+        base = base + 8 #(64/16)
         x = x >> 8 #64/8
-    if (x and 0x000000000000000F0):
-        base = base + 2 #(64/32)
+    if (x & 0x00000000000000F0 != 0):
+        base = base + 4 #(64/32)
         x = x >> 4 #64/16
-
-    return (base + bval[x])
+    return (base + bval[x] - 1) # -1 to convert to index
 ##########################################################
 def mask_direction(square, direction, block64):
     # square = SQUARE_ARRAY[square]
     lsb = ffs(block64)
     msb = msb64(block64)
-    # print(lsb)
-    # print(msb)
+    print(lsb)
+    print(msb)
     # print_board(MASKS[direction][square])
     # print_board(MASKS[direction][SQUARE_ARRAY[lsb]])
     sq_id = SQUARE_IDS[square]
-    # print(sq_id)
+    print(sq_id)
 
-    if sq_id > msb :
+    if sq_id >= msb :
         # directions: NorthWest, West, SouthWest, South    
         return MASKS[direction][SQUARE_ARRAY[msb]] #^ (1 << msb)    
     else:
@@ -164,15 +163,15 @@ def king(board64, sq):
         return MASKS[f"*{f_code}{r_code}"]
     else:
         if RANKS[r_code] == 0:
-            return (MASKS["*B1"] << (8 * (FILES[f_code] - 1))) & (~board64)
+            return (MASKS["*B1"] << (8 * (FILES[f_code] - 1)))# & (~board64)
         elif RANKS[r_code] == 7:
-            return (MASKS["*B8"] << (8 * (FILES[f_code] - 1))) & (~board64)
+            return (MASKS["*B8"] << (8 * (FILES[f_code] - 1)))# & (~board64)
         elif FILES[f_code] == 0:
-            return (MASKS["*A2"] << (RANKS[r_code] - 1)) & (~board64)
+            return (MASKS["*A2"] << (RANKS[r_code] - 1))# & (~board64)
         elif FILES[f_code] == 7:
-            return (MASKS["*H2"] << (RANKS[r_code] - 1)) & (~board64)
+            return (MASKS["*H2"] << (RANKS[r_code] - 1))# & (~board64)
         else:
-            return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1)))) & (~board64)
+            return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1))))# & (~board64)
 ##########################################################
 def knight(board64, _sq):
     _sq = SQUARE_ARRAY[_sq]
@@ -202,7 +201,7 @@ def knight(board64, _sq):
     if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
         mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] + 1))))
 
-    return mask & ~board64
+    return mask #& ~board64
 ##########################################################
 def _reloadVisibility(board64, board128, _piece, _position):
 
@@ -288,15 +287,16 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
             # Making squares beyond to_sq invisible to i_piece
             i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
-            print("EE")
-            print(i_sq)
-            print("PRE")
-            print_board(pc_board64)
+            # print("EE")
+            # print(i_sq)
+            # print("PRE")
+            # print_board(pc_board64)
             visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
-            print_board(visibility[i_piece])
+            # print_board(visibility[i_piece])
         ipc_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
-        print(ipc_sq)
-        if ((visibility[_piece]) >> ipc_sq) % 2 == 1:
+        ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+        # print(ipc_sq)
+        if ((visibility[_piece]) >> ipc_sq) % 2 == 1 and ipc_mode != 0:
             engagements[i_piece].append(_piece)
         i_piece = i_piece + 1
 
