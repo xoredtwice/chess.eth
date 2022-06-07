@@ -6,9 +6,6 @@ from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITIO
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
 from src.pychess.chess_utils import print_board, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 ##########################################################
-def is_power_of_two(n):
-    return (n != 0) and (n & (n-1) == 0)
-##########################################################
 def ffs(x):
     """Returns the index, counting from 0, of the
     least significant set bit in `x`.
@@ -17,21 +14,19 @@ def ffs(x):
 ##########################################################
 def msb64(x):
     bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
-    # print(x)
-    # print(bin(x))
     base = 0
     if (x & 0xFFFFFFFF00000000 != 0): 
-        base = base + 32 #(64/4)
-        x = x >> 32 #(64/2)
+        base = base + 32 # (64/2)
+        x = x >> 32 # (64/2)
     if (x & 0x00000000FFFF0000 != 0):
-        base = base + 16 #(64/8)
-        x = x >> 16 #(64/4)
+        base = base + 16 # (64/4)
+        x = x >> 16 # (64/4)
     if (x & 0x000000000000FF00 != 0):
-        base = base + 8 #(64/16)
-        x = x >> 8 #64/8
+        base = base + 8 # (64/8)
+        x = x >> 8 # (64/8)
     if (x & 0x00000000000000F0 != 0):
-        base = base + 4 #(64/32)
-        x = x >> 4 #64/16
+        base = base + 4 # (64/16)
+        x = x >> 4 # (64/16)
     return (base + bval[x] - 1) # -1 to convert to index
 ##########################################################
 def mask_direction(square, direction, block64):
@@ -74,7 +69,7 @@ def pawn_white(board64, _sq):
         mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)))
         mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)))
 
-    return mask & (~board64)
+    return mask
 ##########################################################
 def pawn_black(board64, _sq):
     f = (_sq // 8)
@@ -99,7 +94,7 @@ def pawn_black(board64, _sq):
         mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)))
         mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)))
 
-    return mask & (~board64)
+    return mask
 ##########################################################
 def rook(board64, _sq):
     _sq = SQUARE_ARRAY[_sq]
@@ -163,15 +158,15 @@ def king(board64, sq):
         return MASKS[f"*{f_code}{r_code}"]
     else:
         if RANKS[r_code] == 0:
-            return (MASKS["*B1"] << (8 * (FILES[f_code] - 1)))# & (~board64)
+            return (MASKS["*B1"] << (8 * (FILES[f_code] - 1)))
         elif RANKS[r_code] == 7:
-            return (MASKS["*B8"] << (8 * (FILES[f_code] - 1)))# & (~board64)
+            return (MASKS["*B8"] << (8 * (FILES[f_code] - 1)))
         elif FILES[f_code] == 0:
-            return (MASKS["*A2"] << (RANKS[r_code] - 1))# & (~board64)
+            return (MASKS["*A2"] << (RANKS[r_code] - 1))
         elif FILES[f_code] == 7:
-            return (MASKS["*H2"] << (RANKS[r_code] - 1))# & (~board64)
+            return (MASKS["*H2"] << (RANKS[r_code] - 1))
         else:
-            return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1))))# & (~board64)
+            return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1))))
 ##########################################################
 def knight(board64, _sq):
     _sq = SQUARE_ARRAY[_sq]
@@ -201,7 +196,7 @@ def knight(board64, _sq):
     if RANKS[r_code] + 2 == (RANKS[r_code] + 2) % 8  and FILES[f_code] + 1 == (FILES[f_code] + 1) % 8:
         mask = mask | (1 << ((RANKS[r_code] + 2) + (8 * (FILES[f_code] + 1))))
 
-    return mask #& ~board64
+    return mask
 ##########################################################
 def _reloadVisibility(board64, board128, _piece, _position):
 
@@ -229,9 +224,9 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     # print(_piece)
 
     if _piece % 2 == 0:
-    	pc_board64 = board64W
+        pc_board64 = board64W
     else:
-    	pc_board64 = board64B
+        pc_board64 = board64B
 
     from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION
     to_sq = _action & MASK128_POSITION
@@ -242,6 +237,7 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     if ((visibility[_piece] & (~pc_board64)) >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
         raise Exception("ILLEGAL_MOVE")
 
+    # Updating board64
     if _piece % 2 == 0:
         if from_sq != 0 : # TODO:: REMOVE, it is for testing
             board64W = board64W & ~(1 << from_sq)
@@ -252,35 +248,31 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
             board64B = board64B & ~(1 << from_sq)
         board64B = board64B | (1 << to_sq)
     board64 = board64W | board64B
-    # Reloading the visibility of the moved piece
-    visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
-    print_board(visibility[_piece])
+
     # updating board128
     new_state = ((M_SET | to_sq) << (_piece * 8))
     piece_mask = (0xFF << (_piece * 8))
     board128 = board128 & (~piece_mask) # clean previous piece state
     board128 = board128 | new_state # shoving the modified piece byte in
-
-    # Updating board64
-    # print(board64)
-
-    # print(board64)
+    
+    # Reloading the visibility of the moved piece
+    visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
+    print_board(visibility[_piece])
 
     # TODO:: update DEAD pieces
 
-    # update engagements and visibility
-    new_engagement = 0x00
 
-    # Making squares beyond from_sq visible to i_piece
+    # Making squares beyond from_sq visible to engaged pieces
     for pc in engagements[_piece]:
         pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
         visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
 
+    # update engagements
     engagements[_piece] = []
     i_piece = 0
     while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
 
-        # Finding post-move engaged pieces
+        # Adding post-move _piece to i_piece engagements
         if((visibility[i_piece]) >> to_sq)  % 2 == 1:
             # update engagement
             engagements[_piece].append(i_piece)
@@ -293,11 +285,18 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
             # print_board(pc_board64)
             visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
             # print_board(visibility[i_piece])
+                    
+            # removing the broken engagements
+            for jpc in engagements[i_piece]:
+                if((visibility[jpc]) >> i_sq)  % 2 != 1:
+                    engagements[i_piece].remove(jpc)
+        
+        # Adding post-move _piece to i_piece engagements
         ipc_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
         ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
-        # print(ipc_sq)
         if ((visibility[_piece]) >> ipc_sq) % 2 == 1 and ipc_mode != 0:
             engagements[i_piece].append(_piece)
+
         i_piece = i_piece + 1
 
     return board64W, board64B, board128, engagements, visibility
