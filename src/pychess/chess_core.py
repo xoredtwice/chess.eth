@@ -144,10 +144,7 @@ def bishop(board64, _sq):
 def queen(board64, _sq):
     return bishop(board64, _sq) | rook(board64, _sq)
 ##########################################################
-def king(visibility, _player, _sq):
-	# TODO:: add revert for check squares
-	# OR all opposite color visibilities and check whether the _sq is set
-
+def king(_sq):
     f_code = FILE_CODES[(_sq // 8)]
     r_code = RANK_CODES[(_sq % 8)]
     if f"*{f_code}{r_code}" in MASKS.keys():
@@ -194,26 +191,25 @@ def knight(_sq):
 
     return mask
 ##########################################################
-def _reloadVisibility(board64, board128, _piece, _position):
-	# TODO:: make sure piece is in legal range
-    new_vis = 0x000000000000000    
+def _reloadVisibility(board64, board128, _piece, _sq):
+    # TODO:: make sure piece is in legal range
+    new_vis = 0x000000000000000
+
     if _piece >= PIECE_IDS['W_P_A']:
         if _piece % 2 == 0 :
-            new_vis = pawn_white(_position)
+            new_vis = pawn_white(_sq)
         else:
-            new_vis = pawn_black(_position)
+            new_vis = pawn_black(_sq)
     elif _piece >= PIECE_IDS['W_N_B']:
-        new_vis = knight(_position)
+        new_vis = knight(_sq)
     elif _piece >= PIECE_IDS['W_B_C']:
-        new_vis = bishop(board64, _position)
+        new_vis = bishop(board64, _sq)
     elif _piece >= PIECE_IDS['W_R_A']:
-        new_vis = rook(board64, _position)
+        new_vis = rook(board64, _sq)
     elif _piece >= PIECE_IDS['W_Q']:
-        new_vis = queen(board64, _position)
+        new_vis = queen(board64, _sq)
     else:
-        new_vis = king(_position)
-
-    # TODO:: alert when the move is causing check
+        new_vis = king(_sq)
 
     return new_vis
 ##########################################################
@@ -264,53 +260,65 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
         pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
         visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
 
-
     # update engagements
     engagements[_piece] = []
     i_piece = 0
+    opp_vis = 0x00
+
+    # Keeping kings position in mind
+    if _piece % 2 == 0:
+        king_sq = board128 & MASK128_POSITION
+    else:
+        king_sq = (board128 >> 8) & MASK128_POSITION
+
+    # Loop over all pieces
     while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
-    	if i_piece != _piece:
-	        i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
 
-	        # Update dead piece state
-	        if i_sq == to_sq:
-			    new_state = M_DEAD << (i_piece * 8)
-			    board128 = update_piece128(board128, i_piece, new_state)
+        # opponent total visibility calculation
+        if (_piece % 2 == 0 and i_piece % 2 == 1) or (_piece % 2 == 1 and i_piece % 2 == 0) :
+            opp_vis = opp_vis | visibility[i_piece]
 
-			else:
-				# Adding post-move _piece to i_piece engagements
-		        if((visibility[i_piece]) >> to_sq)  % 2 == 1:
-		            # update engagement
-		            engagements[_piece].append(i_piece)
+        # for all pieces except the moved piece
+        if i_piece != _piece:
+            # i_piece square calculation
+            i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
 
-		            # Making squares beyond to_sq invisible to i_piece
-		            # print("EE")
-		            # print(i_sq)
-		            # print("PRE")
-		            # print_board(pc_board64)
-		            visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+            # Update dead piece state
+            if i_sq == to_sq:
+                new_state = M_DEAD << (i_piece * 8)
+                board128 = update_piece128(board128, i_piece, new_state)
+            else:
+                # Adding post-move _piece to i_piece engagements
+                if((visibility[i_piece]) >> to_sq)  % 2 == 1:
+                    # update engagement
+                    engagements[_piece].append(i_piece)
 
-		            # removing the broken engagements
-		            for jpc in engagements[i_piece]:
-		            	if i_piece == 5 and _piece == 17:
-		                	print_board(visibility[jpc])
-		                if((visibility[jpc]) >> i_sq)  % 2 != 1:
-		                    engagements[i_piece].remove(jpc)
-		        
-		        # Adding post-move _piece to i_piece engagements
-		        ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
-		        if ((visibility[_piece]) >> ipc_sq) % 2 == 1 and ipc_mode != 0:
-		            engagements[i_piece].append(_piece)
+                    # Making squares beyond to_sq invisible to i_piece
+                    visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+
+                    # removing the broken engagements
+                    for jpc in engagements[i_piece]:
+                        if((visibility[jpc]) >> i_sq)  % 2 != 1:
+                            engagements[i_piece].remove(jpc)
+                
+                # Adding post-move _piece to i_piece engagements
+                ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+                if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
+                    engagements[i_piece].append(_piece)
         i_piece = i_piece + 1
+
+    # player's king must be safe post-move
+    if opp_vis >> king_sq % 2 == 1:
+        raise Exception("ChessCore: KING_IS_CHECK")
 
     # Checking white's checkmate
     if _piece % 2 == 1 and visibility[0] == 0 and (board128 >> 7) % 2 == 1 :
-    	# black won
-    	print("BLACK WON!! not implemented")
+        # black won
+        print("BLACK WON!! not implemented")
 
     # Checking black's checkmate
     if _piece % 2 == 0 and visibility[1] == 0 and (board128 >> 15) % 2 == 1 :
-    	# white won
-    	print("WHITE WON!! not implemented")
+        # white won
+        print("WHITE WON!! not implemented")
     return board64W, board64B, board128, engagements, visibility
 ##########################################################
