@@ -115,17 +115,16 @@ def print_engagements(engagements):
     lprint(s)
 
 ##########################################################
-def print_game_state(turn, board64W, board64B, board128, engagements, visibility):
+def print_game_state(turn, board64W, board64B, board128, engagements, engagements_1, visibility):
     print(f"Turn: {turn}")
     print_board(board64W)
     print_board(board64B)
     pieces, view = parse_board(board128)
     print_board(view)
-    # print(engagements)
     print_engagements(engagements)
-
+    print_engagements(engagements_1)
 ##########################################################
-def save_game_state(turn, board64W, board64B, board128, engagements, visibility):
+def save_game_state(turn, board64W, board64B, board128, engagements, engagements_1, visibility):
     print("saving game state")
     game_state = {}
     game_state["turn"] = turn
@@ -133,6 +132,7 @@ def save_game_state(turn, board64W, board64B, board128, engagements, visibility)
     game_state["board64B"] = board64B
     game_state["board128"] = board128
     game_state["engagements"] = engagements
+    game_state["engagements_1"] = engagements_1
     game_state["visibility"] = visibility
     with open('game_state.pickle', 'wb') as f:
         pickle.dump(game_state, f)
@@ -147,6 +147,7 @@ def load_game_state(pickle_path = 'game_state.pickle'):
             board64B = game_state["board64B"]
             board128 = game_state["board128"]
             engagements = game_state["engagements"]
+            engagements_1 = game_state["engagements_1"]
             visibility = game_state["visibility"]
     else:
         print("initiating game state")
@@ -154,9 +155,10 @@ def load_game_state(pickle_path = 'game_state.pickle'):
         board64B = 0x00
         board128 = 0x00
         engagements = [[]] * 32
+        engagements_1 = [[]] * 32
         visibility = [0x00] * 32
         turn = 0
-    return turn, board64W, board64B, board128, engagements, visibility
+    return turn, board64W, board64B, board128, engagements, engagements_1, visibility
 ##########################################################
 def build_mask(squares):
     mask = 0x0000000000000000

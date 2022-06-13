@@ -29,9 +29,9 @@ def mask_direction(square, direction, block64):
     lsb = ffs(block64)
     msb = msb64(block64)
     sq_id = SQUARE_IDS[square]
-    print(lsb)
-    print(msb)
-    print(sq_id)
+    # print(lsb)
+    # print(msb)
+    # print(sq_id)
 
     if sq_id >= msb :
         # directions: NorthWest, West, SouthWest, South    
@@ -98,11 +98,13 @@ def rook(board64, _sq):
         north = north & (~ mask_direction(_sq, "N", north_obs))
 
     south = MASKS["S"][_sq]
-    print_board(south)
+    # print("    ")
+    # print_board(south)
     south_obs = board64 & south
-    print_board(south_obs)
+    # print_board(south_obs)
     if south_obs != 0x00:
         south = south & (~ mask_direction(_sq, "S", south_obs))
+    # print_board(south)
 
     east = MASKS["E"][_sq]
     east_obs = board64 & east
@@ -219,7 +221,7 @@ def update_piece128(board128, _piece, _state):
     board128 = board128 | _state # shoving the modified piece byte in
     return board128
 ##########################################################
-def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
+def move(board64W, board64B, board128, engagements, engagements_1, visibility, _piece, _action):
 
     if _piece % 2 == 0:
         pc_board64 = board64W
@@ -237,12 +239,12 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
     # Updating board64
     if _piece % 2 == 0:
-        if from_sq != 0 : # TODO:: REMOVE, it is for testing
+        if from_sq != 0 : # TODO:: REMOVE, it is for     ing
             board64W = board64W & ~(1 << from_sq)
         board64W = board64W | (1 << to_sq)
 
     else:
-        if from_sq != 0 : # TODO:: REMOVE, it is for testing
+        if from_sq != 0 : # TODO:: REMOVE, it is for     ing
             board64B = board64B & ~(1 << from_sq)
         board64B = board64B | (1 << to_sq)
     board64 = board64W | board64B
@@ -288,23 +290,36 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
                 new_state = M_DEAD << (i_piece * 8)
                 board128 = update_piece128(board128, i_piece, new_state)
             else:
+                ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+
                 # Adding post-move _piece to i_piece engagements
-                if((visibility[i_piece]) >> to_sq)  % 2 == 1:
+                if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
+                    print("GOT IT")
                     # update engagement
                     engagements[_piece].append(i_piece)
+                    # engagements_1[i_piece].append(_piece)
+
 
                     # Making squares beyond to_sq invisible to i_piece
                     visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
-
+                    print_board(visibility[i_piece])
+                    # print(engagements[i_piece])
                     # removing the broken engagements
-                    for jpc in engagements[i_piece]:
-                        if((visibility[jpc]) >> i_sq)  % 2 != 1:
-                            engagements[i_piece].remove(jpc)
+                    for j_piece in engagements_1[i_piece]:
+                        print("engagements_1")
+                        j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
+                        print(j_piece)
+                        print(j_sq)
+                        if(visibility[i_piece] >> j_sq) % 2 != 1:
+                            engagements[i_piece].remove(j_piece)
+                            engagements_1[j_piece].remove(i_piece)
                 
                 # Adding post-move _piece to i_piece engagements
-                ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+                # print(f"mode: {ipc_mode}")
                 if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
                     engagements[i_piece].append(_piece)
+                    engagements_1[_piece].append(i_piece)
+                    # print_engagements(engagements_1)
         i_piece = i_piece + 1
 
     # player's king must be safe post-move
@@ -320,5 +335,5 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     if _piece % 2 == 0 and visibility[1] == 0 and (board128 >> 15) % 2 == 1 :
         # white won
         print("WHITE WON!! not implemented")
-    return board64W, board64B, board128, engagements, visibility
+    return board64W, board64B, board128, engagements, engagements_1, visibility
 ##########################################################
