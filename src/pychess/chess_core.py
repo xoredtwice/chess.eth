@@ -221,7 +221,14 @@ def update_piece128(board128, _piece, _state):
     board128 = board128 | _state # shoving the modified piece byte in
     return board128
 ##########################################################
-def move(board64W, board64B, board128, engagements, engagements_1, visibility, _piece, _action):
+def set_engagement(engagements, _f_piece, _t_piece, _value):
+    if _value == 0:
+        engagements = engagements & ~(1<< (_f_piece * 32 + _t_piece))
+    else:
+        engagements = engagements |  (1<< (_f_piece * 32 + _t_piece))
+    return engagements
+##########################################################
+def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
 
     if _piece % 2 == 0:
         pc_board64 = board64W
@@ -258,12 +265,12 @@ def move(board64W, board64B, board128, engagements, engagements_1, visibility, _
     print_board(visibility[_piece])
 
     # Making squares beyond from_sq visible to engaged pieces
-    for pc in engagements[_piece]:
-        pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
-        visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
+    # for pc in engagements[_piece]:
+    #     pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
+    #     visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
 
     # update engagements
-    engagements[_piece] = []
+    # engagements[_piece] = 0x00000000000000000000000000000000
     i_piece = 0
     opp_vis = 0x00
 
@@ -294,31 +301,27 @@ def move(board64W, board64B, board128, engagements, engagements_1, visibility, _
 
                 # Adding post-move _piece to i_piece engagements
                 if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
-                    print("GOT IT")
                     # update engagement
-                    engagements[_piece].append(i_piece)
-                    # engagements_1[i_piece].append(_piece)
-
+                    set_engagement(engagements, _piece, i_piece, 1)
 
                     # Making squares beyond to_sq invisible to i_piece
                     visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
                     print_board(visibility[i_piece])
-                    # print(engagements[i_piece])
+
                     # removing the broken engagements
-                    for j_piece in engagements_1[i_piece]:
-                        print("engagements_1")
-                        j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
-                        print(j_piece)
-                        print(j_sq)
-                        if(visibility[i_piece] >> j_sq) % 2 != 1:
-                            engagements[i_piece].remove(j_piece)
-                            engagements_1[j_piece].remove(i_piece)
+                    # for j_piece in engagements_1[i_piece]:
+                    #     j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
+                    #     if(visibility[i_piece] >> j_sq) % 2 != 1:
+                    #         set_engagement(_piece, i_piece, 0)
+                    #         engagements[i_piece].remove(j_piece)
+                    #        # engagements_1[j_piece].remove(i_piece)
                 
                 # Adding post-move _piece to i_piece engagements
                 # print(f"mode: {ipc_mode}")
                 if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
-                    engagements[i_piece].append(_piece)
-                    engagements_1[_piece].append(i_piece)
+                    set_engagement(engagements, i_piece, _piece, 1)
+                    # engagements[i_piece].append(_piece)
+                    # engagements_1[_piece].append(i_piece)
                     # print_engagements(engagements_1)
         i_piece = i_piece + 1
 
@@ -335,5 +338,5 @@ def move(board64W, board64B, board128, engagements, engagements_1, visibility, _
     if _piece % 2 == 0 and visibility[1] == 0 and (board128 >> 15) % 2 == 1 :
         # white won
         print("WHITE WON!! not implemented")
-    return board64W, board64B, board128, engagements, engagements_1, visibility
+    return board64W, board64B, board128, engagements, visibility
 ##########################################################

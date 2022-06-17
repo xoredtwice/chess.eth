@@ -103,28 +103,39 @@ def piece_to_piece_id(piece):
 ##########################################################
 def print_engagements(engagements):
     s = "engagements: {\n"
-    for i in range(len(engagements)):
-        piece_unicode = PIECE_UNICODES[PIECE_CODES[i][:3]]
-        piece_code = PIECE_CODES[i]
-        s = s + f"\n{piece_unicode}({piece_code}) \t: ["
-        for j in range(len(engagements[i])):
-            j_unicode = PIECE_UNICODES[PIECE_CODES[engagements[i][j]][:3]]
-            j_code = PIECE_CODES[engagements[i][j]]
+    i_piece = 0
+    j_piece = 0
+    while engagements != 0:
+
+        i_unicode = PIECE_UNICODES[PIECE_CODES[i_piece][:3]]
+        i_code = PIECE_CODES[i_piece]
+
+        j_unicode = PIECE_UNICODES[PIECE_CODES[engagements[i][j]][:3]]
+        j_code = PIECE_CODES[engagements[i][j]]
+        
+        # there is an engagement from i_piece to j_piece
+        if engagements % 2 == 1:
+            s = s + f"\n{i_unicode}({i_code}) \t: ["
             s = s + f"{j_unicode}({j_code}), "
-        s = s[:-2] + "]"
+
+        engagements = engagements // 2
+        i_piece = i_piece + 1
+        if i_piece == 32:
+            j_piece = j_piece + 1
+            i_piece = 0
+            s = s[:-2] + "]"
     lprint(s)
 
 ##########################################################
-def print_game_state(turn, board64W, board64B, board128, engagements, engagements_1, visibility):
+def print_game_state(turn, board64W, board64B, board128, engagements, visibility):
     print(f"Turn: {turn}")
     print_board(board64W)
     print_board(board64B)
     pieces, view = parse_board(board128)
     print_board(view)
     print_engagements(engagements)
-    print_engagements(engagements_1)
 ##########################################################
-def save_game_state(turn, board64W, board64B, board128, engagements, engagements_1, visibility):
+def save_game_state(turn, board64W, board64B, board128, engagements, visibility):
     print("saving game state")
     game_state = {}
     game_state["turn"] = turn
@@ -132,7 +143,6 @@ def save_game_state(turn, board64W, board64B, board128, engagements, engagements
     game_state["board64B"] = board64B
     game_state["board128"] = board128
     game_state["engagements"] = engagements
-    game_state["engagements_1"] = engagements_1
     game_state["visibility"] = visibility
     with open('game_state.pickle', 'wb') as f:
         pickle.dump(game_state, f)
@@ -147,18 +157,16 @@ def load_game_state(pickle_path = 'game_state.pickle'):
             board64B = game_state["board64B"]
             board128 = game_state["board128"]
             engagements = game_state["engagements"]
-            engagements_1 = game_state["engagements_1"]
             visibility = game_state["visibility"]
     else:
         print("initiating game state")
         board64W = 0x00
         board64B = 0x00
         board128 = 0x00
-        engagements = [[]] * 32
-        engagements_1 = [[]] * 32
+        engagements = 0x00000000000000000000000000000000
         visibility = [0x00] * 32
         turn = 0
-    return turn, board64W, board64B, board128, engagements, engagements_1, visibility
+    return turn, board64W, board64B, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):
     mask = 0x0000000000000000
