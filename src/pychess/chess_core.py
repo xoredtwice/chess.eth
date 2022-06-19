@@ -228,6 +228,15 @@ def set_engagement(engagements, _f_piece, _t_piece, _value):
         engagements = engagements |  (1<< (_f_piece * 32 + _t_piece))
     return engagements
 ##########################################################
+def reset_piece_engagements(engagements, _piece, _direction):
+    if _direction == 0:
+        engagements = engagements & ~( 0xFFFFFFFF << _piece)        
+    else:
+        # TODO:: wrong
+        for i in range(32):
+            engagements = engagements & ~( 0x00000001 << (i * 32 + _piece))
+    return engagements
+##########################################################
 def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
 
     if _piece % 2 == 0:
@@ -270,7 +279,9 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     #     visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
 
     # update engagements
+    engagements = reset_piece_engagements(engagements, _piece, 0)
     # engagements[_piece] = 0x00000000000000000000000000000000
+
     i_piece = 0
     opp_vis = 0x00
 
@@ -320,9 +331,7 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
                 # print(f"mode: {ipc_mode}")
                 if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
                     set_engagement(engagements, i_piece, _piece, 1)
-                    # engagements[i_piece].append(_piece)
-                    # engagements_1[_piece].append(i_piece)
-                    # print_engagements(engagements_1)
+
         i_piece = i_piece + 1
 
     # player's king must be safe post-move
