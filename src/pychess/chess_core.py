@@ -1,6 +1,6 @@
 from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASK128_MODE, MASKS
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
-from src.pychess.chess_utils import print_board, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
+from src.pychess.chess_utils import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 ##########################################################
 def ffs(x):
     """Returns the index, counting from 0, of the
@@ -29,9 +29,6 @@ def mask_direction(square, direction, block64):
     lsb = ffs(block64)
     msb = msb64(block64)
     sq_id = SQUARE_IDS[square]
-    # print(lsb)
-    # print(msb)
-    # print(sq_id)
 
     if sq_id >= msb :
         # directions: NorthWest, West, SouthWest, South    
@@ -274,13 +271,17 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     print_board(visibility[_piece])
 
     # Making squares beyond from_sq visible to engaged pieces
-    # for pc in engagements[_piece]:
-    #     pc_sq = (board128 >> (pc * 8)) & MASK128_POSITION
-    #     visibility[pc] = _reloadVisibility(board64, board128, pc, pc_sq)
+    start_index = _piece * 32
+    end_index = start_index + 32
+    sub_engagements = engagements >> start_index
+    for i in range(end_index - start_index):
+        if sub_engagements % 2 == 1:
+            pc_sq = (board128 >> (i * 8)) & MASK128_POSITION
+            visibility[i] = _reloadVisibility(board64, board128, i, pc_sq)
+        sub_engagements = sub_engagements >> 1
 
-    # update engagements
+    # Reset engagements of the moved piece
     engagements = reset_piece_engagements(engagements, _piece, 0)
-    # engagements[_piece] = 0x00000000000000000000000000000000
 
     i_piece = 0
     opp_vis = 0x00
@@ -312,25 +313,35 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
                 # Adding post-move _piece to i_piece engagements
                 if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
+                    # print("_piece to i_piece")
                     # update engagement
-                    set_engagement(engagements, _piece, i_piece, 1)
+                    engagements = set_engagement(engagements, _piece, i_piece, 1)
+                    # print_engagements(engagements)
 
                     # Making squares beyond to_sq invisible to i_piece
                     visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
                     print_board(visibility[i_piece])
 
                     # removing the broken engagements
-                    # for j_piece in engagements_1[i_piece]:
-                    #     j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
-                    #     if(visibility[i_piece] >> j_sq) % 2 != 1:
-                    #         set_engagement(_piece, i_piece, 0)
-                    #         engagements[i_piece].remove(j_piece)
-                    #        # engagements_1[j_piece].remove(i_piece)
+                    # print(f"i_piece:{i_piece}")
+                    # print(bin(engagements))
+                    sub_engagements = engagements >> i_piece
+                    for j_piece in range(32):
+                        if sub_engagements % 2 == 1:
+                            # print("test1")
+                            j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
+                            # print(j_sq)
+                            # print(j_piece)
+                            # print(i_piece)
+                            if(visibility[i_piece] >> j_sq) % 2 == 0:
+                                # print("test2")
+                                engagements = set_engagement(engagements, j_piece, i_piece, 0)
+                        sub_engagements = sub_engagements >> 32
+                        # print(bin(sub_engagements))
                 
                 # Adding post-move _piece to i_piece engagements
-                # print(f"mode: {ipc_mode}")
                 if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
-                    set_engagement(engagements, i_piece, _piece, 1)
+                    engagements = set_engagement(engagements, i_piece, _piece, 1)
 
         i_piece = i_piece + 1
 
