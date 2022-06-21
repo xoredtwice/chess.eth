@@ -105,6 +105,7 @@ def print_engagements(engagements):
     s = "engagements: {"
     i_piece = 0
     j_piece = 0
+    j_flag = False
     while engagements != 0:
         i_unicode = PIECE_UNICODES[PIECE_CODES[i_piece][:3]]
         i_code = PIECE_CODES[i_piece]
@@ -114,15 +115,17 @@ def print_engagements(engagements):
         
         # there is an engagement from i_piece to j_piece
         if engagements % 2 == 1:
-            s = s + f"\n{j_unicode}({j_code}) \t: "
-            s = s + f"{i_unicode}({i_code})"
+            if j_flag == False:
+                s = s + f"\n{j_unicode}({j_code}) \t: "
+                j_flag = True
+            s = s + f"{i_unicode}({i_code}) "
 
         engagements = engagements // 2
         i_piece = i_piece + 1
         if i_piece == 32:
             j_piece = j_piece + 1
+            j_flag = False
             i_piece = 0
-            #s = s[:-2] + "]"
     lprint(s + "\n}")
 ##########################################################
 def print_game_state(turn, board64W, board64B, board128, engagements, visibility):

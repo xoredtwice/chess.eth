@@ -1,6 +1,7 @@
 from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASK128_MODE, MASKS
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
 from src.pychess.chess_utils import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
+from src.utils.logger import lprint
 ##########################################################
 def ffs(x):
     """Returns the index, counting from 0, of the
@@ -176,6 +177,9 @@ def knight(_sq):
     if RANKS[r_code] + 1 == (RANKS[r_code] + 1) % 8  and FILES[f_code] + 2 == (FILES[f_code] + 2) % 8:
         mask = mask | (1 << ((RANKS[r_code] + 1) + (8 * (FILES[f_code] + 2))))
 
+    if RANKS[r_code] - 1 == (RANKS[r_code] - 1) % 8  and FILES[f_code] - 2 == (FILES[f_code] - 2) % 8:
+        mask = mask | (1 << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 2))))
+
     if RANKS[r_code] - 2 == (RANKS[r_code] - 2) % 8  and FILES[f_code] - 1 == (FILES[f_code] - 1) % 8:
         mask = mask | (1 << ((RANKS[r_code] - 2) + (8 * (FILES[f_code] - 1))))
 
@@ -268,13 +272,13 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
     # Reloading the visibility of the moved piece
     visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
+    lprint("Moved piece's visibility:")
     print_board(visibility[_piece])
 
     # Making squares beyond from_sq visible to engaged pieces
-    start_index = _piece * 32
-    end_index = start_index + 32
+    start_index = _piece * PIECE_COUNT
     sub_engagements = engagements >> start_index
-    for i in range(end_index - start_index):
+    for i in range(PIECE_COUNT):
         if sub_engagements % 2 == 1:
             pc_sq = (board128 >> (i * 8)) & MASK128_POSITION
             visibility[i] = _reloadVisibility(board64, board128, i, pc_sq)
@@ -313,31 +317,21 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
                 # Adding post-move _piece to i_piece engagements
                 if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
-                    # print("_piece to i_piece")
                     # update engagement
                     engagements = set_engagement(engagements, _piece, i_piece, 1)
-                    # print_engagements(engagements)
 
                     # Making squares beyond to_sq invisible to i_piece
                     visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
-                    print_board(visibility[i_piece])
+                    # print_board(visibility[i_piece])
 
                     # removing the broken engagements
-                    # print(f"i_piece:{i_piece}")
-                    # print(bin(engagements))
                     sub_engagements = engagements >> i_piece
                     for j_piece in range(32):
                         if sub_engagements % 2 == 1:
-                            # print("test1")
                             j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
-                            # print(j_sq)
-                            # print(j_piece)
-                            # print(i_piece)
                             if(visibility[i_piece] >> j_sq) % 2 == 0:
-                                # print("test2")
                                 engagements = set_engagement(engagements, j_piece, i_piece, 0)
                         sub_engagements = sub_engagements >> 32
-                        # print(bin(sub_engagements))
                 
                 # Adding post-move _piece to i_piece engagements
                 if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:

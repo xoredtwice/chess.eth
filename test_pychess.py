@@ -6,7 +6,7 @@ import json
 
 from src.utils.logger import setup_logger, lprint, lsection
 from src.utils.yaml_wrapper import load_configuration
-from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black, move
+from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black, knight, move
 from src.pychess.chess_consts import SQUARE_IDS
 from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board, print_game_state
 ############################################################################33
@@ -35,27 +35,27 @@ square = args.square[1:-1]
 square = SQUARE_IDS[square]
 piece = args.piece[1:-1]
 if "'visibility'" in args.command:
-    board64 = build_mask(["B1", "C1"])
+    # board64 = build_mask(["B1", "C1"])
 
     lsection(f"[[Testing Visibility of {args.piece} in {args.square}]]")
-    print("Board state: ")
-    print_board(board64)
+    # print("Board state: ")
+    # print_board(board64)
 
     vis64 = 0x00
     if "'rook'" in args.piece:
-        vis64 = rook( board64, square)
+        vis64 = rook(board64, square)
     if "'bishop'" in args.piece:
         vis64 = bishop(board64, square)
     if "'queen'" in args.piece:
         vis64 = queen(board64, square)
     if "'pawnw'" in args.piece:
-        vis64 = pawn_white(board64, square)
+        vis64 = pawn_white(square)
     if "'pawnb'" in args.piece:
-        vis64 = pawn_black(board64, square)
+        vis64 = pawn_black(square)
     if "'king'" in args.piece:
-        vis64 = king(board64, square)
+        vis64 = king(square)
     if "'knight'" in args.piece:
-        vis64 = knight(board64, square)
+        vis64 = knight(square)
 
     print("Visibility: ")
     print_board(vis64)
