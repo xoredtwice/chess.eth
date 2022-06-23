@@ -3,7 +3,7 @@ from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT
 from src.pychess.chess_utils import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 from src.utils.logger import lprint
 ##########################################################
-def ffs(x):
+def lsb64(x):
     """Returns the index, counting from 0, of the
     least significant set bit in `x`.
     """
@@ -27,7 +27,7 @@ def msb64(x):
     return (base + bval[x] - 1) # -1 to convert to index
 ##########################################################
 def mask_direction(square, direction, block64):
-    lsb = ffs(block64)
+    lsb = lsb64(block64)
     msb = msb64(block64)
     sq_id = SQUARE_IDS[square]
 

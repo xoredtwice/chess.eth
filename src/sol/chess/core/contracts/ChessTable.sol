@@ -215,7 +215,55 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
+    //                     [[MATH FUNCTION]]
+    //-----------------------------------------------------------------
+
+    //-----------------------------------------------------------------
+    function _msb64(uint64 x) private{
+        uint8[] bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5];
+        uint8 base = 0;
+        if (x & 0xFFFFFFFF00000000 != 0){
+            base = base + 32; // (64/2)
+            x = x >> 32; // (64/2)
+        }
+        if (x & 0x00000000FFFF0000 != 0){
+            base = base + 16; // (64/4)
+            x = x >> 16; // (64/4)
+        }
+        if (x & 0x000000000000FF00 != 0){
+            base = base + 8; // (64/8)
+            x = x >> 8; // (64/8)
+        }
+        if (x & 0x00000000000000F0 != 0){
+            base = base + 4; // (64/16)
+            x = x >> 4; // (64/16)
+        }
+        return (base + bval[x] - 1); // -1 to convert to index
+    }
+    //-----------------------------------------------------------------
+    function lsb64(uint64 x) private{
+        /*Returns the index, counting from 0, of the
+        least significant set bit in `x`.
+        */
+        return _msb64(x & -x);
+
+    }
+    //-----------------------------------------------------------------
     //                     [[PRIVATE FUNCTION]]
+    //-----------------------------------------------------------------
+    function _mask_direction(uint8 square, uint8 direction, uint64 block64){
+        uint8 lsb = _lsb64(block64);
+        uint8 msb = _msb64(block64);
+        uint8 sq_id = SQUARE_IDS[square];
+
+        if(sq_id >= msb){
+            // directions: NorthWest, West, SouthWest, South    
+            return MASKS[direction][SQUARE_ARRAY[msb]]; //^ (1 << msb)    
+        }else{
+            // directions: SouthEast, East, NorthEast, North
+            return MASKS[direction][SQUARE_ARRAY[lsb]]; //^ (1 << lsb)
+        }
+    }
     //-----------------------------------------------------------------
     // called once by the lobby at time of deployment
     function _initialize(address _player1, address _player2, uint8 meta) private {
@@ -226,6 +274,7 @@ contract ChessTable is IChessTable{
         emit GameStarted(white, black, meta);
     }
 
+    //-----------------------------------------------------------------
     function _logic(uint8 _piece, uint8 _action) private {
 
         uint8 from_sq = ((uint8)(board >> (_piece * 8))) & PC_COORD_MASK;
@@ -300,8 +349,36 @@ contract ChessTable is IChessTable{
     }
 
 
-    function _pawn(uint8 _square) private{
+    function _pawn_white(uint8 _sq) private{
 
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+        require(r!=0, 'ChessTable: FATAL. PAWN_WHITE');
+
+        if(r == 1){
+            mask = mask | (0x03 << (((f) * 8) + (r + 1)));
+        }  
+        else if(r < 7){
+            mask = mask | (0x01 << (((f) * 8) + (r + 1)));
+        }
+        else{
+            // TODO:: implement pawn improvement
+//            print("White Pawn IMP not implemeted")    
+        }
+
+        if(f == 0){
+            mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)));
+        }
+        else if (f == 7){
+            mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)));
+        }
+        else{
+            mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)));
+            mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)));
+        }
+
+        return mask
     }
 
     function _reloadVisibility(uint8 _piece) private{
@@ -321,53 +398,6 @@ contract ChessTable is IChessTable{
             // TODO:: log here later to avoid undetectable bugs
         }
     }
-
-    function _updateVisibility(uint8 _piece, uint8 _square, bool _newBit) private{
-        uint8 p_square = ((uint8)(board >> (_piece * 8))) & PC_COORD_MASK;
-        
-        uint8 file_diff = (((p_square & PC_FILE_MASK) >> 3) - ((_square & PC_FILE_MASK) >> 3)) % 8;
-        uint8 rank_diff = ((p_square & PC_RANK_MASK) - (_square & PC_RANK_MASK)) % 8;
-
-        int8 step = 0;
-        if(_piece < PIECE_COUNT){
-            
-            if(_piece < W_Q){           // KINGS
-                visibility[_piece] |= (_newBit?1:0) << _square;
-            
-            } else if(_piece < W_R_A){  // QUEENS
-            
-                if(file_diff != 0 && rank_diff == 0){step = 1;}
-                else if(file_diff == 0 && rank_diff != 0){step = 8;}
-                else if(rank_diff == file_diff){step = 9;}
-                else{step = -9;}
-
-            } else if(_piece < W_B_C){  // ROOKS
-
-                if(rank_diff){step = 1;}
-                else{step = 8;}
-
-            } else if(_piece < W_N_B){  // BISHOPS
-                
-                if(rank_diff == file_diff){step = 9;}
-                else{step = -9;}
-
-            } else if(_piece < W_P_A){  // KNIGHTS
-                
-                visibility[_piece] |= (_newBit?1:0) << _square;
-            
-            }else{                      // POOR PAWNs
-            
-                visibility[_piece] |= (_newBit?1:0) << _square;
-            
-            }
-
-            if(step){
-
-            }
-        }else{
-            // TODO:: log here later to avoid undetectable bugs
-        }
-    }    
 
     function _move(address _player, uint8 _piece, uint8 _action) private{
         _logic(_piece, _action);
