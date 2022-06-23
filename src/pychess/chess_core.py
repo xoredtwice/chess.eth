@@ -340,16 +340,19 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
         i_piece = i_piece + 1
 
     # player's king must be safe post-move
-    if opp_vis >> king_sq % 2 == 1:
+    print(f"king square: {king_sq}")
+    print(opp_vis >> king_sq)
+    if (opp_vis >> king_sq) % 2 == 1:
         raise Exception("ChessCore: KING_IS_CHECK")
 
     # Checking white's checkmate
-    if _piece % 2 == 1 and visibility[0] == 0 and (board128 >> 7) % 2 == 1 :
+    print_board(visibility[0] & (~board64W))
+    if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (board128 >> 7) % 2 == 1 :
         # black won
         print("BLACK WON!! not implemented")
 
     # Checking black's checkmate
-    if _piece % 2 == 0 and visibility[1] == 0 and (board128 >> 15) % 2 == 1 :
+    if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (board128 >> 15) % 2 == 1 :
         # white won
         print("WHITE WON!! not implemented")
     return board64W, board64B, board128, engagements, visibility
