@@ -323,37 +323,15 @@ contract ChessTable is IChessTable{
         _reloadVisibility(_piece);
 
     }
-
-    function _king(uint8 _square) private{
-
-    }
-
-
-    function _queen(uint8 _square) private{
-
-    }
-
-
-    function _rook(uint8 _square) private{
-
-    }
-
-
-    function _bishop(uint8 _square) private{
-
-    }
-
-
-    function _knight(uint8 _square) private{
-
-    }
-
-
-    function _pawn_white(uint8 _sq) private{
+    //-----------------------------------------------------------------
+    //                     [[VISIBILITY FUNCTIONS]]
+    //-----------------------------------------------------------------
+    function _pawn_white(uint8 _sq) private returns (uint64){
 
         uint8 r = (_sq % 8);
         uint8 f = ((_sq - r) % 8);
         uint64 mask = 0x00;
+ 
         require(r!=0, 'ChessTable: FATAL. PAWN_WHITE');
 
         if(r == 1){
@@ -364,7 +342,7 @@ contract ChessTable is IChessTable{
         }
         else{
             // TODO:: implement pawn improvement
-//            print("White Pawn IMP not implemeted")    
+            require(1==0, 'ChessTable: IMP ERROR');
         }
 
         if(f == 0){
@@ -378,9 +356,179 @@ contract ChessTable is IChessTable{
             mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)));
         }
 
-        return mask
+        return mask;
     }
+    //-----------------------------------------------------------------
+    function _pawn_black(uint8 _sq) private returns (uint64){
 
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+        require(r != 7, 'ChessTable: FATAL. PAWN_WHITE');
+
+        if(r == 6){
+            mask = mask | (0x03 << (((f) * 8) + (r + 1)));
+        }  
+        else if(r != 0){
+            mask = mask | (0x01 << (((f) * 8) + (r + 1)));
+        }
+        else{
+            // TODO:: implement pawn improvement
+            require(1==0, 'ChessTable: IMP ERROR');
+        }
+
+        if(f == 0){
+            mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)));
+        }
+        else if (f == 7){
+            mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)));
+        }
+        else{
+            mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)));
+            mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)));
+        }
+
+        return mask;
+    }
+    //-----------------------------------------------------------------
+    function _knight(uint8 _sq) private returns (uint64){
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+
+        if((r + 1 == (r + 1) % 8) && (f - 2 == (f - 2) % 8)){
+            mask |= 1 << ((r + 1) + (8 * (f - 2)));
+        }
+
+        if((r - 1 == (r - 1) % 8) && (f + 2 == (f + 2) % 8)){
+            mask |= 1 << ((r - 1) + (8 * (f + 2)));
+        }
+
+        if((r + 1 == (r + 1) % 8)  && (f + 2 == (f + 2) % 8)){
+            mask |= 1 << ((r + 1) + (8 * (f + 2)));
+        }
+
+        if((r - 1 == (r - 1) % 8) && (f - 2 == (f - 2) % 8)){
+            mask |= 1 << ((r - 1) + (8 * (f - 2)));
+        }
+
+        if((r - 2 == (r - 2) % 8) && (f - 1 == (f - 1) % 8)){
+            mask |= 1 << ((r - 2) + (8 * (f - 1)));
+        }
+
+        if((r + 2 == (r + 2) % 8) && (f - 1 == (f - 1) % 8)){
+            mask |= 1 << ((r + 2) + (8 * (f - 1)));
+        }
+
+        if((r - 2 == (r - 2) % 8) && (f + 1 == (f + 1) % 8)){
+            mask |= 1 << ((r - 2) + (8 * (f + 1)));
+        }
+
+        if((r + 2 == (r + 2) % 8) && (f + 1 == (f + 1) % 8)){
+            mask |= 1 << ((r + 2) + (8 * (f + 1)));
+        }
+
+        return mask;
+    }
+    //-----------------------------------------------------------------
+    function _bishop(uint64 board64, uint8 _sq) private returns (uint64){
+        // NE:4, NW:5, SE:6, SW:7
+
+        uint64 ne = MASKS[4][_sq];
+        uint64 ne_obs = board64 & ne;
+        if(ne_obs != 0x00){
+            ne = ne & (~ mask_direction(_sq, 4, ne_obs));
+        }
+
+        uint64 nw = MASKS[5][_sq];
+        uint64 nw_obs = board64 & nw;
+        if(nw_obs != 0x00){
+            nw = nw & (~ mask_direction(_sq, 5, nw_obs));
+        }
+
+        uint64 se = MASKS[6][_sq];
+        uint64 se_obs = board64 & se;
+        if(se_obs != 0x00){
+            se = se & (~ mask_direction(_sq, 6, se_obs));
+        }
+
+        uint64 sw = MASKS[7][_sq];
+        uint64 sw_obs = board64 & sw;
+        if(sw_obs != 0x00){
+            sw = sw & (~ mask_direction(_sq, 7, sw_obs));
+        }
+
+        return ne | nw | se | sw;
+    }
+    //-----------------------------------------------------------------
+    function _rook(uint64 board64, uint8 _sq) private returns (uint64){
+        // N:0, S:1, E:2, W:3
+        uint64 north = MASKS[0][_sq];
+        uint64 north_obs = board64 & north;
+        if(north_obs != 0x00){
+            north = north & (~ mask_direction(_sq, 0, north_obs));
+        }
+
+        uint64 south = MASKS[1][_sq];
+        uint64 south_obs = board64 & south;
+        if(south_obs != 0x00){
+            south = south & (~ mask_direction(_sq, 1, south_obs));
+        }
+
+        uint64 east = MASKS[2][_sq];
+        uint64 east_obs = board64 & east;
+        if(east_obs != 0x00){
+            east = east & (~ mask_direction(_sq, 2, east_obs));
+        }
+
+        uint64 west = MASKS[3][_sq];
+        uint64 west_obs = board64 & west;
+        if(west_obs != 0x00){
+            west = west & (~ mask_direction(_sq, 3, west_obs));
+        }
+
+        return north | south | east | west;
+    }
+    //-----------------------------------------------------------------
+    function _queen(uint64 board64, uint8 _sq) private returns (uint64){
+        return _bishop(board64, _sq) | _rook(board64, _sq);
+    }
+    //-----------------------------------------------------------------
+    function _king(uint8 _sq) private returns (uint64){
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+        // '*A1': 0x0000000000000302,0
+        // '*A2': 0x0000000000000705,1
+        // '*A8': 0x000000000000c040,2
+        // '*B8': 0x0000000000c040c0,3
+        // '*H8': 0x40c0000000000000,4
+        // '*H2': 0x0507000000000000,5
+        // '*H1': 0x0203000000000000,6
+        // '*B1': 0x0000000000030203,7
+        // '*B2': 0x0000000000070507,8
+        if(MASKS[9][f * 8 + r] != 0){
+            return MASKS[9][f * 8 + r];
+        }
+        else{
+            if(r == 0){
+                return (MASKS[9][7] << (8 * (f - 1)));
+            }
+            else if(r == 7){
+                return (MASKS[9][3] << (8 * (f - 1)));
+            }
+            else if(f == 0){
+                return (MASKS[9][1] << (r - 1));
+            }
+            else if(f == 7){
+                return (MASKS[9][5] << (r - 1));
+            }
+            else{
+                return (MASKS[9][8] << ((r - 1) + (8 * (f - 1))));
+            }
+        }
+    }
+    //-----------------------------------------------------------------
     function _reloadVisibility(uint8 _piece) private{
         uint8 p_square = ((uint8)(board >> (_piece * 8))) & PC_COORD_MASK;
 
@@ -398,7 +546,7 @@ contract ChessTable is IChessTable{
             // TODO:: log here later to avoid undetectable bugs
         }
     }
-
+    //-----------------------------------------------------------------
     function _move(address _player, uint8 _piece, uint8 _action) private{
         _logic(_piece, _action);
         // lastMove = _piece << 8 | _action; 
