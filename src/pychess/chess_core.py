@@ -1,15 +1,11 @@
 from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASK128_MODE, MASKS
-from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_DIAGS, SQUARE_ARRAY
+from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_ARRAY
 from src.pychess.chess_utils import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 from src.utils.logger import lprint
 ##########################################################
-def lsb64(x):
-    """Returns the index, counting from 0, of the
-    least significant set bit in `x`.
-    """
-    return (x & -x).bit_length() - 1
-##########################################################
 def msb64(x):
+    """ Returns the index, counting from 0, of the
+    most significant set bit in `x` that is 64-bit. """
     bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
     base = 0
     if (x & 0xFFFFFFFF00000000 != 0): 
@@ -26,9 +22,15 @@ def msb64(x):
         x = x >> 4 # (64/16)
     return (base + bval[x] - 1) # -1 to convert to index
 ##########################################################
+def lsb64(x):
+    """Returns the index, counting from 0, of the
+    least significant set bit in `x`. """
+    return msb64(x & -x)
+##########################################################
 def mask_direction(square, direction, block64):
     lsb = lsb64(block64)
     msb = msb64(block64)
+
     sq_id = SQUARE_IDS[square]
 
     if sq_id >= msb :

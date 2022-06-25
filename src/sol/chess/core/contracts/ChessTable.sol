@@ -22,6 +22,7 @@ contract ChessTable is IChessTable{
     // 5,949 moves.
     uint16 public constant MAX_MOVES = 400;
     uint8 public constant PIECE_COUNT = 32;
+    uint8 public constant SQUARE_COUNT = 64;    
     //-----------------------------------------------------------------
     // PIECE indices
     // Kings
@@ -246,7 +247,6 @@ contract ChessTable is IChessTable{
         least significant set bit in `x`.
         */
         return _msb64(x & -x);
-
     }
     //-----------------------------------------------------------------
     //                     [[PRIVATE FUNCTION]]
@@ -529,22 +529,37 @@ contract ChessTable is IChessTable{
         }
     }
     //-----------------------------------------------------------------
-    function _reloadVisibility(uint8 _piece) private{
-        uint8 p_square = ((uint8)(board >> (_piece * 8))) & PC_COORD_MASK;
+    function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private{
+        // TODO:: make sure _piece is in legal range
+        require(_piece < PIECE_COUNT, "ChessTable, PIECE_OUT_OF_RANGE");
+        require(_sq < SQUARE_COUNT, "ChessTable, SQUARE_OUT_OF_RANGE");
+        uint64 new_vis;
 
-        // TODO:: Can be replaced with mapping to function pointers
-        if(_piece < PIECE_COUNT){
-            
-            if(_piece < W_Q)        {_king(p_square);} 
-            else if(_piece < W_R_A) {_queen(p_square);} 
-            else if(_piece < W_B_C) {_rook(p_square);} 
-            else if(_piece < W_N_B) {_bishop(p_square);} 
-            else if(_piece < W_P_A) {_knight(p_square);}
-            else                    {_pawn(p_square);}
-
-        }else{
-            // TODO:: log here later to avoid undetectable bugs
+        if(_piece >= PIECE_IDS['W_P_A']){
+            if(_piece % 2 == 0){
+                new_vis = pawn_white(_sq);
+            }
+            else{
+                new_vis = pawn_black(_sq);
+            }
         }
+        else if(_piece >= PIECE_IDS['W_N_B']){
+            new_vis = _knight(_sq);
+        }
+        else if _piece >= PIECE_IDS['W_B_C']){
+            new_vis = _bishop(board64, _sq);
+        }
+        else if _piece >= PIECE_IDS['W_R_A']){
+            new_vis = _rook(board64, _sq);
+        }
+        else if _piece >= PIECE_IDS['W_Q']){
+            new_vis = _queen(board64, _sq);
+        }
+        else{
+            new_vis = _king(_sq);
+        }
+
+        return new_vis
     }
     //-----------------------------------------------------------------
     function _move(address _player, uint8 _piece, uint8 _action) private{
