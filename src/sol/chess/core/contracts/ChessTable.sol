@@ -79,6 +79,7 @@ contract ChessTable is IChessTable{
     uint8 public constant PC_FILE_MASK = 0x38;
     uint8 public constant PC_RANK_MASK = 0x07;
     uint8 public constant PC_COORD_MASK = 0x3F;
+    uint8 public constant PC_MODE_MASK = 0xC0;
     //-----------------------------------------------------------------
     // MASKS64 for visibility updates
     // NE:4, NW:5, SE:6, SW:7
@@ -92,6 +93,8 @@ contract ChessTable is IChessTable{
     uint8 public constant D_SE = 6;
     uint8 public constant D_SW = 7;
     uint8 public constant D_ST = 8; // star patterns for king
+
+    uint8[] public bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5];
 
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -224,7 +227,6 @@ contract ChessTable is IChessTable{
 
     //-----------------------------------------------------------------
     function _msb64(uint64 x) private{
-        uint8[] bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5];
         uint8 base = 0;
         if (x & 0xFFFFFFFF00000000 != 0){
             base = base + 32; // (64/2)
@@ -690,16 +692,16 @@ contract ChessTable is IChessTable{
 
     }
     //-----------------------------------------------------------------
-    function _mask_direction(uint8 _sq, uint8 _direction, uint64 _block64){
+    function _mask_direction(uint8 _sq, uint8 _direction, uint64 _block64) private returns (uint64){
         uint8 lsb = _lsb64(_block64);
         uint8 msb = _msb64(_block64);
 
         if(_sq >= msb){
             // directions: NorthWest, West, SouthWest, South    
-            return M64[direction][msb];  
+            return M64[_direction][msb];  
         }else{
             // directions: SouthEast, East, NorthEast, North
-            return M64[direction][lsb];
+            return M64[_direction][lsb];
         }
     }
     //-----------------------------------------------------------------
@@ -812,25 +814,25 @@ contract ChessTable is IChessTable{
         uint64 ne = M64[D_NE][_sq];
         uint64 ne_obs = board64 & ne;
         if(ne_obs != 0x00){
-            ne = ne & (~ mask_direction(_sq, D_NE, ne_obs));
+            ne = ne & (~ _mask_direction(_sq, D_NE, ne_obs));
         }
 
         uint64 nw = M64[D_NW][_sq];
         uint64 nw_obs = board64 & nw;
         if(nw_obs != 0x00){
-            nw = nw & (~ mask_direction(_sq, D_NW, nw_obs));
+            nw = nw & (~ _mask_direction(_sq, D_NW, nw_obs));
         }
 
         uint64 se = M64[D_SE][_sq];
         uint64 se_obs = board64 & se;
         if(se_obs != 0x00){
-            se = se & (~ mask_direction(_sq, D_SE, se_obs));
+            se = se & (~ _mask_direction(_sq, D_SE, se_obs));
         }
 
         uint64 sw = M64[D_SW][_sq];
         uint64 sw_obs = board64 & sw;
         if(sw_obs != 0x00){
-            sw = sw & (~ mask_direction(_sq, D_SW, sw_obs));
+            sw = sw & (~ _mask_direction(_sq, D_SW, sw_obs));
         }
 
         return ne | nw | se | sw;
@@ -840,25 +842,25 @@ contract ChessTable is IChessTable{
         uint64 north = M64[D_N][_sq];
         uint64 north_obs = board64 & north;
         if(north_obs != 0x00){
-            north = north & (~ mask_direction(_sq, D_N, north_obs));
+            north = north & (~ _mask_direction(_sq, D_N, north_obs));
         }
 
         uint64 south = M64[D_S][_sq];
         uint64 south_obs = board64 & south;
         if(south_obs != 0x00){
-            south = south & (~ mask_direction(_sq, D_S, south_obs));
+            south = south & (~ _mask_direction(_sq, D_S, south_obs));
         }
 
         uint64 east = M64[D_E][_sq];
         uint64 east_obs = board64 & east;
         if(east_obs != 0x00){
-            east = east & (~ mask_direction(_sq, D_E, east_obs));
+            east = east & (~ _mask_direction(_sq, D_E, east_obs));
         }
 
         uint64 west = M64[D_W][_sq];
         uint64 west_obs = board64 & west;
         if(west_obs != 0x00){
-            west = west & (~ mask_direction(_sq, D_W, west_obs));
+            west = west & (~ _mask_direction(_sq, D_W, west_obs));
         }
 
         return north | south | east | west;
@@ -895,43 +897,43 @@ contract ChessTable is IChessTable{
     }
     //
     //-----------------------------------------------------------------
-    function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private{
+    function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private returns (uint64){
         // TODO:: make sure _piece is in legal range
         require(_piece < PIECE_COUNT, "ChessTable, PIECE_OUT_OF_RANGE");
         require(_sq < SQUARE_COUNT, "ChessTable, SQUARE_OUT_OF_RANGE");
 
         if(_piece >= W_P_A){
             if(_piece % 2 == 0){
-                return pawn_white(_sq);
+                return _pawn_white(_sq);
             }
             else{
-                return pawn_black(_sq);
+                return _pawn_black(_sq);
             }
         }
         else if(_piece >= W_N_B){
             return _knight(_sq);
         }
         else if(_piece >= W_B_C){
-            return _bishop(board64, _sq);
+            return _bishop(_block64, _sq);
         }
         else if(_piece >= W_R_A){
-            return _rook(board64, _sq);
+            return _rook(_block64, _sq);
         }
         else if(_piece >= W_Q){
-            return _queen(board64, _sq);
+            return _queen(_block64, _sq);
         }
         else{
             return _king(_sq);
         }
     }
     //-----------------------------------------------------------------
-    function _updatePiece(_piece, _state){
+    function _updatePiece(uint8 _piece, uint8 _state) private{
         uint256 piece_mask = (0xFF << (_piece * 8));
-        board128 &= (~piece_mask); // clean previous piece state
-        board128 |= _state; // shoving the modified piece byte in
+        pieces &= (~piece_mask); // clean previous piece state
+        pieces |= _state; // shoving the modified piece byte in
     }
     //-----------------------------------------------------------------
-    function _setEngagement(_f_piece, _t_piece, _value){
+    function _setEngagement(uint8 _f_piece, uint8 _t_piece, uint8 _value) private{
         if(_value == 0){
             engagements &= ~(1<< (_f_piece * 32 + _t_piece));
         }
@@ -940,7 +942,7 @@ contract ChessTable is IChessTable{
         }
     }
     //-----------------------------------------------------------------
-    function _clearEngagements(_piece, _direction){
+    function _clearEngagements(uint8 _piece, uint8 _direction) private{
         if(_direction == 0){
             engagements &= ~( 0xFFFFFFFF << _piece);
         }
@@ -961,12 +963,12 @@ contract ChessTable is IChessTable{
             pieceB64 = board64B;
         }
 
-        uint64 to_sq = _action & MASK128_POSITION;
+        uint64 to_sq = _action & PC_COORD_MASK;
 
         // is the square visible to the moved piece?
         require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
 
-        uint64 from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION;
+        uint64 from_sq = (pieces >> (_piece * 8)) & PC_COORD_MASK;
 
         // Updating board64
         if(_piece % 2 == 0){
@@ -977,9 +979,9 @@ contract ChessTable is IChessTable{
             board64B = board64B & ~(1 << from_sq);
             board64B = board64B | (1 << to_sq);
         }
-        board64 = board64W | board64B;
+        uint64 board64 = board64W | board64B;
 
-        // updating board128
+        // updating pieces
         uint8 new_state = ((M_SET | to_sq) << (_piece * 8));
         _updatePiece(_piece, new_state);
 
@@ -991,7 +993,7 @@ contract ChessTable is IChessTable{
         uint32 sub_engagements = engagements >> start_index;
         for(uint8 i=0;i<PIECE_COUNT;i++){
             if(sub_engagements % 2 == 1){
-                uint64 pc_sq = (board128 >> (i * 8)) & MASK128_POSITION;
+                uint64 pc_sq = (pieces >> (i * 8)) & PC_COORD_MASK;
                 visibility[i] = _reloadVisibility(board64, i, pc_sq);               
             }
             sub_engagements = sub_engagements >> 1;
@@ -1000,36 +1002,35 @@ contract ChessTable is IChessTable{
         // Reset engagements of the moved piece
         _clearEngagements(_piece, 0);
 
-        uint8 i_piece = 0;
         uint64 opp_vis = 0x00;
-
+        uint8 king_sq;
         // Keeping kings position in mind
         if(_piece % 2 == 0){
-            king_sq = board128 & MASK128_POSITION;
+            king_sq = pieces & PC_COORD_MASK;
         }
         else{
-            king_sq = (board128 >> 8) & MASK128_POSITION;
+            king_sq = (pieces >> 8) & PC_COORD_MASK;
         }
 
         // Loop over all pieces
         for(uint8 i_piece = 0; i_piece < PIECE_COUNT; i_piece++){
             // opponent total visibility calculation
-            if((_piece % 2 == 0 and i_piece % 2 == 1) || (_piece % 2 == 1 and i_piece % 2 == 0)){
+            if((_piece % 2 == 0 && i_piece % 2 == 1) || (_piece % 2 == 1 && i_piece % 2 == 0)){
                 opp_vis |= visibility[i_piece];
             }
 
             // for all pieces except the moved piece
             if(i_piece != _piece){
                 // i_piece square calculation
-                uint64 i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION;
+                uint64 i_sq = (pieces >> (i_piece * 8)) & PC_COORD_MASK;
 
                 // Update dead piece state
                 if(i_sq == to_sq){
                     new_state = M_DEAD << (i_piece * 8);
-                    board128 = _updatePiece(board128, i_piece, new_state);
+                    pieces = _updatePiece(pieces, i_piece, new_state);
                 }
                 else{
-                    uint8 ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE;
+                    uint8 ipc_mode = (pieces >> (i_piece * 8)) & PC_MODE_MASK;
 
                     // Adding post-move _piece to i_piece engagements
                     if(((visibility[i_piece]) >> to_sq)  % 2 == 1 && ipc_mode != 0){
@@ -1041,9 +1042,9 @@ contract ChessTable is IChessTable{
 
                         // removing the broken engagements
                         sub_engagements = engagements >> i_piece;
-                        for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j++){
+                        for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j_piece++){
                             if(sub_engagements % 2 == 1){
-                                uint64 j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION;
+                                uint64 j_sq = (pieces >> (j_piece * 8)) & PC_COORD_MASK;
                                 if((visibility[i_piece] >> j_sq) % 2 == 0){
                                     _setEngagement(j_piece, i_piece, 0);
                                 }
@@ -1065,12 +1066,12 @@ contract ChessTable is IChessTable{
         require((opp_vis >> king_sq) % 2 != 1, "ChessTable: KING_IS_CHECK");
 
         // // Checking white's checkmate
-        // if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (board128 >> 7) % 2 == 1 :
+        // if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (pieces >> 7) % 2 == 1 :
         //     # black won
         //     print("BLACK WON!! not implemented")
 
         // // Checking black's checkmate
-        // if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (board128 >> 15) % 2 == 1 :
+        // if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (pieces >> 15) % 2 == 1 :
         //     # white won
         //     print("WHITE WON!! not implemented")
 
