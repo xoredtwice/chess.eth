@@ -81,14 +81,18 @@ contract ChessTable is IChessTable{
     uint8 public constant PC_COORD_MASK = 0x3F;
     //-----------------------------------------------------------------
     // MASKS64 for visibility updates
-    uint8 public constant MASK_MESH = 0;
-    uint8 public constant MASK_KING_CASTLE = 1;
-    uint8 public constant MASK_ROOK = 2;
-    uint8 public constant MASK_BISHOP = 3;
-    uint8 public constant MASK_KNIGHT = 4;
-    uint8 public constant MASK_PAWN_WHITE = 7;
-    uint8 public constant MASK_PAWN_BLACK = 8;
-    uint64[9] public MASKS64;
+    // NE:4, NW:5, SE:6, SW:7
+    // N:0, S:1, E:2, W:3
+    uint8 public constant D_N = 0;
+    uint8 public constant D_S = 1;
+    uint8 public constant D_E = 2;
+    uint8 public constant D_W = 3;
+    uint8 public constant D_NE = 4;
+    uint8 public constant D_NW = 5;
+    uint8 public constant D_SE = 6;
+    uint8 public constant D_SW = 7;
+    uint8 public constant D_ST = 8; // star patterns for king
+
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -120,9 +124,7 @@ contract ChessTable is IChessTable{
     uint private unlocked = 1;
     uint16[] private moves;
 
-    mapping(uint8 => mapping (uint8 => uint64)) public MASKS;
-
-
+    mapping(uint8 => mapping (uint8 => uint64)) public M64;
 
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -188,35 +190,31 @@ contract ChessTable is IChessTable{
         pieces |= ((uint256)(M_SET | F_H | R_7) << (B_P_H * 8));
 
         // setting up the board through two variables
-        // whiteOnBoard 64bit, each bit shows whether a white piece fills a square or not
+        // board64W 64bit, each bit shows whether a white piece fills a square or not
         // same for black
-        // board = whiteOnBoard + blackOnBoard;
+        // board = board64W + board64B;
 
-        // whiteOnBoard =
-        whiteOnBoard |= (1 << F_A | R_1); whiteOnBoard |= (1 << F_A | R_2);
-        whiteOnBoard |= (1 << F_B | R_1); whiteOnBoard |= (1 << F_B | R_2);
-        whiteOnBoard |= (1 << F_C | R_1); whiteOnBoard |= (1 << F_C | R_2);
-        whiteOnBoard |= (1 << F_D | R_1); whiteOnBoard |= (1 << F_D | R_2);
-        whiteOnBoard |= (1 << F_E | R_1); whiteOnBoard |= (1 << F_E | R_2);
-        whiteOnBoard |= (1 << F_F | R_1); whiteOnBoard |= (1 << F_F | R_2);
-        whiteOnBoard |= (1 << F_G | R_1); whiteOnBoard |= (1 << F_G | R_2);
-        whiteOnBoard |= (1 << F_H | R_1); whiteOnBoard |= (1 << F_H | R_2);
+        // board64W =
+        board64W |= (1 << F_A | R_1); board64W |= (1 << F_A | R_2);
+        board64W |= (1 << F_B | R_1); board64W |= (1 << F_B | R_2);
+        board64W |= (1 << F_C | R_1); board64W |= (1 << F_C | R_2);
+        board64W |= (1 << F_D | R_1); board64W |= (1 << F_D | R_2);
+        board64W |= (1 << F_E | R_1); board64W |= (1 << F_E | R_2);
+        board64W |= (1 << F_F | R_1); board64W |= (1 << F_F | R_2);
+        board64W |= (1 << F_G | R_1); board64W |= (1 << F_G | R_2);
+        board64W |= (1 << F_H | R_1); board64W |= (1 << F_H | R_2);
 
-        // blackOnBoard =
-        blackOnBoard |= (1 << F_A | R_7); blackOnBoard |= (1 << F_A | R_8);
-        blackOnBoard |= (1 << F_B | R_7); blackOnBoard |= (1 << F_B | R_8);
-        blackOnBoard |= (1 << F_C | R_7); blackOnBoard |= (1 << F_C | R_8);
-        blackOnBoard |= (1 << F_D | R_7); blackOnBoard |= (1 << F_D | R_8);
-        blackOnBoard |= (1 << F_E | R_7); blackOnBoard |= (1 << F_E | R_8);
-        blackOnBoard |= (1 << F_F | R_7); blackOnBoard |= (1 << F_F | R_8);
-        blackOnBoard |= (1 << F_G | R_7); blackOnBoard |= (1 << F_G | R_8);
-        blackOnBoard |= (1 << F_H | R_7); blackOnBoard |= (1 << F_H | R_8);
+        // board64B =
+        board64B |= (1 << F_A | R_7); board64B |= (1 << F_A | R_8);
+        board64B |= (1 << F_B | R_7); board64B |= (1 << F_B | R_8);
+        board64B |= (1 << F_C | R_7); board64B |= (1 << F_C | R_8);
+        board64B |= (1 << F_D | R_7); board64B |= (1 << F_D | R_8);
+        board64B |= (1 << F_E | R_7); board64B |= (1 << F_E | R_8);
+        board64B |= (1 << F_F | R_7); board64B |= (1 << F_F | R_8);
+        board64B |= (1 << F_G | R_7); board64B |= (1 << F_G | R_8);
+        board64B |= (1 << F_H | R_7); board64B |= (1 << F_H | R_8);
 
-        MASKS64[I_FILE] = 0x0000000F;
-        MASKS64[I_RANK] = 0x11111111;
-        MASKS64[I_DI_P] = 0x00000000;
-        MASKS64[I_DI_N] = 0x00000000;
-
+        _precomputations();
     }
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -256,33 +254,458 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     //                     [[PRIVATE FUNCTION]]
     //-----------------------------------------------------------------
-    function _mask_direction(uint8 square, uint8 direction, uint64 block64){
-        uint8 lsb = _lsb64(block64);
-        uint8 msb = _msb64(block64);
-        uint8 sq_id = SQUARE_IDS[square];
+    function _precomputations() private{
+        M64[D_E][F_A | R_8] = 0x8080808080808000;
+        M64[D_S][F_A | R_8] = 0x7f;
+        M64[D_SE][F_A | R_8] = 0x102040810204000;
+        M64[D_W][F_B | R_8] = 0x80;
+        M64[D_E][F_B | R_8] = 0x8080808080800000;
+        M64[D_S][F_B | R_8] = 0x7f00;
+        M64[D_SE][F_B | R_8] = 0x204081020400000;
+        M64[D_SW][F_B | R_8] = 0x40;
+        M64[D_W][F_C | R_8] = 0x8080;
+        M64[D_E][F_C | R_8] = 0x8080808080000000;
+        M64[D_S][F_C | R_8] = 0x7f0000;
+        M64[D_SE][F_C | R_8] = 0x408102040000000;
+        M64[D_SW][F_C | R_8] = 0x4020;
+        M64[D_W][F_D | R_8] = 0x808080;
+        M64[D_E][F_D | R_8] = 0x8080808000000000;
+        M64[D_S][F_D | R_8] = 0x7f000000;
+        M64[D_SE][F_D | R_8] = 0x810204000000000;
+        M64[D_SW][F_D | R_8] = 0x402010;
+        M64[D_W][F_E | R_8] = 0x80808080;
+        M64[D_E][F_E | R_8] = 0x8080800000000000;
+        M64[D_S][F_E | R_8] = 0x7f00000000;
+        M64[D_SE][F_E | R_8] = 0x1020400000000000;
+        M64[D_SW][F_E | R_8] = 0x40201008;
+        M64[D_W][F_F | R_8] = 0x8080808080;
+        M64[D_E][F_F | R_8] = 0x8080000000000000;
+        M64[D_S][F_F | R_8] = 0x7f0000000000;
+        M64[D_SE][F_F | R_8] = 0x2040000000000000;
+        M64[D_SW][F_F | R_8] = 0x4020100804;
+        M64[D_W][F_G | R_8] = 0x808080808080;
+        M64[D_E][F_G | R_8] = 0x8000000000000000;
+        M64[D_S][F_G | R_8] = 0x7f000000000000;
+        M64[D_SE][F_G | R_8] = 0x4000000000000000;
+        M64[D_SW][F_G | R_8] = 0x402010080402;
+        M64[D_W][F_H | R_8] = 0x80808080808080;
+        M64[D_S][F_H | R_8] = 0x7f00000000000000;
+        M64[D_SW][F_H | R_8] = 0x40201008040201;
+        M64[D_E][F_A | R_7] = 0x4040404040404000;
+        M64[D_S][F_A | R_7] = 0x3f;
+        M64[D_N][F_A | R_7] = 0x80;
+        M64[D_SE][F_A | R_7] = 0x1020408102000;
+        M64[D_NE][F_A | R_7] = 0x8000;
+        M64[D_W][F_B | R_7] = 0x40;
+        M64[D_E][F_B | R_7] = 0x4040404040400000;
+        M64[D_S][F_B | R_7] = 0x3f00;
+        M64[D_N][F_B | R_7] = 0x8000;
+        M64[D_NW][F_B | R_7] = 0x80;
+        M64[D_SE][F_B | R_7] = 0x102040810200000;
+        M64[D_SW][F_B | R_7] = 0x20;
+        M64[D_NE][F_B | R_7] = 0x800000;
+        M64[D_W][F_C | R_7] = 0x4040;
+        M64[D_E][F_C | R_7] = 0x4040404040000000;
+        M64[D_S][F_C | R_7] = 0x3f0000;
+        M64[D_N][F_C | R_7] = 0x800000;
+        M64[D_NW][F_C | R_7] = 0x8000;
+        M64[D_SE][F_C | R_7] = 0x204081020000000;
+        M64[D_SW][F_C | R_7] = 0x2010;
+        M64[D_NE][F_C | R_7] = 0x80000000;
+        M64[D_W][F_D | R_7] = 0x404040;
+        M64[D_E][F_D | R_7] = 0x4040404000000000;
+        M64[D_S][F_D | R_7] = 0x3f000000;
+        M64[D_N][F_D | R_7] = 0x80000000;
+        M64[D_NW][F_D | R_7] = 0x800000;
+        M64[D_SE][F_D | R_7] = 0x408102000000000;
+        M64[D_SW][F_D | R_7] = 0x201008;
+        M64[D_NE][F_D | R_7] = 0x8000000000;
+        M64[D_W][F_E | R_7] = 0x40404040;
+        M64[D_E][F_E | R_7] = 0x4040400000000000;
+        M64[D_S][F_E | R_7] = 0x3f00000000;
+        M64[D_N][F_E | R_7] = 0x8000000000;
+        M64[D_NW][F_E | R_7] = 0x80000000;
+        M64[D_SE][F_E | R_7] = 0x810200000000000;
+        M64[D_SW][F_E | R_7] = 0x20100804;
+        M64[D_NE][F_E | R_7] = 0x800000000000;
+        M64[D_W][F_F | R_7] = 0x4040404040;
+        M64[D_E][F_F | R_7] = 0x4040000000000000;
+        M64[D_S][F_F | R_7] = 0x3f0000000000;
+        M64[D_N][F_F | R_7] = 0x800000000000;
+        M64[D_NW][F_F | R_7] = 0x8000000000;
+        M64[D_SE][F_F | R_7] = 0x1020000000000000;
+        M64[D_SW][F_F | R_7] = 0x2010080402;
+        M64[D_NE][F_F | R_7] = 0x80000000000000;
+        M64[D_W][F_G | R_7] = 0x404040404040;
+        M64[D_E][F_G | R_7] = 0x4000000000000000;
+        M64[D_S][F_G | R_7] = 0x3f000000000000;
+        M64[D_N][F_G | R_7] = 0x80000000000000;
+        M64[D_NW][F_G | R_7] = 0x800000000000;
+        M64[D_SE][F_G | R_7] = 0x2000000000000000;
+        M64[D_SW][F_G | R_7] = 0x201008040201;
+        M64[D_NE][F_G | R_7] = 0x8000000000000000;
+        M64[D_W][F_H | R_7] = 0x40404040404040;
+        M64[D_S][F_H | R_7] = 0x3f00000000000000;
+        M64[D_N][F_H | R_7] = 0x8000000000000000;
+        M64[D_NW][F_H | R_7] = 0x80000000000000;
+        M64[D_SW][F_H | R_7] = 0x20100804020100;
+        M64[D_E][F_A | R_6] = 0x2020202020202000;
+        M64[D_S][F_A | R_6] = 0x1f;
+        M64[D_N][F_A | R_6] = 0xc0;
+        M64[D_SE][F_A | R_6] = 0x10204081000;
+        M64[D_NE][F_A | R_6] = 0x804000;
+        M64[D_W][F_B | R_6] = 0x20;
+        M64[D_E][F_B | R_6] = 0x2020202020200000;
+        M64[D_S][F_B | R_6] = 0x1f00;
+        M64[D_N][F_B | R_6] = 0xc000;
+        M64[D_NW][F_B | R_6] = 0x40;
+        M64[D_SE][F_B | R_6] = 0x1020408100000;
+        M64[D_SW][F_B | R_6] = 0x10;
+        M64[D_NE][F_B | R_6] = 0x80400000;
+        M64[D_W][F_C | R_6] = 0x2020;
+        M64[D_E][F_C | R_6] = 0x2020202020000000;
+        M64[D_S][F_C | R_6] = 0x1f0000;
+        M64[D_N][F_C | R_6] = 0xc00000;
+        M64[D_NW][F_C | R_6] = 0x4080;
+        M64[D_SE][F_C | R_6] = 0x102040810000000;
+        M64[D_SW][F_C | R_6] = 0x1008;
+        M64[D_NE][F_C | R_6] = 0x8040000000;
+        M64[D_W][F_D | R_6] = 0x202020;
+        M64[D_E][F_D | R_6] = 0x2020202000000000;
+        M64[D_S][F_D | R_6] = 0x1f000000;
+        M64[D_N][F_D | R_6] = 0xc0000000;
+        M64[D_NW][F_D | R_6] = 0x408000;
+        M64[D_SE][F_D | R_6] = 0x204081000000000;
+        M64[D_SW][F_D | R_6] = 0x100804;
+        M64[D_NE][F_D | R_6] = 0x804000000000;
+        M64[D_W][F_E | R_6] = 0x20202020;
+        M64[D_E][F_E | R_6] = 0x2020200000000000;
+        M64[D_S][F_E | R_6] = 0x1f00000000;
+        M64[D_N][F_E | R_6] = 0xc000000000;
+        M64[D_NW][F_E | R_6] = 0x40800000;
+        M64[D_SE][F_E | R_6] = 0x408100000000000;
+        M64[D_SW][F_E | R_6] = 0x10080402;
+        M64[D_NE][F_E | R_6] = 0x80400000000000;
+        M64[D_W][F_F | R_6] = 0x2020202020;
+        M64[D_E][F_F | R_6] = 0x2020000000000000;
+        M64[D_S][F_F | R_6] = 0x1f0000000000;
+        M64[D_N][F_F | R_6] = 0xc00000000000;
+        M64[D_NW][F_F | R_6] = 0x4080000000;
+        M64[D_SE][F_F | R_6] = 0x810000000000000;
+        M64[D_SW][F_F | R_6] = 0x1008040201;
+        M64[D_NE][F_F | R_6] = 0x8040000000000000;
+        M64[D_W][F_G | R_6] = 0x202020202020;
+        M64[D_E][F_G | R_6] = 0x2000000000000000;
+        M64[D_S][F_G | R_6] = 0x1f000000000000;
+        M64[D_N][F_G | R_6] = 0xc0000000000000;
+        M64[D_NW][F_G | R_6] = 0x408000000000;
+        M64[D_SE][F_G | R_6] = 0x1000000000000000;
+        M64[D_SW][F_G | R_6] = 0x100804020100;
+        M64[D_NE][F_G | R_6] = 0x4000000000000000;
+        M64[D_W][F_H | R_6] = 0x20202020202020;
+        M64[D_S][F_H | R_6] = 0x1f00000000000000;
+        M64[D_N][F_H | R_6] = 0xc000000000000000;
+        M64[D_NW][F_H | R_6] = 0x40800000000000;
+        M64[D_SW][F_H | R_6] = 0x10080402010000;
+        M64[D_E][F_A | R_5] = 0x1010101010101000;
+        M64[D_S][F_A | R_5] = 0xf;
+        M64[D_N][F_A | R_5] = 0xe0;
+        M64[D_SE][F_A | R_5] = 0x102040800;
+        M64[D_NE][F_A | R_5] = 0x80402000;
+        M64[D_W][F_B | R_5] = 0x10;
+        M64[D_E][F_B | R_5] = 0x1010101010100000;
+        M64[D_S][F_B | R_5] = 0xf00;
+        M64[D_N][F_B | R_5] = 0xe000;
+        M64[D_NW][F_B | R_5] = 0x20;
+        M64[D_SE][F_B | R_5] = 0x10204080000;
+        M64[D_SW][F_B | R_5] = 0x8;
+        M64[D_NE][F_B | R_5] = 0x8040200000;
+        M64[D_W][F_C | R_5] = 0x1010;
+        M64[D_E][F_C | R_5] = 0x1010101010000000;
+        M64[D_S][F_C | R_5] = 0xf0000;
+        M64[D_N][F_C | R_5] = 0xe00000;
+        M64[D_NW][F_C | R_5] = 0x2040;
+        M64[D_SE][F_C | R_5] = 0x1020408000000;
+        M64[D_SW][F_C | R_5] = 0x804;
+        M64[D_NE][F_C | R_5] = 0x804020000000;
+        M64[D_W][F_D | R_5] = 0x101010;
+        M64[D_E][F_D | R_5] = 0x1010101000000000;
+        M64[D_S][F_D | R_5] = 0xf000000;
+        M64[D_N][F_D | R_5] = 0xe0000000;
+        M64[D_NW][F_D | R_5] = 0x204080;
+        M64[D_SE][F_D | R_5] = 0x102040800000000;
+        M64[D_SW][F_D | R_5] = 0x80402;
+        M64[D_NE][F_D | R_5] = 0x80402000000000;
+        M64[D_W][F_E | R_5] = 0x10101010;
+        M64[D_E][F_E | R_5] = 0x1010100000000000;
+        M64[D_S][F_E | R_5] = 0xf00000000;
+        M64[D_N][F_E | R_5] = 0xe000000000;
+        M64[D_NW][F_E | R_5] = 0x20408000;
+        M64[D_SE][F_E | R_5] = 0x204080000000000;
+        M64[D_SW][F_E | R_5] = 0x8040201;
+        M64[D_NE][F_E | R_5] = 0x8040200000000000;
+        M64[D_W][F_F | R_5] = 0x1010101010;
+        M64[D_E][F_F | R_5] = 0x1010000000000000;
+        M64[D_S][F_F | R_5] = 0xf0000000000;
+        M64[D_N][F_F | R_5] = 0xe00000000000;
+        M64[D_NW][F_F | R_5] = 0x2040800000;
+        M64[D_SE][F_F | R_5] = 0x408000000000000;
+        M64[D_SW][F_F | R_5] = 0x804020100;
+        M64[D_NE][F_F | R_5] = 0x4020000000000000;
+        M64[D_W][F_G | R_5] = 0x101010101010;
+        M64[D_E][F_G | R_5] = 0x1000000000000000;
+        M64[D_S][F_G | R_5] = 0xf000000000000;
+        M64[D_N][F_G | R_5] = 0xe0000000000000;
+        M64[D_NW][F_G | R_5] = 0x204080000000;
+        M64[D_SE][F_G | R_5] = 0x800000000000000;
+        M64[D_SW][F_G | R_5] = 0x80402010000;
+        M64[D_NE][F_G | R_5] = 0x2000000000000000;
+        M64[D_W][F_H | R_5] = 0x10101010101010;
+        M64[D_S][F_H | R_5] = 0xf00000000000000;
+        M64[D_N][F_H | R_5] = 0xe000000000000000;
+        M64[D_NW][F_H | R_5] = 0x20408000000000;
+        M64[D_SW][F_H | R_5] = 0x8040201000000;
+        M64[D_E][F_A | R_4] = 0x808080808080800;
+        M64[D_S][F_A | R_4] = 0x7;
+        M64[D_N][F_A | R_4] = 0xf0;
+        M64[D_SE][F_A | R_4] = 0x1020400;
+        M64[D_NE][F_A | R_4] = 0x8040201000;
+        M64[D_W][F_B | R_4] = 0x8;
+        M64[D_E][F_B | R_4] = 0x808080808080000;
+        M64[D_S][F_B | R_4] = 0x700;
+        M64[D_N][F_B | R_4] = 0xf000;
+        M64[D_NW][F_B | R_4] = 0x10;
+        M64[D_SE][F_B | R_4] = 0x102040000;
+        M64[D_SW][F_B | R_4] = 0x4;
+        M64[D_NE][F_B | R_4] = 0x804020100000;
+        M64[D_W][F_C | R_4] = 0x808;
+        M64[D_E][F_C | R_4] = 0x808080808000000;
+        M64[D_S][F_C | R_4] = 0x70000;
+        M64[D_N][F_C | R_4] = 0xf00000;
+        M64[D_NW][F_C | R_4] = 0x1020;
+        M64[D_SE][F_C | R_4] = 0x10204000000;
+        M64[D_SW][F_C | R_4] = 0x402;
+        M64[D_NE][F_C | R_4] = 0x80402010000000;
+        M64[D_W][F_D | R_4] = 0x80808;
+        M64[D_E][F_D | R_4] = 0x808080800000000;
+        M64[D_S][F_D | R_4] = 0x7000000;
+        M64[D_N][F_D | R_4] = 0xf0000000;
+        M64[D_NW][F_D | R_4] = 0x102040;
+        M64[D_SE][F_D | R_4] = 0x1020400000000;
+        M64[D_SW][F_D | R_4] = 0x40201;
+        M64[D_NE][F_D | R_4] = 0x8040201000000000;
+        M64[D_W][F_E | R_4] = 0x8080808;
+        M64[D_E][F_E | R_4] = 0x808080000000000;
+        M64[D_S][F_E | R_4] = 0x700000000;
+        M64[D_N][F_E | R_4] = 0xf000000000;
+        M64[D_NW][F_E | R_4] = 0x10204080;
+        M64[D_SE][F_E | R_4] = 0x102040000000000;
+        M64[D_SW][F_E | R_4] = 0x4020100;
+        M64[D_NE][F_E | R_4] = 0x4020100000000000;
+        M64[D_W][F_F | R_4] = 0x808080808;
+        M64[D_E][F_F | R_4] = 0x808000000000000;
+        M64[D_S][F_F | R_4] = 0x70000000000;
+        M64[D_N][F_F | R_4] = 0xf00000000000;
+        M64[D_NW][F_F | R_4] = 0x1020408000;
+        M64[D_SE][F_F | R_4] = 0x204000000000000;
+        M64[D_SW][F_F | R_4] = 0x402010000;
+        M64[D_NE][F_F | R_4] = 0x2010000000000000;
+        M64[D_W][F_G | R_4] = 0x80808080808;
+        M64[D_E][F_G | R_4] = 0x800000000000000;
+        M64[D_S][F_G | R_4] = 0x7000000000000;
+        M64[D_N][F_G | R_4] = 0xf0000000000000;
+        M64[D_NW][F_G | R_4] = 0x102040800000;
+        M64[D_SE][F_G | R_4] = 0x400000000000000;
+        M64[D_SW][F_G | R_4] = 0x40201000000;
+        M64[D_NE][F_G | R_4] = 0x1000000000000000;
+        M64[D_W][F_H | R_4] = 0x8080808080808;
+        M64[D_S][F_H | R_4] = 0x700000000000000;
+        M64[D_N][F_H | R_4] = 0xf000000000000000;
+        M64[D_NW][F_H | R_4] = 0x10204080000000;
+        M64[D_SW][F_H | R_4] = 0x4020100000000;
+        M64[D_E][F_A | R_3] = 0x404040404040400;
+        M64[D_S][F_A | R_3] = 0x3;
+        M64[D_N][F_A | R_3] = 0xf8;
+        M64[D_SE][F_A | R_3] = 0x10200;
+        M64[D_NE][F_A | R_3] = 0x804020100800;
+        M64[D_W][F_B | R_3] = 0x4;
+        M64[D_E][F_B | R_3] = 0x404040404040000;
+        M64[D_S][F_B | R_3] = 0x300;
+        M64[D_N][F_B | R_3] = 0xf800;
+        M64[D_NW][F_B | R_3] = 0x8;
+        M64[D_SE][F_B | R_3] = 0x1020000;
+        M64[D_SW][F_B | R_3] = 0x2;
+        M64[D_NE][F_B | R_3] = 0x80402010080000;
+        M64[D_W][F_C | R_3] = 0x404;
+        M64[D_E][F_C | R_3] = 0x404040404000000;
+        M64[D_S][F_C | R_3] = 0x30000;
+        M64[D_N][F_C | R_3] = 0xf80000;
+        M64[D_NW][F_C | R_3] = 0x810;
+        M64[D_SE][F_C | R_3] = 0x102000000;
+        M64[D_SW][F_C | R_3] = 0x201;
+        M64[D_NE][F_C | R_3] = 0x8040201008000000;
+        M64[D_W][F_D | R_3] = 0x40404;
+        M64[D_E][F_D | R_3] = 0x404040400000000;
+        M64[D_S][F_D | R_3] = 0x3000000;
+        M64[D_N][F_D | R_3] = 0xf8000000;
+        M64[D_NW][F_D | R_3] = 0x81020;
+        M64[D_SE][F_D | R_3] = 0x10200000000;
+        M64[D_SW][F_D | R_3] = 0x20100;
+        M64[D_NE][F_D | R_3] = 0x4020100800000000;
+        M64[D_W][F_E | R_3] = 0x4040404;
+        M64[D_E][F_E | R_3] = 0x404040000000000;
+        M64[D_S][F_E | R_3] = 0x300000000;
+        M64[D_N][F_E | R_3] = 0xf800000000;
+        M64[D_NW][F_E | R_3] = 0x8102040;
+        M64[D_SE][F_E | R_3] = 0x1020000000000;
+        M64[D_SW][F_E | R_3] = 0x2010000;
+        M64[D_NE][F_E | R_3] = 0x2010080000000000;
+        M64[D_W][F_F | R_3] = 0x404040404;
+        M64[D_E][F_F | R_3] = 0x404000000000000;
+        M64[D_S][F_F | R_3] = 0x30000000000;
+        M64[D_N][F_F | R_3] = 0xf80000000000;
+        M64[D_NW][F_F | R_3] = 0x810204080;
+        M64[D_SE][F_F | R_3] = 0x102000000000000;
+        M64[D_SW][F_F | R_3] = 0x201000000;
+        M64[D_NE][F_F | R_3] = 0x1008000000000000;
+        M64[D_W][F_G | R_3] = 0x40404040404;
+        M64[D_E][F_G | R_3] = 0x400000000000000;
+        M64[D_S][F_G | R_3] = 0x3000000000000;
+        M64[D_N][F_G | R_3] = 0xf8000000000000;
+        M64[D_NW][F_G | R_3] = 0x81020408000;
+        M64[D_SE][F_G | R_3] = 0x200000000000000;
+        M64[D_SW][F_G | R_3] = 0x20100000000;
+        M64[D_NE][F_G | R_3] = 0x800000000000000;
+        M64[D_W][F_H | R_3] = 0x4040404040404;
+        M64[D_S][F_H | R_3] = 0x300000000000000;
+        M64[D_N][F_H | R_3] = 0xf800000000000000;
+        M64[D_NW][F_H | R_3] = 0x8102040800000;
+        M64[D_SW][F_H | R_3] = 0x2010000000000;
+        M64[D_E][F_A | R_2] = 0x202020202020200;
+        M64[D_S][F_A | R_2] = 0x1;
+        M64[D_N][F_A | R_2] = 0xfc;
+        M64[D_SE][F_A | R_2] = 0x100;
+        M64[D_NE][F_A | R_2] = 0x80402010080400;
+        M64[D_W][F_B | R_2] = 0x2;
+        M64[D_E][F_B | R_2] = 0x202020202020000;
+        M64[D_S][F_B | R_2] = 0x100;
+        M64[D_N][F_B | R_2] = 0xfc00;
+        M64[D_NW][F_B | R_2] = 0x4;
+        M64[D_SE][F_B | R_2] = 0x10000;
+        M64[D_SW][F_B | R_2] = 0x1;
+        M64[D_NE][F_B | R_2] = 0x8040201008040000;
+        M64[D_W][F_C | R_2] = 0x202;
+        M64[D_E][F_C | R_2] = 0x202020202000000;
+        M64[D_S][F_C | R_2] = 0x10000;
+        M64[D_N][F_C | R_2] = 0xfc0000;
+        M64[D_NW][F_C | R_2] = 0x408;
+        M64[D_SE][F_C | R_2] = 0x1000000;
+        M64[D_SW][F_C | R_2] = 0x100;
+        M64[D_NE][F_C | R_2] = 0x4020100804000000;
+        M64[D_W][F_D | R_2] = 0x20202;
+        M64[D_E][F_D | R_2] = 0x202020200000000;
+        M64[D_S][F_D | R_2] = 0x1000000;
+        M64[D_N][F_D | R_2] = 0xfc000000;
+        M64[D_NW][F_D | R_2] = 0x40810;
+        M64[D_SE][F_D | R_2] = 0x100000000;
+        M64[D_SW][F_D | R_2] = 0x10000;
+        M64[D_NE][F_D | R_2] = 0x2010080400000000;
+        M64[D_W][F_E | R_2] = 0x2020202;
+        M64[D_E][F_E | R_2] = 0x202020000000000;
+        M64[D_S][F_E | R_2] = 0x100000000;
+        M64[D_N][F_E | R_2] = 0xfc00000000;
+        M64[D_NW][F_E | R_2] = 0x4081020;
+        M64[D_SE][F_E | R_2] = 0x10000000000;
+        M64[D_SW][F_E | R_2] = 0x1000000;
+        M64[D_NE][F_E | R_2] = 0x1008040000000000;
+        M64[D_W][F_F | R_2] = 0x202020202;
+        M64[D_E][F_F | R_2] = 0x202000000000000;
+        M64[D_S][F_F | R_2] = 0x10000000000;
+        M64[D_N][F_F | R_2] = 0xfc0000000000;
+        M64[D_NW][F_F | R_2] = 0x408102040;
+        M64[D_SE][F_F | R_2] = 0x1000000000000;
+        M64[D_SW][F_F | R_2] = 0x100000000;
+        M64[D_NE][F_F | R_2] = 0x804000000000000;
+        M64[D_W][F_G | R_2] = 0x20202020202;
+        M64[D_E][F_G | R_2] = 0x200000000000000;
+        M64[D_S][F_G | R_2] = 0x1000000000000;
+        M64[D_N][F_G | R_2] = 0xfc000000000000;
+        M64[D_NW][F_G | R_2] = 0x40810204080;
+        M64[D_SE][F_G | R_2] = 0x100000000000000;
+        M64[D_SW][F_G | R_2] = 0x10000000000;
+        M64[D_NE][F_G | R_2] = 0x400000000000000;
+        M64[D_W][F_H | R_2] = 0x2020202020202;
+        M64[D_S][F_H | R_2] = 0x100000000000000;
+        M64[D_N][F_H | R_2] = 0xfc00000000000000;
+        M64[D_NW][F_H | R_2] = 0x4081020408000;
+        M64[D_SW][F_H | R_2] = 0x1000000000000;
+        M64[D_E][F_A | R_1] = 0x101010101010100;
+        M64[D_N][F_A | R_1] = 0xfe;
+        M64[D_NE][F_A | R_1] = 0x8040201008040200;
+        M64[D_W][F_B | R_1] = 0x1;
+        M64[D_E][F_B | R_1] = 0x101010101010000;
+        M64[D_N][F_B | R_1] = 0xfe00;
+        M64[D_NW][F_B | R_1] = 0x2;
+        M64[D_NE][F_B | R_1] = 0x4020100804020000;
+        M64[D_W][F_C | R_1] = 0x101;
+        M64[D_E][F_C | R_1] = 0x101010101000000;
+        M64[D_N][F_C | R_1] = 0xfe0000;
+        M64[D_NW][F_C | R_1] = 0x204;
+        M64[D_NE][F_C | R_1] = 0x2010080402000000;
+        M64[D_W][F_D | R_1] = 0x10101;
+        M64[D_E][F_D | R_1] = 0x101010100000000;
+        M64[D_N][F_D | R_1] = 0xfe000000;
+        M64[D_NW][F_D | R_1] = 0x20408;
+        M64[D_NE][F_D | R_1] = 0x1008040200000000;
+        M64[D_W][F_E | R_1] = 0x1010101;
+        M64[D_E][F_E | R_1] = 0x101010000000000;
+        M64[D_N][F_E | R_1] = 0xfe00000000;
+        M64[D_NW][F_E | R_1] = 0x2040810;
+        M64[D_NE][F_E | R_1] = 0x804020000000000;
+        M64[D_W][F_F | R_1] = 0x101010101;
+        M64[D_E][F_F | R_1] = 0x101000000000000;
+        M64[D_N][F_F | R_1] = 0xfe0000000000;
+        M64[D_NW][F_F | R_1] = 0x204081020;
+        M64[D_NE][F_F | R_1] = 0x402000000000000;
+        M64[D_W][F_G | R_1] = 0x10101010101;
+        M64[D_E][F_G | R_1] = 0x100000000000000;
+        M64[D_N][F_G | R_1] = 0xfe000000000000;
+        M64[D_NW][F_G | R_1] = 0x20408102040;
+        M64[D_NE][F_G | R_1] = 0x200000000000000;
+        M64[D_W][F_H | R_1] = 0x1010101010101;
+        M64[D_N][F_H | R_1] = 0xfe00000000000000;
+        M64[D_NW][F_H | R_1] = 0x2040810204080;   
 
-        if(sq_id >= msb){
-            // directions: NorthWest, West, SouthWest, South    
-            return MASKS[direction][SQUARE_ARRAY[msb]]; //^ (1 << msb)    
-        }else{
-            // directions: SouthEast, East, NorthEast, North
-            return MASKS[direction][SQUARE_ARRAY[lsb]]; //^ (1 << lsb)
-        }
+        M64[D_ST][F_A | R_1] = 0x0000000000000302;
+        M64[D_ST][F_A | R_2] = 0x0000000000000705;
+        M64[D_ST][F_A | R_8] = 0x000000000000c040;
+        M64[D_ST][F_B | R_8] = 0x0000000000c040c0;
+        M64[D_ST][F_H | R_8] = 0x40c0000000000000;
+        M64[D_ST][F_H | R_2] = 0x0507000000000000;
+        M64[D_ST][F_H | R_1] = 0x0203000000000000;
+        M64[D_ST][F_B | R_1] = 0x0000000000030203;
+        M64[D_ST][F_B | R_2] = 0x0000000000070507; 
+
+        // TODO:: calculate M64 hash and check in initialization to avoid random tampering
+
     }
     //-----------------------------------------------------------------
-    // called once by the lobby at time of deployment
-    function _initialize(address _player1, address _player2, uint8 meta) private {
-        white = _player1;
-        black = _player2;
-        turn = white;
-        state = 0x10;
-        emit GameStarted(white, black, meta);
+    function _mask_direction(uint8 _sq, uint8 _direction, uint64 _block64){
+        uint8 lsb = _lsb64(_block64);
+        uint8 msb = _msb64(_block64);
+
+        if(_sq >= msb){
+            // directions: NorthWest, West, SouthWest, South    
+            return M64[direction][msb];  
+        }else{
+            // directions: SouthEast, East, NorthEast, North
+            return M64[direction][lsb];
+        }
     }
     //-----------------------------------------------------------------
     //                     [[VISIBILITY FUNCTIONS]]
     //-----------------------------------------------------------------
     function _pawn_white(uint8 _sq) private returns (uint64){
-
         uint8 r = (_sq % 8);
         uint8 f = ((_sq - r) % 8);
         uint64 mask = 0x00;
@@ -297,7 +720,7 @@ contract ChessTable is IChessTable{
         }
         else{
             // TODO:: implement pawn improvement
-            require(1==0, 'ChessTable: IMP ERROR');
+            require(1==0, 'ChessTable: IMPROVEMENT_ERROR');
         }
 
         if(f == 0){
@@ -315,7 +738,6 @@ contract ChessTable is IChessTable{
     }
     //-----------------------------------------------------------------
     function _pawn_black(uint8 _sq) private returns (uint64){
-
         uint8 r = (_sq % 8);
         uint8 f = ((_sq - r) % 8);
         uint64 mask = 0x00;
@@ -329,7 +751,7 @@ contract ChessTable is IChessTable{
         }
         else{
             // TODO:: implement pawn improvement
-            require(1==0, 'ChessTable: IMP ERROR');
+            require(1==0, 'ChessTable: IMPROVEMENT_ERROR');
         }
 
         if(f == 0){
@@ -387,59 +809,56 @@ contract ChessTable is IChessTable{
     }
     //-----------------------------------------------------------------
     function _bishop(uint64 board64, uint8 _sq) private returns (uint64){
-        // NE:4, NW:5, SE:6, SW:7
-
-        uint64 ne = MASKS[4][_sq];
+        uint64 ne = M64[D_NE][_sq];
         uint64 ne_obs = board64 & ne;
         if(ne_obs != 0x00){
-            ne = ne & (~ mask_direction(_sq, 4, ne_obs));
+            ne = ne & (~ mask_direction(_sq, D_NE, ne_obs));
         }
 
-        uint64 nw = MASKS[5][_sq];
+        uint64 nw = M64[D_NW][_sq];
         uint64 nw_obs = board64 & nw;
         if(nw_obs != 0x00){
-            nw = nw & (~ mask_direction(_sq, 5, nw_obs));
+            nw = nw & (~ mask_direction(_sq, D_NW, nw_obs));
         }
 
-        uint64 se = MASKS[6][_sq];
+        uint64 se = M64[D_SE][_sq];
         uint64 se_obs = board64 & se;
         if(se_obs != 0x00){
-            se = se & (~ mask_direction(_sq, 6, se_obs));
+            se = se & (~ mask_direction(_sq, D_SE, se_obs));
         }
 
-        uint64 sw = MASKS[7][_sq];
+        uint64 sw = M64[D_SW][_sq];
         uint64 sw_obs = board64 & sw;
         if(sw_obs != 0x00){
-            sw = sw & (~ mask_direction(_sq, 7, sw_obs));
+            sw = sw & (~ mask_direction(_sq, D_SW, sw_obs));
         }
 
         return ne | nw | se | sw;
     }
     //-----------------------------------------------------------------
     function _rook(uint64 board64, uint8 _sq) private returns (uint64){
-        // N:0, S:1, E:2, W:3
-        uint64 north = MASKS[0][_sq];
+        uint64 north = M64[D_N][_sq];
         uint64 north_obs = board64 & north;
         if(north_obs != 0x00){
-            north = north & (~ mask_direction(_sq, 0, north_obs));
+            north = north & (~ mask_direction(_sq, D_N, north_obs));
         }
 
-        uint64 south = MASKS[1][_sq];
+        uint64 south = M64[D_S][_sq];
         uint64 south_obs = board64 & south;
         if(south_obs != 0x00){
-            south = south & (~ mask_direction(_sq, 1, south_obs));
+            south = south & (~ mask_direction(_sq, D_S, south_obs));
         }
 
-        uint64 east = MASKS[2][_sq];
+        uint64 east = M64[D_E][_sq];
         uint64 east_obs = board64 & east;
         if(east_obs != 0x00){
-            east = east & (~ mask_direction(_sq, 2, east_obs));
+            east = east & (~ mask_direction(_sq, D_E, east_obs));
         }
 
-        uint64 west = MASKS[3][_sq];
+        uint64 west = M64[D_W][_sq];
         uint64 west_obs = board64 & west;
         if(west_obs != 0x00){
-            west = west & (~ mask_direction(_sq, 3, west_obs));
+            west = west & (~ mask_direction(_sq, D_W, west_obs));
         }
 
         return north | south | east | west;
@@ -452,69 +871,85 @@ contract ChessTable is IChessTable{
     function _king(uint8 _sq) private returns (uint64){
         uint8 r = (_sq % 8);
         uint8 f = ((_sq - r) % 8);
-        uint64 mask = 0x00;
-        // '*A1': 0x0000000000000302,0
-        // '*A2': 0x0000000000000705,1
-        // '*A8': 0x000000000000c040,2
-        // '*B8': 0x0000000000c040c0,3
-        // '*H8': 0x40c0000000000000,4
-        // '*H2': 0x0507000000000000,5
-        // '*H1': 0x0203000000000000,6
-        // '*B1': 0x0000000000030203,7
-        // '*B2': 0x0000000000070507,8
-        if(MASKS[9][f * 8 + r] != 0){
-            return MASKS[9][f * 8 + r];
+
+        if(M64[D_ST][_sq] != 0){
+            return M64[D_ST][_sq];
         }
         else{
             if(r == 0){
-                return (MASKS[9][7] << (8 * (f - 1)));
+                return (M64[D_ST][F_B | R_1] << (8 * (f - 1)));
             }
             else if(r == 7){
-                return (MASKS[9][3] << (8 * (f - 1)));
+                return (M64[D_ST][F_B | R_8] << (8 * (f - 1)));
             }
             else if(f == 0){
-                return (MASKS[9][1] << (r - 1));
+                return (M64[D_ST][F_A | R_2] << (r - 1));
             }
             else if(f == 7){
-                return (MASKS[9][5] << (r - 1));
+                return (M64[D_ST][F_H | R_2] << (r - 1));
             }
             else{
-                return (MASKS[9][8] << ((r - 1) + (8 * (f - 1))));
+                return (M64[D_ST][F_B | R_2] << ((r - 1) + (8 * (f - 1))));
             }
         }
     }
+    //
     //-----------------------------------------------------------------
     function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private{
         // TODO:: make sure _piece is in legal range
         require(_piece < PIECE_COUNT, "ChessTable, PIECE_OUT_OF_RANGE");
         require(_sq < SQUARE_COUNT, "ChessTable, SQUARE_OUT_OF_RANGE");
-        uint64 new_vis;
 
-        if(_piece >= PIECE_IDS['W_P_A']){
+        if(_piece >= W_P_A){
             if(_piece % 2 == 0){
-                new_vis = pawn_white(_sq);
+                return pawn_white(_sq);
             }
             else{
-                new_vis = pawn_black(_sq);
+                return pawn_black(_sq);
             }
         }
-        else if(_piece >= PIECE_IDS['W_N_B']){
-            new_vis = _knight(_sq);
+        else if(_piece >= W_N_B){
+            return _knight(_sq);
         }
-        else if _piece >= PIECE_IDS['W_B_C']){
-            new_vis = _bishop(board64, _sq);
+        else if(_piece >= W_B_C){
+            return _bishop(board64, _sq);
         }
-        else if _piece >= PIECE_IDS['W_R_A']){
-            new_vis = _rook(board64, _sq);
+        else if(_piece >= W_R_A){
+            return _rook(board64, _sq);
         }
-        else if _piece >= PIECE_IDS['W_Q']){
-            new_vis = _queen(board64, _sq);
+        else if(_piece >= W_Q){
+            return _queen(board64, _sq);
         }
         else{
-            new_vis = _king(_sq);
+            return _king(_sq);
         }
-
-        return new_vis
+    }
+    //-----------------------------------------------------------------
+    function _updatePiece(_piece, _state){
+        uint256 piece_mask = (0xFF << (_piece * 8));
+        board128 &= (~piece_mask); // clean previous piece state
+        board128 |= _state; // shoving the modified piece byte in
+    }
+    //-----------------------------------------------------------------
+    function _setEngagement(_f_piece, _t_piece, _value){
+        if(_value == 0){
+            engagements &= ~(1<< (_f_piece * 32 + _t_piece));
+        }
+        else{
+            engagements |= (1<< (_f_piece * 32 + _t_piece));
+        }
+    }
+    //-----------------------------------------------------------------
+    function _clearEngagements(_piece, _direction){
+        if(_direction == 0){
+            engagements &= ~( 0xFFFFFFFF << _piece);
+        }
+        else{
+            // TODO:: wrong
+            for(uint8 i=0; i<PIECE_COUNT; i++){
+                engagements = engagements & ~( 0x00000001 << (i * 32 + _piece));
+            }
+        }
     }
     //-----------------------------------------------------------------
     function _move(address _player, uint8 _piece, uint8 _action) private{
@@ -549,83 +984,95 @@ contract ChessTable is IChessTable{
         _updatePiece(_piece, new_state);
 
         // Reloading the visibility of the moved piece
-        visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq);
+        visibility[_piece] = _reloadVisibility(board64,_piece, to_sq);
 
         // Making squares beyond from_sq visible to engaged pieces
-        start_index = _piece * PIECE_COUNT;
-        sub_engagements = engagements >> start_index;
-        for i in range(PIECE_COUNT):
-            if sub_engagements % 2 == 1:
-                pc_sq = (board128 >> (i * 8)) & MASK128_POSITION
-                visibility[i] = _reloadVisibility(board64, board128, i, pc_sq)
-            sub_engagements = sub_engagements >> 1
+        uint32 start_index = _piece * PIECE_COUNT;
+        uint32 sub_engagements = engagements >> start_index;
+        for(uint8 i=0;i<PIECE_COUNT;i++){
+            if(sub_engagements % 2 == 1){
+                uint64 pc_sq = (board128 >> (i * 8)) & MASK128_POSITION;
+                visibility[i] = _reloadVisibility(board64, i, pc_sq);               
+            }
+            sub_engagements = sub_engagements >> 1;
+        }
 
         // Reset engagements of the moved piece
-        engagements = reset_piece_engagements(engagements, _piece, 0)
+        _clearEngagements(_piece, 0);
 
-        i_piece = 0
-        opp_vis = 0x00
+        uint8 i_piece = 0;
+        uint64 opp_vis = 0x00;
 
         // Keeping kings position in mind
-        if _piece % 2 == 0:
-            king_sq = board128 & MASK128_POSITION
-        else:
-            king_sq = (board128 >> 8) & MASK128_POSITION
+        if(_piece % 2 == 0){
+            king_sq = board128 & MASK128_POSITION;
+        }
+        else{
+            king_sq = (board128 >> 8) & MASK128_POSITION;
+        }
 
         // Loop over all pieces
-        while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
+        for(uint8 i_piece = 0; i_piece < PIECE_COUNT; i_piece++){
             // opponent total visibility calculation
-            if (_piece % 2 == 0 and i_piece % 2 == 1) or (_piece % 2 == 1 and i_piece % 2 == 0) :
-                opp_vis = opp_vis | visibility[i_piece]
+            if((_piece % 2 == 0 and i_piece % 2 == 1) || (_piece % 2 == 1 and i_piece % 2 == 0)){
+                opp_vis |= visibility[i_piece];
+            }
 
             // for all pieces except the moved piece
-            if i_piece != _piece:
-                # i_piece square calculation
-                i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
+            if(i_piece != _piece){
+                // i_piece square calculation
+                uint64 i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION;
 
                 // Update dead piece state
-                if i_sq == to_sq:
-                    new_state = M_DEAD << (i_piece * 8)
-                    board128 = update_piece128(board128, i_piece, new_state)
-                else:
-                    ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+                if(i_sq == to_sq){
+                    new_state = M_DEAD << (i_piece * 8);
+                    board128 = _updatePiece(board128, i_piece, new_state);
+                }
+                else{
+                    uint8 ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE;
 
                     // Adding post-move _piece to i_piece engagements
-                    if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
+                    if(((visibility[i_piece]) >> to_sq)  % 2 == 1 && ipc_mode != 0){
                         // update engagement
-                        engagements = set_engagement(engagements, _piece, i_piece, 1)
+                        _setEngagement(_piece, i_piece, 1);
 
                         // Making squares beyond to_sq invisible to i_piece
-                        visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+                        visibility[i_piece] = _reloadVisibility(board64, i_piece, i_sq);
 
                         // removing the broken engagements
-                        sub_engagements = engagements >> i_piece
-                        for j_piece in range(32):
-                            if sub_engagements % 2 == 1:
-                                j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
-                                if(visibility[i_piece] >> j_sq) % 2 == 0:
-                                    engagements = set_engagement(engagements, j_piece, i_piece, 0)
-                            sub_engagements = sub_engagements >> 32
-                    
-                    // Adding post-move _piece to i_piece engagements
-                    if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
-                        engagements = set_engagement(engagements, i_piece, _piece, 1)
+                        sub_engagements = engagements >> i_piece;
+                        for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j++){
+                            if(sub_engagements % 2 == 1){
+                                uint64 j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION;
+                                if((visibility[i_piece] >> j_sq) % 2 == 0){
+                                    _setEngagement(j_piece, i_piece, 0);
+                                }
+                            }
+                            sub_engagements = sub_engagements >> 32;
 
-            i_piece = i_piece + 1
+                        }
+                    }
+                    // Adding post-move _piece to i_piece engagements
+                    if(((visibility[_piece]) >> i_sq) % 2 == 1 && ipc_mode != 0){
+                        _setEngagement(i_piece, _piece, 1);
+                    }
+                }
+            }
+
+        }
 
         // player's king must be safe post-move
-        if (opp_vis >> king_sq) % 2 == 1:
-            raise Exception("ChessCore: KING_IS_CHECK")
+        require((opp_vis >> king_sq) % 2 != 1, "ChessTable: KING_IS_CHECK");
 
-        // Checking white's checkmate
-        if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (board128 >> 7) % 2 == 1 :
-            # black won
-            print("BLACK WON!! not implemented")
+        // // Checking white's checkmate
+        // if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (board128 >> 7) % 2 == 1 :
+        //     # black won
+        //     print("BLACK WON!! not implemented")
 
-        // Checking black's checkmate
-        if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (board128 >> 15) % 2 == 1 :
-            # white won
-            print("WHITE WON!! not implemented")
+        // // Checking black's checkmate
+        // if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (board128 >> 15) % 2 == 1 :
+        //     # white won
+        //     print("WHITE WON!! not implemented")
 
         // lastMove = _piece << 8 | _action; 
         // moves.push(lastMove);
@@ -638,6 +1085,12 @@ contract ChessTable is IChessTable{
     }
 
     //-----------------------------------------------------------------
+    // called once by the lobby at time of deployment
+    // function _initialize(address _player1, address _player2, uint8 meta) private {
+
+    // }
+
+    //-----------------------------------------------------------------
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
     //                      [[PUBLIC FUNCTION]]
@@ -645,7 +1098,11 @@ contract ChessTable is IChessTable{
 
     function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {
         require(msg.sender == lobby, 'ChessTable: NOT_AUTHORIZED');
-        _initialize(_player1, _player2, meta);
+        white = _player1;
+        black = _player2;
+        turn = white;
+        state = 0x10;
+        emit GameStarted(white, black, meta);
         return true;
     }
 
@@ -665,4 +1122,6 @@ contract ChessTable is IChessTable{
         _move(pieceOwner, piece, action);
         return true;
     }
+
+
 }
