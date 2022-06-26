@@ -113,8 +113,9 @@ contract ChessTable is IChessTable{
     uint32[] public engagements;
 
     // showing whether a square is filled or not
-    uint64 public whiteOnBoard;
-    uint64 public blackOnBoard;
+    uint64 public board64W;
+    uint64 public board64B;
+
 
     uint private unlocked = 1;
     uint16[] private moves;
@@ -246,7 +247,7 @@ contract ChessTable is IChessTable{
         return (base + bval[x] - 1); // -1 to convert to index
     }
     //-----------------------------------------------------------------
-    function lsb64(uint64 x) private{
+    function _lsb64(uint64 x) private{
         /*Returns the index, counting from 0, of the
         least significant set bit in `x`.
         */
@@ -276,56 +277,6 @@ contract ChessTable is IChessTable{
         turn = white;
         state = 0x10;
         emit GameStarted(white, black, meta);
-    }
-
-    //-----------------------------------------------------------------
-    function _logic(uint8 _piece, uint8 _action) private {
-
-        uint8 from_sq = ((uint8)(board >> (_piece * 8))) & PC_COORD_MASK;
-        uint8 to_sq = _action & PC_COORD_MASK;
-
-        // is the square visible to the moved piece?
-        require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
-
-        // updating the board partially
-        uint256 newPieceState = ((uint256)(M_SET | to_sq) << (_piece * 8));
-        uint256 piece_mask = (0xFF << (_piece * 8));
-        board &= (~piece_mask);// clean previous piece state
-        board |= newPieceState; // shoving the modified piece byte in
-
-        // TODO:: update DEAD pieces
-
-        // update engagements and visibility
-        uint32 new_engagement = 0x00;
-        uint8 i_piece = PIECE_COUNT - 1;
-        while(i_piece >= 0 && i_piece <= PIECE_COUNT - 1){
-
-            // Finding pre-move engaged pieces
-            if(i_piece != _piece && (engagements[i_piece] >> _piece) % 2){
-                // Making squares beyond from_sq visible to i_piece
-                _updateVisibility(i_piece, from_sq, true);
-            }
-
-            // Finding post-move engaged pieces
-            if((visibility[i_piece] >> to_sq) % 2 == 1){
-                // update engagement
-                new_engagement |= 1;
-                engagements[i_piece] |= (1 << _piece);
-
-                // Making squares beyond to_sq invisible to i_piece
-                _updateVisibility(i_piece, to_sq, false);
-
-            }
-
-            new_engagement = new_engagement << 1;
-            i_piece--;
-        }
-        // setting engagements of the moved piece
-        engagements[_piece] = new_engagement;
-
-        // Reloading the visibility of the moved piece
-        _reloadVisibility(_piece);
-
     }
     //-----------------------------------------------------------------
     //                     [[VISIBILITY FUNCTIONS]]
@@ -567,7 +518,115 @@ contract ChessTable is IChessTable{
     }
     //-----------------------------------------------------------------
     function _move(address _player, uint8 _piece, uint8 _action) private{
-        _logic(_piece, _action);
+        uint64 pieceB64;
+        if(_piece % 2 == 0){
+            pieceB64 = board64W;
+        }
+        else{
+            pieceB64 = board64B;
+        }
+
+        uint64 to_sq = _action & MASK128_POSITION;
+
+        // is the square visible to the moved piece?
+        require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+
+        uint64 from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION;
+
+        // Updating board64
+        if(_piece % 2 == 0){
+            board64W = board64W & ~(1 << from_sq);
+            board64W = board64W | (1 << to_sq);
+        }
+        else{
+            board64B = board64B & ~(1 << from_sq);
+            board64B = board64B | (1 << to_sq);
+        }
+        board64 = board64W | board64B;
+
+        // updating board128
+        uint8 new_state = ((M_SET | to_sq) << (_piece * 8));
+        _updatePiece(_piece, new_state);
+
+        // Reloading the visibility of the moved piece
+        visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq);
+
+        // Making squares beyond from_sq visible to engaged pieces
+        start_index = _piece * PIECE_COUNT;
+        sub_engagements = engagements >> start_index;
+        for i in range(PIECE_COUNT):
+            if sub_engagements % 2 == 1:
+                pc_sq = (board128 >> (i * 8)) & MASK128_POSITION
+                visibility[i] = _reloadVisibility(board64, board128, i, pc_sq)
+            sub_engagements = sub_engagements >> 1
+
+        // Reset engagements of the moved piece
+        engagements = reset_piece_engagements(engagements, _piece, 0)
+
+        i_piece = 0
+        opp_vis = 0x00
+
+        // Keeping kings position in mind
+        if _piece % 2 == 0:
+            king_sq = board128 & MASK128_POSITION
+        else:
+            king_sq = (board128 >> 8) & MASK128_POSITION
+
+        // Loop over all pieces
+        while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
+            // opponent total visibility calculation
+            if (_piece % 2 == 0 and i_piece % 2 == 1) or (_piece % 2 == 1 and i_piece % 2 == 0) :
+                opp_vis = opp_vis | visibility[i_piece]
+
+            // for all pieces except the moved piece
+            if i_piece != _piece:
+                # i_piece square calculation
+                i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
+
+                // Update dead piece state
+                if i_sq == to_sq:
+                    new_state = M_DEAD << (i_piece * 8)
+                    board128 = update_piece128(board128, i_piece, new_state)
+                else:
+                    ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+
+                    // Adding post-move _piece to i_piece engagements
+                    if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
+                        // update engagement
+                        engagements = set_engagement(engagements, _piece, i_piece, 1)
+
+                        // Making squares beyond to_sq invisible to i_piece
+                        visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+
+                        // removing the broken engagements
+                        sub_engagements = engagements >> i_piece
+                        for j_piece in range(32):
+                            if sub_engagements % 2 == 1:
+                                j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
+                                if(visibility[i_piece] >> j_sq) % 2 == 0:
+                                    engagements = set_engagement(engagements, j_piece, i_piece, 0)
+                            sub_engagements = sub_engagements >> 32
+                    
+                    // Adding post-move _piece to i_piece engagements
+                    if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:
+                        engagements = set_engagement(engagements, i_piece, _piece, 1)
+
+            i_piece = i_piece + 1
+
+        // player's king must be safe post-move
+        if (opp_vis >> king_sq) % 2 == 1:
+            raise Exception("ChessCore: KING_IS_CHECK")
+
+        // Checking white's checkmate
+        if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (board128 >> 7) % 2 == 1 :
+            # black won
+            print("BLACK WON!! not implemented")
+
+        // Checking black's checkmate
+        if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (board128 >> 15) % 2 == 1 :
+            # white won
+            print("WHITE WON!! not implemented")
+
         // lastMove = _piece << 8 | _action; 
         // moves.push(lastMove);
 
