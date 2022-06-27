@@ -94,7 +94,6 @@ contract ChessTable is IChessTable{
     uint8 public constant D_SW = 7;
     uint8 public constant D_ST = 8; // star patterns for king
 
-    uint8[] public bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5];
     uint64 public constant U64_1 = 0x01;
     //-----------------------------------------------------------------
     //-----------------------------------------------------------------
@@ -114,10 +113,10 @@ contract ChessTable is IChessTable{
     uint256 public pieces;
 
     // piece to squares
-    uint64[] public visibility;
+    uint64[32] public visibility;
 
     // piece to pieces
-    uint32[] public engagements;
+    uint32[32] public engagements;
 
     // showing whether a square is filled or not
     uint64 public board64W;
@@ -145,12 +144,480 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     //                          [[CONSTRUCTOR]]
     //-----------------------------------------------------------------
-    constructor() public {
+    constructor(){
         lobby = msg.sender;
         name = "gary";
     
-        // setting the board pieces
+        _precomputations();
+        _setBoard();
+    }
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    //                     [[MATH FUNCTION]]
+    //-----------------------------------------------------------------
 
+    //-----------------------------------------------------------------
+    function _msb64(uint64 x) private returns (uint8){
+        uint8[32] memory bval = [ 0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5];
+        uint8 base = 0;
+        if (x & 0xFFFFFFFF00000000 != 0){
+            base = base + 32; // (64/2)
+            x = x >> 32; // (64/2)
+        }
+        if (x & 0x00000000FFFF0000 != 0){
+            base = base + 16; // (64/4)
+            x = x >> 16; // (64/4)
+        }
+        if (x & 0x000000000000FF00 != 0){
+            base = base + 8; // (64/8)
+            x = x >> 8; // (64/8)
+        }
+        if (x & 0x00000000000000F0 != 0){
+            base = base + 4; // (64/16)
+            x = x >> 4; // (64/16)
+        }
+        return (base + bval[x] - 1); // -1 to convert to index
+    }
+    //-----------------------------------------------------------------
+    function _lsb64(uint64 x) private returns (uint8){
+        /*Returns the index, counting from 0, of the
+        least significant set bit in `x`.
+        */
+        // return _msb64(x & -x);
+        // TODO:: new!! test it.
+        return _msb64(x & (~(x-1)));
+    }
+    //-----------------------------------------------------------------
+    //                     [[PRIVATE FUNCTION]]
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    function _mask_direction(uint8 _sq, uint8 _direction, uint64 _block64) private returns (uint64){
+        uint8 lsb = _lsb64(_block64);
+        uint8 msb = _msb64(_block64);
+
+        if(_sq >= msb){
+            // directions: NorthWest, West, SouthWest, South    
+            return M64[_direction][msb];  
+        }else{
+            // directions: SouthEast, East, NorthEast, North
+            return M64[_direction][lsb];
+        }
+    }
+    //-----------------------------------------------------------------
+    //                     [[VISIBILITY FUNCTIONS]]
+    //-----------------------------------------------------------------
+    function _pawn_white(uint8 _sq) private returns (uint64){
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+ 
+        require(r!=0, 'ChessTable: FATAL. PAWN_WHITE');
+
+        if(r == 1){
+            mask |= (uint64)(0x03 << (((f) * 8) + (r + 1)));
+        }  
+        else if(r < 7){
+            mask |= (uint64)(0x01 << (((f) * 8) + (r + 1)));
+        }
+        else{
+            // TODO:: implement pawn improvement
+            require(1==0, 'ChessTable: IMPROVEMENT_ERROR');
+        }
+
+        if(f == 0){
+            mask |= (uint64)(0x01 << (((f + 1) * 8) + (r + 1)));
+        }
+        else if (f == 7){
+            mask |= (uint64)(0x01 << (((f - 1) * 8) + (r + 1)));
+        }
+        else{
+            mask |= (uint64)(0x01 << (((f + 1) * 8) + (r + 1)));
+            mask |= (uint64)(0x01 << (((f - 1) * 8) + (r + 1)));
+        }
+
+        return mask;
+    }
+    //-----------------------------------------------------------------
+    function _pawn_black(uint8 _sq) private returns (uint64){
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+        require(r != 7, 'ChessTable: FATAL. PAWN_WHITE');
+
+        if(r == 6){
+            mask |= (uint64)(0x03 << (((f) * 8) + (r + 1)));
+        }  
+        else if(r != 0){
+            mask |= (uint64)(0x01 << (((f) * 8) + (r + 1)));
+        }
+        else{
+            // TODO:: implement pawn improvement
+            require(1==0, 'ChessTable: IMPROVEMENT_ERROR');
+        }
+
+        if(f == 0){
+            mask |= (uint64)(0x01 << (((f + 1) * 8) + (r - 1)));
+        }
+        else if (f == 7){
+            mask |= (uint64)(0x01 << (((f - 1) * 8) + (r - 1)));
+        }
+        else{
+            mask |= (uint64)(0x01 << (((f + 1) * 8) + (r - 1)));
+            mask |= (uint64)(0x01 << (((f - 1) * 8) + (r - 1)));
+        }
+
+        return mask;
+    }
+    //-----------------------------------------------------------------
+    function _knight(uint8 _sq) private returns (uint64){
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+        uint64 mask = 0x00;
+
+        if((r + 1 == (r + 1) % 8) && (f - 2 == (f - 2) % 8)){
+            mask |= (uint64)(1 << ((r + 1) + (8 * (f - 2))));
+        }
+
+        if((r - 1 == (r - 1) % 8) && (f + 2 == (f + 2) % 8)){
+            mask |= (uint64)(1 << ((r - 1) + (8 * (f + 2))));
+        }
+
+        if((r + 1 == (r + 1) % 8)  && (f + 2 == (f + 2) % 8)){
+            mask |= (uint64)(1 << ((r + 1) + (8 * (f + 2))));
+        }
+
+        if((r - 1 == (r - 1) % 8) && (f - 2 == (f - 2) % 8)){
+            mask |= (uint64)(1 << ((r - 1) + (8 * (f - 2))));
+        }
+
+        if((r - 2 == (r - 2) % 8) && (f - 1 == (f - 1) % 8)){
+            mask |= (uint64)(1 << ((r - 2) + (8 * (f - 1))));
+        }
+
+        if((r + 2 == (r + 2) % 8) && (f - 1 == (f - 1) % 8)){
+            mask |= (uint64)(1 << ((r + 2) + (8 * (f - 1))));
+        }
+
+        if((r - 2 == (r - 2) % 8) && (f + 1 == (f + 1) % 8)){
+            mask |= (uint64)(1 << ((r - 2) + (8 * (f + 1))));
+        }
+
+        if((r + 2 == (r + 2) % 8) && (f + 1 == (f + 1) % 8)){
+            mask |= (uint64)(1 << ((r + 2) + (8 * (f + 1))));
+        }
+
+        return mask;
+    }
+    //-----------------------------------------------------------------
+    function _bishop(uint64 board64, uint8 _sq) private returns (uint64){
+        uint64 ne = M64[D_NE][_sq];
+        uint64 ne_obs = board64 & ne;
+        if(ne_obs != 0x00){
+            ne &= (~ _mask_direction(_sq, D_NE, ne_obs));
+        }
+
+        uint64 nw = M64[D_NW][_sq];
+        uint64 nw_obs = board64 & nw;
+        if(nw_obs != 0x00){
+            nw &= (~ _mask_direction(_sq, D_NW, nw_obs));
+        }
+
+        uint64 se = M64[D_SE][_sq];
+        uint64 se_obs = board64 & se;
+        if(se_obs != 0x00){
+            se &= (~ _mask_direction(_sq, D_SE, se_obs));
+        }
+
+        uint64 sw = M64[D_SW][_sq];
+        uint64 sw_obs = board64 & sw;
+        if(sw_obs != 0x00){
+            sw &= (~ _mask_direction(_sq, D_SW, sw_obs));
+        }
+
+        return ne | nw | se | sw;
+    }
+    //-----------------------------------------------------------------
+    function _rook(uint64 board64, uint8 _sq) private returns (uint64){
+        uint64 north = M64[D_N][_sq];
+        uint64 north_obs = board64 & north;
+        if(north_obs != 0x00){
+            north &= (~ _mask_direction(_sq, D_N, north_obs));
+        }
+
+        uint64 south = M64[D_S][_sq];
+        uint64 south_obs = board64 & south;
+        if(south_obs != 0x00){
+            south &= (~ _mask_direction(_sq, D_S, south_obs));
+        }
+
+        uint64 east = M64[D_E][_sq];
+        uint64 east_obs = board64 & east;
+        if(east_obs != 0x00){
+            east &= (~ _mask_direction(_sq, D_E, east_obs));
+        }
+
+        uint64 west = M64[D_W][_sq];
+        uint64 west_obs = board64 & west;
+        if(west_obs != 0x00){
+            west &= (~ _mask_direction(_sq, D_W, west_obs));
+        }
+
+        return north | south | east | west;
+    }
+    //-----------------------------------------------------------------
+    function _queen(uint64 board64, uint8 _sq) private returns (uint64){
+        return _bishop(board64, _sq) | _rook(board64, _sq);
+    }
+    //-----------------------------------------------------------------
+    function _king(uint8 _sq) private returns (uint64){
+        uint8 r = (_sq % 8);
+        uint8 f = ((_sq - r) % 8);
+
+        if(M64[D_ST][_sq] != 0){
+            return M64[D_ST][_sq];
+        }
+        else{
+            if(r == 0){
+                return (uint64)(M64[D_ST][F_B | R_1] << (8 * (f - 1)));
+            }
+            else if(r == 7){
+                return (uint64)(M64[D_ST][F_B | R_8] << (8 * (f - 1)));
+            }
+            else if(f == 0){
+                return (uint64)(M64[D_ST][F_A | R_2] << (r - 1));
+            }
+            else if(f == 7){
+                return (uint64)(M64[D_ST][F_H | R_2] << (r - 1));
+            }
+            else{
+                return (uint64)(M64[D_ST][F_B | R_2] << ((r - 1) + (8 * (f - 1))));
+            }
+        }
+    }
+    //
+    //-----------------------------------------------------------------
+    function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private returns (uint64){
+        // TODO:: make sure _piece is in legal range
+        require(_piece < PIECE_COUNT, "ChessTable, PIECE_OUT_OF_RANGE");
+        require(_sq < SQUARE_COUNT, "ChessTable, SQUARE_OUT_OF_RANGE");
+
+        if(_piece >= W_P_A){
+            if(_piece % 2 == 0){
+                return _pawn_white(_sq);
+            }
+            else{
+                return _pawn_black(_sq);
+            }
+        }
+        else if(_piece >= W_N_B){
+            return _knight(_sq);
+        }
+        else if(_piece >= W_B_C){
+            return _bishop(_block64, _sq);
+        }
+        else if(_piece >= W_R_A){
+            return _rook(_block64, _sq);
+        }
+        else if(_piece >= W_Q){
+            return _queen(_block64, _sq);
+        }
+        else{
+            return _king(_sq);
+        }
+    }
+    //-----------------------------------------------------------------
+    function _updatePiece(uint8 _piece, uint8 _state) private{
+        uint256 piece_mask = (0xFF << (_piece * 8));
+        pieces &= (~piece_mask); // clean previous piece state
+        pieces |= _state; // shoving the modified piece byte in
+    }
+    //-----------------------------------------------------------------
+    function _setEngagement(uint8 _f_piece, uint8 _t_piece, uint8 _value) private{
+        if(_value == 0){
+            engagements[_f_piece] &= (uint32) (~(1<< _t_piece));
+        }
+        else{
+            engagements[_f_piece] |= (uint32)(1<< _t_piece);
+        }
+    }
+    //-----------------------------------------------------------------
+    function _clearEngagements(uint8 _piece, uint8 _direction) private{
+        if(_direction == 0){
+            engagements[_piece] = 0xFFFFFFFF;
+        }
+        else{
+            // TODO:: wrong
+            for(uint8 i=0; i<PIECE_COUNT; i++){
+                engagements[i] &= (uint32)(~( 0x00000001 << (_piece)));
+            }
+        }
+    }
+    //-----------------------------------------------------------------
+    function _move(address _player, uint8 _piece, uint8 _action) private{
+        uint64 pieceB64 = _piece % 2 == 0 ? board64W : board64B;
+        uint8 to_sq = _action & PC_COORD_MASK;
+
+        // is the square visible to the moved piece?
+        require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+
+        uint8 from_sq = (uint8)(pieces >> (_piece * 8)) & PC_COORD_MASK;
+
+        // Updating board64
+        if(_piece % 2 == 0){
+            board64W &= (uint64)(~(1 << from_sq));
+            board64W |= (uint64)(1 << to_sq);
+        }
+        else{
+            board64B &= (uint64)(~(1 << from_sq));
+            board64B |= (uint64)(1 << to_sq);
+        }
+        uint64 board64 = board64W | board64B;
+
+        // updating pieces
+        uint8 new_state = ((M_SET | to_sq) << (_piece * 8));
+        _updatePiece(_piece, new_state);
+
+        // Reloading the visibility of the moved piece
+        visibility[_piece] = _reloadVisibility(board64,_piece, to_sq);
+
+        // Making squares beyond from_sq visible to engaged pieces
+        // uint32 start_index = _piece * PIECE_COUNT;
+        uint32 pc_engagements = engagements[_piece];
+        
+        // TODO:: It can be replaced with O(log(n)) algorithm
+        for(uint8 i=0;i<PIECE_COUNT;i++){
+            if(pc_engagements % 2 == 1){
+                uint8 pc_sq = (uint8)((pieces >> (i * 8)) & PC_COORD_MASK);
+                visibility[i] = _reloadVisibility(board64, i, pc_sq);               
+            }
+            pc_engagements >>= 1;
+        }
+
+        // Reset engagements of the moved piece
+        _clearEngagements(_piece, 0);
+
+        uint64 opp_vis = 0x00;
+        uint8 king_sq;
+        // Keeping kings position in mind
+        if(_piece % 2 == 0){
+            king_sq = (uint8)(pieces & PC_COORD_MASK);
+        }
+        else{
+            king_sq = (uint8)((pieces >> 8) & PC_COORD_MASK);
+        }
+
+        // Loop over all pieces
+        for(uint8 i_piece = 0; i_piece < PIECE_COUNT; i_piece++){
+            // opponent total visibility calculation
+            if((_piece % 2 == 0 && i_piece % 2 == 1) || (_piece % 2 == 1 && i_piece % 2 == 0)){
+                opp_vis |= visibility[i_piece];
+            }
+
+            // for all pieces except the moved piece
+            if(i_piece != _piece){
+                // i_piece square calculation
+                uint8 i_sq = (uint8)((pieces >> (i_piece * 8)) & PC_COORD_MASK);
+
+                // Update dead piece state
+                if(i_sq == to_sq){
+                    new_state = M_DEAD << (i_piece * 8);
+                    _updatePiece(i_piece, new_state);
+                }
+                else{
+                    uint8 ipc_mode = (uint8)((pieces >> (i_piece * 8)) & PC_MODE_MASK);
+
+                    // Adding post-move _piece to i_piece engagements
+                    if(((visibility[i_piece]) >> to_sq)  % 2 == 1 && ipc_mode != 0){
+                        // update engagement
+                        _setEngagement(_piece, i_piece, 1);
+
+                        // Making squares beyond to_sq invisible to i_piece
+                        visibility[i_piece] = _reloadVisibility(board64, i_piece, i_sq);
+
+                        // removing the broken engagements
+                        // sub_engagements = engagements >> i_piece;
+                        for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j_piece++){
+                            if((engagements[j_piece] >> i_piece) % 2 == 1){
+                                uint8 j_sq = (uint8)((pieces >> (j_piece * 8)) & PC_COORD_MASK);
+                                if((visibility[i_piece] >> j_sq) % 2 == 0){
+                                    _setEngagement(j_piece, i_piece, 0);
+                                }
+                            }
+                        }
+                    }
+                    // Adding post-move _piece to i_piece engagements
+                    if(((visibility[_piece]) >> i_sq) % 2 == 1 && ipc_mode != 0){
+                        _setEngagement(i_piece, _piece, 1);
+                    }
+                }
+            }
+
+        }
+
+        // player's king must be safe post-move
+        require((opp_vis >> king_sq) % 2 != 1, "ChessTable: KING_IS_CHECK");
+
+        // // Checking white's checkmate
+        // if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (pieces >> 7) % 2 == 1 :
+        //     # black won
+        //     print("BLACK WON!! not implemented")
+
+        // // Checking black's checkmate
+        // if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (pieces >> 15) % 2 == 1 :
+        //     # white won
+        //     print("WHITE WON!! not implemented")
+
+        // lastMove = _piece << 8 | _action; 
+        // moves.push(lastMove);
+
+        // Changing the turn
+        // TODO:: it can be done through flipping the addresses too.
+        turn = moves.length % 2 == 0 ? white : black;
+
+        emit PlayerMoved(_player, _piece, _action);
+    }
+
+    //-----------------------------------------------------------------
+    // called once by the lobby at time of deployment
+    // function _initialize(address _player1, address _player2, uint8 meta) private {
+
+    // }
+
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    //                      [[PUBLIC FUNCTION]]
+    //-----------------------------------------------------------------
+
+    function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {
+        require(msg.sender == lobby, 'ChessTable: NOT_AUTHORIZED');
+        white = _player1;
+        black = _player2;
+        turn = white;
+        state = 0x10;
+        emit GameStarted(white, black, meta);
+        return true;
+    }
+
+    function move(uint8 piece, uint8 action) external returns (bool) {
+        require(state >= 0x10, 'ChessTable: STATE_MISMATCH');
+        
+        // TODO:: the maxed out game's result must get resolved.
+        require(moves.length < MAX_MOVES, 'ChessTable: MOVE_OVERFLOW');
+        
+        // checking the turn condition
+        require(msg.sender == turn, 'ChessTable: NOT_YOUR_TURN');
+
+        // player should not be able to move other player's pieces
+        address pieceOwner = (piece % 2 == 0 ? white : black);
+        require( msg.sender == pieceOwner, 'ChessTable: NOT_YOUR_PIECE');
+
+        _move(pieceOwner, piece, action);
+        return true;
+    }
+
+    function _setBoard() private{
         // this part can be replaced with
         // pieces = 57206024880500355210511422320168595472987210685811253910150542059381089396576;
 
@@ -198,64 +665,26 @@ contract ChessTable is IChessTable{
         // board = board64W + board64B;
 
         // board64W =
-        board64W |= (1 << F_A | R_1); board64W |= (1 << F_A | R_2);
-        board64W |= (1 << F_B | R_1); board64W |= (1 << F_B | R_2);
-        board64W |= (1 << F_C | R_1); board64W |= (1 << F_C | R_2);
-        board64W |= (1 << F_D | R_1); board64W |= (1 << F_D | R_2);
-        board64W |= (1 << F_E | R_1); board64W |= (1 << F_E | R_2);
-        board64W |= (1 << F_F | R_1); board64W |= (1 << F_F | R_2);
-        board64W |= (1 << F_G | R_1); board64W |= (1 << F_G | R_2);
-        board64W |= (1 << F_H | R_1); board64W |= (1 << F_H | R_2);
+        board64W |= (uint64)(1 << F_A | R_1); board64W |= (uint64)(1 << F_A | R_2);
+        board64W |= (uint64)(1 << F_B | R_1); board64W |= (uint64)(1 << F_B | R_2);
+        board64W |= (uint64)(1 << F_C | R_1); board64W |= (uint64)(1 << F_C | R_2);
+        board64W |= (uint64)(1 << F_D | R_1); board64W |= (uint64)(1 << F_D | R_2);
+        board64W |= (uint64)(1 << F_E | R_1); board64W |= (uint64)(1 << F_E | R_2);
+        board64W |= (uint64)(1 << F_F | R_1); board64W |= (uint64)(1 << F_F | R_2);
+        board64W |= (uint64)(1 << F_G | R_1); board64W |= (uint64)(1 << F_G | R_2);
+        board64W |= (uint64)(1 << F_H | R_1); board64W |= (uint64)(1 << F_H | R_2);
 
         // board64B =
-        board64B |= (1 << F_A | R_7); board64B |= (1 << F_A | R_8);
-        board64B |= (1 << F_B | R_7); board64B |= (1 << F_B | R_8);
-        board64B |= (1 << F_C | R_7); board64B |= (1 << F_C | R_8);
-        board64B |= (1 << F_D | R_7); board64B |= (1 << F_D | R_8);
-        board64B |= (1 << F_E | R_7); board64B |= (1 << F_E | R_8);
-        board64B |= (1 << F_F | R_7); board64B |= (1 << F_F | R_8);
-        board64B |= (1 << F_G | R_7); board64B |= (1 << F_G | R_8);
-        board64B |= (1 << F_H | R_7); board64B |= (1 << F_H | R_8);
+        board64B |= (uint64)(1 << F_A | R_7); board64B |= (uint64)(1 << F_A | R_8);
+        board64B |= (uint64)(1 << F_B | R_7); board64B |= (uint64)(1 << F_B | R_8);
+        board64B |= (uint64)(1 << F_C | R_7); board64B |= (uint64)(1 << F_C | R_8);
+        board64B |= (uint64)(1 << F_D | R_7); board64B |= (uint64)(1 << F_D | R_8);
+        board64B |= (uint64)(1 << F_E | R_7); board64B |= (uint64)(1 << F_E | R_8);
+        board64B |= (uint64)(1 << F_F | R_7); board64B |= (uint64)(1 << F_F | R_8);
+        board64B |= (uint64)(1 << F_G | R_7); board64B |= (uint64)(1 << F_G | R_8);
+        board64B |= (uint64)(1 << F_H | R_7); board64B |= (uint64)(1 << F_H | R_8);
+    }
 
-        _precomputations();
-    }
-    //-----------------------------------------------------------------
-    //-----------------------------------------------------------------
-    //-----------------------------------------------------------------
-    //                     [[MATH FUNCTION]]
-    //-----------------------------------------------------------------
-
-    //-----------------------------------------------------------------
-    function _msb64(uint64 x) private{
-        uint8 base = 0;
-        if (x & 0xFFFFFFFF00000000 != 0){
-            base = base + 32; // (64/2)
-            x = x >> 32; // (64/2)
-        }
-        if (x & 0x00000000FFFF0000 != 0){
-            base = base + 16; // (64/4)
-            x = x >> 16; // (64/4)
-        }
-        if (x & 0x000000000000FF00 != 0){
-            base = base + 8; // (64/8)
-            x = x >> 8; // (64/8)
-        }
-        if (x & 0x00000000000000F0 != 0){
-            base = base + 4; // (64/16)
-            x = x >> 4; // (64/16)
-        }
-        return (base + bval[x] - 1); // -1 to convert to index
-    }
-    //-----------------------------------------------------------------
-    function _lsb64(uint64 x) private{
-        /*Returns the index, counting from 0, of the
-        least significant set bit in `x`.
-        */
-        return _msb64(x & -x);
-    }
-    //-----------------------------------------------------------------
-    //                     [[PRIVATE FUNCTION]]
-    //-----------------------------------------------------------------
     function _precomputations() private{
         M64[D_E][F_A | R_8] = 0x8080808080808000;
         M64[D_S][F_A | R_8] = 0x7f;
@@ -691,438 +1120,9 @@ contract ChessTable is IChessTable{
         // TODO:: calculate M64 hash and check in initialization to avoid random tampering
 
     }
-    //-----------------------------------------------------------------
-    function _mask_direction(uint8 _sq, uint8 _direction, uint64 _block64) private returns (uint64){
-        uint8 lsb = _lsb64(_block64);
-        uint8 msb = _msb64(_block64);
-
-        if(_sq >= msb){
-            // directions: NorthWest, West, SouthWest, South    
-            return M64[_direction][msb];  
-        }else{
-            // directions: SouthEast, East, NorthEast, North
-            return M64[_direction][lsb];
-        }
-    }
-    //-----------------------------------------------------------------
-    //                     [[VISIBILITY FUNCTIONS]]
-    //-----------------------------------------------------------------
-    function _pawn_white(uint8 _sq) private returns (uint64){
-        uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
-        uint64 mask = 0x00;
- 
-        require(r!=0, 'ChessTable: FATAL. PAWN_WHITE');
-
-        if(r == 1){
-            mask = mask | (0x03 << (((f) * 8) + (r + 1)));
-        }  
-        else if(r < 7){
-            mask = mask | (0x01 << (((f) * 8) + (r + 1)));
-        }
-        else{
-            // TODO:: implement pawn improvement
-            require(1==0, 'ChessTable: IMPROVEMENT_ERROR');
-        }
-
-        if(f == 0){
-            mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)));
-        }
-        else if (f == 7){
-            mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)));
-        }
-        else{
-            mask = mask | (0x01 << (((f + 1) * 8) + (r + 1)));
-            mask = mask | (0x01 << (((f - 1) * 8) + (r + 1)));
-        }
-
-        return mask;
-    }
-    //-----------------------------------------------------------------
-    function _pawn_black(uint8 _sq) private returns (uint64){
-        uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
-        uint64 mask = 0x00;
-        require(r != 7, 'ChessTable: FATAL. PAWN_WHITE');
-
-        if(r == 6){
-            mask = mask | (0x03 << (((f) * 8) + (r + 1)));
-        }  
-        else if(r != 0){
-            mask = mask | (0x01 << (((f) * 8) + (r + 1)));
-        }
-        else{
-            // TODO:: implement pawn improvement
-            require(1==0, 'ChessTable: IMPROVEMENT_ERROR');
-        }
-
-        if(f == 0){
-            mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)));
-        }
-        else if (f == 7){
-            mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)));
-        }
-        else{
-            mask = mask | (0x01 << (((f + 1) * 8) + (r - 1)));
-            mask = mask | (0x01 << (((f - 1) * 8) + (r - 1)));
-        }
-
-        return mask;
-    }
-    //-----------------------------------------------------------------
-    function _knight(uint8 _sq) private returns (uint64){
-        uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
-        uint64 mask = 0x00;
-
-        if((r + 1 == (r + 1) % 8) && (f - 2 == (f - 2) % 8)){
-            mask |= 1 << ((r + 1) + (8 * (f - 2)));
-        }
-
-        if((r - 1 == (r - 1) % 8) && (f + 2 == (f + 2) % 8)){
-            mask |= 1 << ((r - 1) + (8 * (f + 2)));
-        }
-
-        if((r + 1 == (r + 1) % 8)  && (f + 2 == (f + 2) % 8)){
-            mask |= 1 << ((r + 1) + (8 * (f + 2)));
-        }
-
-        if((r - 1 == (r - 1) % 8) && (f - 2 == (f - 2) % 8)){
-            mask |= 1 << ((r - 1) + (8 * (f - 2)));
-        }
-
-        if((r - 2 == (r - 2) % 8) && (f - 1 == (f - 1) % 8)){
-            mask |= 1 << ((r - 2) + (8 * (f - 1)));
-        }
-
-        if((r + 2 == (r + 2) % 8) && (f - 1 == (f - 1) % 8)){
-            mask |= 1 << ((r + 2) + (8 * (f - 1)));
-        }
-
-        if((r - 2 == (r - 2) % 8) && (f + 1 == (f + 1) % 8)){
-            mask |= 1 << ((r - 2) + (8 * (f + 1)));
-        }
-
-        if((r + 2 == (r + 2) % 8) && (f + 1 == (f + 1) % 8)){
-            mask |= 1 << ((r + 2) + (8 * (f + 1)));
-        }
-
-        return mask;
-    }
-    //-----------------------------------------------------------------
-    function _bishop(uint64 board64, uint8 _sq) private returns (uint64){
-        uint64 ne = M64[D_NE][_sq];
-        uint64 ne_obs = board64 & ne;
-        if(ne_obs != 0x00){
-            ne = ne & (~ _mask_direction(_sq, D_NE, ne_obs));
-        }
-
-        uint64 nw = M64[D_NW][_sq];
-        uint64 nw_obs = board64 & nw;
-        if(nw_obs != 0x00){
-            nw = nw & (~ _mask_direction(_sq, D_NW, nw_obs));
-        }
-
-        uint64 se = M64[D_SE][_sq];
-        uint64 se_obs = board64 & se;
-        if(se_obs != 0x00){
-            se = se & (~ _mask_direction(_sq, D_SE, se_obs));
-        }
-
-        uint64 sw = M64[D_SW][_sq];
-        uint64 sw_obs = board64 & sw;
-        if(sw_obs != 0x00){
-            sw = sw & (~ _mask_direction(_sq, D_SW, sw_obs));
-        }
-
-        return ne | nw | se | sw;
-    }
-    //-----------------------------------------------------------------
-    function _rook(uint64 board64, uint8 _sq) private returns (uint64){
-        uint64 north = M64[D_N][_sq];
-        uint64 north_obs = board64 & north;
-        if(north_obs != 0x00){
-            north = north & (~ _mask_direction(_sq, D_N, north_obs));
-        }
-
-        uint64 south = M64[D_S][_sq];
-        uint64 south_obs = board64 & south;
-        if(south_obs != 0x00){
-            south = south & (~ _mask_direction(_sq, D_S, south_obs));
-        }
-
-        uint64 east = M64[D_E][_sq];
-        uint64 east_obs = board64 & east;
-        if(east_obs != 0x00){
-            east = east & (~ _mask_direction(_sq, D_E, east_obs));
-        }
-
-        uint64 west = M64[D_W][_sq];
-        uint64 west_obs = board64 & west;
-        if(west_obs != 0x00){
-            west = west & (~ _mask_direction(_sq, D_W, west_obs));
-        }
-
-        return north | south | east | west;
-    }
-    //-----------------------------------------------------------------
-    function _queen(uint64 board64, uint8 _sq) private returns (uint64){
-        return _bishop(board64, _sq) | _rook(board64, _sq);
-    }
-    //-----------------------------------------------------------------
-    function _king(uint8 _sq) private returns (uint64){
-        uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
-
-        if(M64[D_ST][_sq] != 0){
-            return M64[D_ST][_sq];
-        }
-        else{
-            if(r == 0){
-                return (M64[D_ST][F_B | R_1] << (8 * (f - 1)));
-            }
-            else if(r == 7){
-                return (M64[D_ST][F_B | R_8] << (8 * (f - 1)));
-            }
-            else if(f == 0){
-                return (M64[D_ST][F_A | R_2] << (r - 1));
-            }
-            else if(f == 7){
-                return (M64[D_ST][F_H | R_2] << (r - 1));
-            }
-            else{
-                return (M64[D_ST][F_B | R_2] << ((r - 1) + (8 * (f - 1))));
-            }
-        }
-    }
-    //
-    //-----------------------------------------------------------------
-    function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private returns (uint64){
-        // TODO:: make sure _piece is in legal range
-        require(_piece < PIECE_COUNT, "ChessTable, PIECE_OUT_OF_RANGE");
-        require(_sq < SQUARE_COUNT, "ChessTable, SQUARE_OUT_OF_RANGE");
-
-        if(_piece >= W_P_A){
-            if(_piece % 2 == 0){
-                return _pawn_white(_sq);
-            }
-            else{
-                return _pawn_black(_sq);
-            }
-        }
-        else if(_piece >= W_N_B){
-            return _knight(_sq);
-        }
-        else if(_piece >= W_B_C){
-            return _bishop(_block64, _sq);
-        }
-        else if(_piece >= W_R_A){
-            return _rook(_block64, _sq);
-        }
-        else if(_piece >= W_Q){
-            return _queen(_block64, _sq);
-        }
-        else{
-            return _king(_sq);
-        }
-    }
-    //-----------------------------------------------------------------
-    function _updatePiece(uint8 _piece, uint8 _state) private{
-        uint256 piece_mask = (0xFF << (_piece * 8));
-        pieces &= (~piece_mask); // clean previous piece state
-        pieces |= _state; // shoving the modified piece byte in
-    }
-    //-----------------------------------------------------------------
-    function _setEngagement(uint8 _f_piece, uint8 _t_piece, uint8 _value) private{
-        if(_value == 0){
-            engagements &= ~(1<< (_f_piece * 32 + _t_piece));
-        }
-        else{
-            engagements |= (1<< (_f_piece * 32 + _t_piece));
-        }
-    }
-    //-----------------------------------------------------------------
-    function _clearEngagements(uint8 _piece, uint8 _direction) private{
-        if(_direction == 0){
-            engagements &= ~( 0xFFFFFFFF << _piece);
-        }
-        else{
-            // TODO:: wrong
-            for(uint8 i=0; i<PIECE_COUNT; i++){
-                engagements = engagements & ~( 0x00000001 << (i * 32 + _piece));
-            }
-        }
-    }
-    //-----------------------------------------------------------------
-    function _move(address _player, uint8 _piece, uint8 _action) private{
-        uint64 pieceB64;
-        if(_piece % 2 == 0){
-            pieceB64 = board64W;
-        }
-        else{
-            pieceB64 = board64B;
-        }
-
-        uint64 to_sq = _action & PC_COORD_MASK;
-
-        // is the square visible to the moved piece?
-        require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
-
-        uint64 from_sq = (pieces >> (_piece * 8)) & PC_COORD_MASK;
-
-        // Updating board64
-        if(_piece % 2 == 0){
-            board64W = board64W & ~(1 << from_sq);
-            board64W = board64W | (1 << to_sq);
-        }
-        else{
-            board64B = board64B & ~(1 << from_sq);
-            board64B = board64B | (1 << to_sq);
-        }
-        uint64 board64 = board64W | board64B;
-
-        // updating pieces
-        uint8 new_state = ((M_SET | to_sq) << (_piece * 8));
-        _updatePiece(_piece, new_state);
-
-        // Reloading the visibility of the moved piece
-        visibility[_piece] = _reloadVisibility(board64,_piece, to_sq);
-
-        // Making squares beyond from_sq visible to engaged pieces
-        uint32 start_index = _piece * PIECE_COUNT;
-        uint32 sub_engagements = engagements >> start_index;
-        for(uint8 i=0;i<PIECE_COUNT;i++){
-            if(sub_engagements % 2 == 1){
-                uint64 pc_sq = (pieces >> (i * 8)) & PC_COORD_MASK;
-                visibility[i] = _reloadVisibility(board64, i, pc_sq);               
-            }
-            sub_engagements = sub_engagements >> 1;
-        }
-
-        // Reset engagements of the moved piece
-        _clearEngagements(_piece, 0);
-
-        uint64 opp_vis = 0x00;
-        uint8 king_sq;
-        // Keeping kings position in mind
-        if(_piece % 2 == 0){
-            king_sq = pieces & PC_COORD_MASK;
-        }
-        else{
-            king_sq = (pieces >> 8) & PC_COORD_MASK;
-        }
-
-        // Loop over all pieces
-        for(uint8 i_piece = 0; i_piece < PIECE_COUNT; i_piece++){
-            // opponent total visibility calculation
-            if((_piece % 2 == 0 && i_piece % 2 == 1) || (_piece % 2 == 1 && i_piece % 2 == 0)){
-                opp_vis |= visibility[i_piece];
-            }
-
-            // for all pieces except the moved piece
-            if(i_piece != _piece){
-                // i_piece square calculation
-                uint64 i_sq = (pieces >> (i_piece * 8)) & PC_COORD_MASK;
-
-                // Update dead piece state
-                if(i_sq == to_sq){
-                    new_state = M_DEAD << (i_piece * 8);
-                    pieces = _updatePiece(pieces, i_piece, new_state);
-                }
-                else{
-                    uint8 ipc_mode = (pieces >> (i_piece * 8)) & PC_MODE_MASK;
-
-                    // Adding post-move _piece to i_piece engagements
-                    if(((visibility[i_piece]) >> to_sq)  % 2 == 1 && ipc_mode != 0){
-                        // update engagement
-                        _setEngagement(_piece, i_piece, 1);
-
-                        // Making squares beyond to_sq invisible to i_piece
-                        visibility[i_piece] = _reloadVisibility(board64, i_piece, i_sq);
-
-                        // removing the broken engagements
-                        sub_engagements = engagements >> i_piece;
-                        for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j_piece++){
-                            if(sub_engagements % 2 == 1){
-                                uint64 j_sq = (pieces >> (j_piece * 8)) & PC_COORD_MASK;
-                                if((visibility[i_piece] >> j_sq) % 2 == 0){
-                                    _setEngagement(j_piece, i_piece, 0);
-                                }
-                            }
-                            sub_engagements = sub_engagements >> 32;
-
-                        }
-                    }
-                    // Adding post-move _piece to i_piece engagements
-                    if(((visibility[_piece]) >> i_sq) % 2 == 1 && ipc_mode != 0){
-                        _setEngagement(i_piece, _piece, 1);
-                    }
-                }
-            }
-
-        }
-
-        // player's king must be safe post-move
-        require((opp_vis >> king_sq) % 2 != 1, "ChessTable: KING_IS_CHECK");
-
-        // // Checking white's checkmate
-        // if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (pieces >> 7) % 2 == 1 :
-        //     # black won
-        //     print("BLACK WON!! not implemented")
-
-        // // Checking black's checkmate
-        // if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (pieces >> 15) % 2 == 1 :
-        //     # white won
-        //     print("WHITE WON!! not implemented")
-
-        // lastMove = _piece << 8 | _action; 
-        // moves.push(lastMove);
-
-        // Changing the turn
-        // TODO:: it can be done through flipping the addresses too.
-        turn = moves.length % 2 == 0 ? white : black;
-
-        emit PlayerMoved(_player, _piece, _action);
-    }
-
-    //-----------------------------------------------------------------
-    // called once by the lobby at time of deployment
-    // function _initialize(address _player1, address _player2, uint8 meta) private {
-
-    // }
-
-    //-----------------------------------------------------------------
-    //-----------------------------------------------------------------
-    //-----------------------------------------------------------------
-    //                      [[PUBLIC FUNCTION]]
-    //-----------------------------------------------------------------
-
-    function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {
-        require(msg.sender == lobby, 'ChessTable: NOT_AUTHORIZED');
-        white = _player1;
-        black = _player2;
-        turn = white;
-        state = 0x10;
-        emit GameStarted(white, black, meta);
-        return true;
-    }
-
-    function move(uint8 piece, uint8 action) external returns (bool) {
-        require(state >= 0x10, 'ChessTable: STATE_MISMATCH');
-        
-        // TODO:: the maxed out game's result must get resolved.
-        require(moves.length < MAX_MOVES, 'ChessTable: MOVE_OVERFLOW');
-        
-        // checking the turn condition
-        require(msg.sender == turn, 'ChessTable: NOT_YOUR_TURN');
-
-        // player should not be able to move other player's pieces
-        address pieceOwner = (piece % 2 == 0 ? white : black);
-        require( msg.sender == pieceOwner, 'ChessTable: NOT_YOUR_PIECE');
-
-        _move(pieceOwner, piece, action);
-        return true;
-    }
 
 
 }
+
+
+

@@ -8,7 +8,7 @@ interface IChessTable {
     function white() external view returns (address);
     function black() external view returns (address);
     function turn() external view returns (address);
-    function board() external view returns(uint256);
+    function pieces() external view returns(uint256);
 
     function state() external view returns (uint8);
     function activeGame() external view returns (uint);
@@ -18,6 +18,6 @@ interface IChessTable {
     event GameStarted(address indexed white, address indexed black, uint8 meta);
     event GameEnded(bool isDraw, address indexed winner, address indexed log);
 
-    function initialize(address, address, uint8) external returns (bool);
+    function initialize(address player1, address player2, uint8 meta) external returns (bool);
     function move(uint8 piece, uint8 action) external returns (bool);
 }

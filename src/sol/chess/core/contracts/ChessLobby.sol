@@ -40,7 +40,7 @@ contract ChessLobby {
     event PlayerDeposited(address indexed player, uint amount);
     event PlayerSit(address indexed player, uint8 waitingListLength);
 
-    constructor(address chessTokenAddress) public {
+    constructor(address chessTokenAddress) {
         waitingListLength = 0;
         chessToken = chessTokenAddress;
         house = msg.sender;
