@@ -435,7 +435,7 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     function _setEngagement(uint8 _f_piece, uint8 _t_piece, uint8 _value) private{
         if(_value == 0){
-            engagements[_f_piece] &= (uint32) (~(1<< _t_piece));
+            engagements[_f_piece] &= (uint32)(~(1<< _t_piece));
         }
         else{
             engagements[_f_piece] |= (uint32)(1<< _t_piece);
