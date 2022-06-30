@@ -143,12 +143,12 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     p1_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p1_address)
     p2_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p2_address)
     try:
-        lsection("[PLAYER1 reads the board]", 1)
-        board = p1_table_provider.board()
-        pieces, view = parse_board(board)
+        lsection("[PLAYER1 reads the pieces]", 1)
+        pieces = p1_table_provider.pieces()
+        pieces, view = parse_board(pieces)
         white_address = p1_table_provider.white()
         black_address = p1_table_provider.black()
-        lprint(f"board value: {board}")
+        lprint(f"pieces value: {pieces}")
         lprint(f"parsed pieces:{pieces}")
         lprint(f"White:{white_address}")
         lprint(f"Black:{black_address}")
@@ -190,10 +190,10 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
         lprint(f"Exception in sending move() by {white_address}")
         lexcept(ex, True)
     try:
-        lsection("[PLAYER2 reads the board]", 1)
-        board = p2_table_provider.board();
-        pieces, view = parse_board(board)
-        lprint(f"board value: {board}")
+        lsection("[PLAYER2 reads the pieces]", 1)
+        pieces = p2_table_provider.pieces();
+        pieces, view = parse_board(pieces)
+        lprint(f"pieces value: {pieces}")
         lprint(f"parsed pieces:{pieces}")
         print_board(view)
     except Exception as ex:

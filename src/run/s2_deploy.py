@@ -59,7 +59,7 @@ def s2_deploy_chess_project(root_path, network, chess, token_receipt):
     chess_path = os.path.join(root_path, "build", "chess")
 
     ################################################################################
-    # deploying uni-core 
+    # deploying chess lobby
     ################################################################################
     lprint(f"Deploying chess.lobby ...")
 

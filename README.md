@@ -4,7 +4,8 @@ Chess Game on Ethereum Layer 2 (in progress)
 Steps:
 --------
 + [x] Create an offline Ethereum-Python test environment.
-+ [x] Design and develop and test Chess gameplay in Python.
++ [x] Design an efiicient Chess engine based on EVM machine.
++ [x] Develop and test Chess gameplay in Python.
 + [ ] Final Tests on the gameplay over solidity (Layer 1).
 + [ ] Add Layer 2 Compatibility.
 + [ ] Security Audit.
@@ -32,7 +33,7 @@ How to run:
 ```
         ./test/set_board.sh
 ```
-        or
+
 
 ```
         ./test/test_checkmate.sh
