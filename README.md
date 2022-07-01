@@ -14,7 +14,7 @@ Steps:
 
 How to run:
 --------
-+ Install Python3 and Pip3
++ Install Python3, Pip3 and Ganache
 
 + Create and enable a Python3 virtual environment
 
@@ -22,10 +22,12 @@ How to run:
         python3 -m venv <ENV-NAME>
         source <ENV-NAME>/bin/activate
 ```
-+ Install Brownie
+
++ Install Brownie and PyQt5
 
 ```
         pip install eth-brownie
+        pip install pyqt5
 ```
 
 + Run some tests over pychess core.
@@ -38,3 +40,9 @@ How to run:
 ```
         ./test/test_checkmate.sh
 ```
+
++ Run the whole scenario (preparation of the project folder, compile, deploy, simulate and play) by
+```
+        python run_chess.py
+```
+

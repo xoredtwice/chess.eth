@@ -590,10 +590,10 @@ contract ChessTable is IChessTable{
     //                      [[PUBLIC FUNCTION]]
     //-----------------------------------------------------------------
 
-    function initialize(address _player1, address _player2, uint8 meta) external returns (bool) {
+    function initialize(address player1, address player2, uint8 meta) external returns (bool) {
         require(msg.sender == lobby, 'ChessTable: NOT_AUTHORIZED');
-        white = _player1;
-        black = _player2;
+        white = player1;
+        black = player2;
         turn = white;
         state = 0x10;
         emit GameStarted(white, black, meta);
