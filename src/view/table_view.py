@@ -38,7 +38,7 @@ class TableView(QDialog):
                 newSq.move(xOffset + i * sqSize, yOffset + j * sqSize)
                 newSq.setAlignment(QtCore.Qt.AlignCenter)
                 if (i+j) % 2 == 0:
-                    newSq.setStyleSheet("QLabel { background-color : purple; color : black; font-size: 40pt; }");
+                    newSq.setStyleSheet("QLabel { background-color : gray; color : black; font-size: 40pt; }");
                 else:
                     newSq.setStyleSheet("QLabel { background-color : white; color : black; font-size: 40pt;}");
                 file_layout.addWidget(newSq)
@@ -54,9 +54,17 @@ class TableView(QDialog):
 
         self.setLayout(main_layout)
     def onClicked_refresh(self):
-        turn, board64W, board64B, pieces256, engagements, visibility = load_game_state()
+        self.refreshBoard(True)
+
+    def refreshBoard(self, isFromLocalStateFile = True):
+        if isFromLocalStateFile :
+            turn, board64W, board64B, pieces256, engagements, visibility = load_game_state()
+        else:
+            pieces256 = read_pieces_from_chain(self.tableAddress)            
         pieces, view = parse_board(pieces256)
         for rank in range(8):
             for file in range(8):
                 self.squares[file * 8 + (7-rank)].setText(view[rank][file])
         print_board(view)
+
+

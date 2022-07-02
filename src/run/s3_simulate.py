@@ -62,7 +62,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     # transferring initial tokens to players
     ################################################################################
     try:
-        lsection("[HOUSE calls chessToken.transfer(PLAYER1])", 1)
+        lsection("[HOUSE calls chessToken.transfer(PLAYER1)]", 1)
         p1_tr_tx = token_provider.transfer(p1_address, p1_token_amount)
         lprint(f"[EVENT] ChessToken.Transfer: {json.dumps(dict(p1_tr_tx.events['Transfer']), indent=4)}")
     except Exception as ex:
