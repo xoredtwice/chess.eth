@@ -1,9 +1,12 @@
 from PyQt5.QtWidgets import QApplication
-from src.view.table_view import TableView
+from src.client.view.table_view import TableView
+import sys
 
-def run_chess_client(conf, receipts):
+def run_chess_client(root_path, conf):
     app = QApplication(sys.argv)
 
+
+    receipts = None
     # creating a window object
     main = TableView(conf, receipts)
 

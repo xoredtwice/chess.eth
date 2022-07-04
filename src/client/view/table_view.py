@@ -10,7 +10,7 @@ from src.helpers.chess_helpers import load_game_state, parse_board, print_board
 class TableView(QDialog):
 
     # constructor
-    def __init__(self, parent=None):
+    def __init__(self, conf, receipts, parent=None):
         super(TableView, self).__init__(parent)
 
         self.setWindowTitle("Chess.eth Table View")

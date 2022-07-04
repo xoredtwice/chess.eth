@@ -18,4 +18,4 @@ def load_web3_environment(network):
 
     return w3, chain_id, network["accounts"]
 #*******************************************************************************
-def read_pieces():
+# def read_pieces():

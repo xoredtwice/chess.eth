@@ -3,16 +3,16 @@ import sys
 import argparse
 import pathlib
 import json
-from PyQt5.QtWidgets import QApplication
 
-from src.utils.logger import setup_logger, lprint, lsection
-from src.utils.yaml_wrapper import load_configuration
+
+from src.logger import setup_logger, lprint, lsection
+from src.helpers.yaml_helpers import load_configuration
 from src.run.s0_prepare import s0_create_chess_project, s0_create_token_project
 from src.run.s1_compile import s1_compile_chess_project, s1_compile_token_project
 from src.run.s2_deploy import s2_deploy_chess_project, s2_deploy_token_project
 from src.run.s3_simulate import s3_simulate_chess
+from src.client.run_client import run_chess_client
 
-from src.view.table_view import TableView
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())
@@ -68,15 +68,7 @@ if "'simulate'" in args.commands or "'all'" in args.commands:
 
 if "'play'" in args.commands or "'all'" in args.commands:
 	lsection("[[LETS PLAY]]")
-	app = QApplication(sys.argv)
+	run_chess_client(root_path, conf)
 
-	# creating a window object
-	main = TableView()
-
-	# showing the window
-	main.show()
-
-	# loop
-	sys.exit(app.exec_())
 
 ############################################################################33
