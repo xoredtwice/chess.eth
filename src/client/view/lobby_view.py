@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog, QPushButton, QLineEdit
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QIcon
 
-from src.utils.logger import lprint, lsection
+from src.logger import lprint, lsection
 
 # 
 class LobbyView(QDialog):

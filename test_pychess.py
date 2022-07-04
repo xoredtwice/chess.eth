@@ -4,11 +4,11 @@ import argparse
 import pathlib
 import json
 
-from src.utils.logger import setup_logger, lprint, lsection
-from src.utils.yaml_wrapper import load_configuration
+from src.logger import setup_logger, lprint, lsection
+from src.helpers.yaml_helpers import load_configuration
 from src.pychess.chess_core import rook, bishop, queen, pawn_white, pawn_black, knight, move
 from src.pychess.chess_consts import SQUARE_IDS
-from src.pychess.chess_utils import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board, print_game_state
+from src.helpers.chess_herlpers import print_board, build_mask, load_game_state, save_game_state, piece_to_piece_id, build_state, parse_board, print_game_state
 ############################################################################33
 
 root_path = str(pathlib.Path(__file__).parent.resolve())

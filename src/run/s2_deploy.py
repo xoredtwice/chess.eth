@@ -4,8 +4,8 @@ from web3 import Web3
 import os
 import pathlib
 import shutil
-from src.utils.logger import lprint, lsection
-from src.utils.utils import load_web3_environment
+from src.logger import lprint, lsection
+from src.web3 import load_web3_environment
 #*******************************************************************************
 #*******************************************************************************
 #*******************************************************************************

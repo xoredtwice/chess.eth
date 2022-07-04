@@ -4,7 +4,7 @@ from src.pychess.chess_consts import SQUARE_IDS, M_SET
 import pickle
 import os
 from pprint import pprint
-from src.utils.logger import setup_logger, lprint, lsection
+from src.logger import lprint, lsection
 ##########################################################
 
 RANKS = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7}

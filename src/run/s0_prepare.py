@@ -5,8 +5,8 @@ import shutil
 from tempfile import mkstemp
 from shutil import move, copymode
 import subprocess
-from src.utils.utils import replace_in_file
-from src.utils.logger import lprint, lsection
+from src.helpers.string_helpers import replace_in_file
+from src.logger import lprint, lsection
 #*******************************************************************************
 def s0_create_chess_project(root_path, project_name):
 	project_path = os.path.join(root_path, "build", project_name)

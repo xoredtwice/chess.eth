@@ -1,7 +1,7 @@
 from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASK128_MODE, MASKS
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_ARRAY
-from src.pychess.chess_utils import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
-from src.utils.logger import lprint
+from src.helpers.chess_helpers import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
+from src.logger import lprint
 ##########################################################
 def msb64(x):
     """ Returns the index, counting from 0, of the

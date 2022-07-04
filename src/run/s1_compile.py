@@ -1,6 +1,6 @@
 import os
 import subprocess
-from src.utils.logger import lprint, lsection
+from src.logger import lprint, lsection
 #*******************************************************************************
 def s1_compile_token_project(root_path):
     lsection("[Compiling shared subprojects]",1)

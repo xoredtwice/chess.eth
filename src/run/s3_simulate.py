@@ -1,8 +1,8 @@
 import json
 import os
 import brownie
-from src.utils.utils import get_brownie_provider, load_web3_environment
-from src.utils.logger import lprint, lsection, lexcept
+from src.web3 import get_brownie_provider, load_web3_environment
+from src.logger import lprint, lsection, lexcept
 from src.pychess.chess_utils import parse_board, print_board, PIECE_IDS
 from pprint import pprint
 #*******************************************************************************

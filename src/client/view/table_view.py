@@ -3,9 +3,9 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 
-from src.utils.logger import lprint, lsection
+from src.logger import lprint, lsection
 
-from src.pychess.chess_utils import load_game_state, parse_board, print_board
+from src.helpers.chess_helpers import load_game_state, parse_board, print_board
 
 class TableView(QDialog):
 
