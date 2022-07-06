@@ -226,18 +226,13 @@ def update_piece128(board128, _piece, _state):
 ##########################################################
 def set_engagement(engagements, _f_piece, _t_piece, _value):
     if _value == 0:
-        engagements = engagements & ~(1<< (_f_piece * 32 + _t_piece))
+        engagements[_f_piece] = engagements[_f_piece] & ~(1<<  _t_piece)
     else:
-        engagements = engagements |  (1<< (_f_piece * 32 + _t_piece))
+        engagements[_f_piece] = engagements[_f_piece] |  (1<<  _t_piece)
     return engagements
 ##########################################################
-def reset_piece_engagements(engagements, _piece, _direction):
-    if _direction == 0:
-        engagements = engagements & ~( 0xFFFFFFFF << _piece)        
-    else:
-        # TODO:: wrong
-        for i in range(32):
-            engagements = engagements & ~( 0x00000001 << (i * 32 + _piece))
+def reset_piece_engagements(engagements, _piece):
+    engagements[_piece] = 0    
     return engagements
 ##########################################################
 def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
@@ -278,8 +273,7 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
     print_board(visibility[_piece])
 
     # Making squares beyond from_sq visible to engaged pieces
-    start_index = _piece * PIECE_COUNT
-    sub_engagements = engagements >> start_index
+    sub_engagements = engagements[_piece]
     for i in range(PIECE_COUNT):
         if sub_engagements % 2 == 1:
             pc_sq = (board128 >> (i * 8)) & MASK128_POSITION
@@ -287,7 +281,7 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
         sub_engagements = sub_engagements >> 1
 
     # Reset engagements of the moved piece
-    engagements = reset_piece_engagements(engagements, _piece, 0)
+    engagements = reset_piece_engagements(engagements, _piece)
 
     i_piece = 0
     opp_vis = 0x00
@@ -327,13 +321,11 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
                     # print_board(visibility[i_piece])
 
                     # removing the broken engagements
-                    sub_engagements = engagements >> i_piece
                     for j_piece in range(32):
-                        if sub_engagements % 2 == 1:
+                        if (engagements[j_piece] >> i_piece) % 2 == 1:
                             j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
                             if(visibility[i_piece] >> j_sq) % 2 == 0:
                                 engagements = set_engagement(engagements, j_piece, i_piece, 0)
-                        sub_engagements = sub_engagements >> 32
                 
                 # Adding post-move _piece to i_piece engagements
                 if ((visibility[_piece]) >> i_sq) % 2 == 1 and ipc_mode != 0:

@@ -103,29 +103,22 @@ def piece_to_piece_id(piece):
 ##########################################################
 def print_engagements(engagements):
     s = "engagements: {"
-    i_piece = 0
-    j_piece = 0
-    j_flag = False
-    while engagements != 0:
-        i_unicode = PIECE_UNICODES[PIECE_CODES[i_piece][:3]]
-        i_code = PIECE_CODES[i_piece]
-
+    for j_piece in range(len(engagements)):
+        i_piece = 0
         j_unicode = PIECE_UNICODES[PIECE_CODES[j_piece][:3]]
         j_code = PIECE_CODES[j_piece]
-        
-        # there is an engagement from i_piece to j_piece
-        if engagements % 2 == 1:
-            if j_flag == False:
-                s = s + f"\n{j_unicode}({j_code}) \t: "
-                j_flag = True
-            s = s + f"{i_unicode}({i_code}) "
+        en = engagements[j_piece]
+        s = s + f"\n{j_unicode}({j_code}) {str(hex(en))}\t: "
 
-        engagements = engagements // 2
-        i_piece = i_piece + 1
-        if i_piece == 32:
-            j_piece = j_piece + 1
-            j_flag = False
-            i_piece = 0
+        while en != 0:
+            i_unicode = PIECE_UNICODES[PIECE_CODES[i_piece][:3]]
+            i_code = PIECE_CODES[i_piece]            
+            # there is an engagement from i_piece to j_piece
+            if en % 2 == 1:
+                s = s + f"{i_unicode}({i_code}) "
+
+            en = en // 2
+            i_piece = i_piece + 1
     lprint(s + "\n}")
 ##########################################################
 def print_game_state(turn, board64W, board64B, board128, engagements, visibility):
@@ -164,7 +157,7 @@ def load_game_state(pickle_path = 'game_state.pickle'):
         board64W = 0x00
         board64B = 0x00
         board128 = 0x00
-        engagements = 0x00000000000000000000000000000000
+        engagements = [0x00] * 32
         visibility = [0x00] * 32
         turn = 0
     return turn, board64W, board64B, board128, engagements, visibility
@@ -237,11 +230,6 @@ def parse_board(board):
         m = sq >> 3 
         if m != 0 :
             pieces[PIECE_CODES[i]] = FILE_CODES[f] + RANK_CODES[r]
-            # print(i)
-            # print(PIECE_CODES[i][:3])
-            # print(PIECE_UNICODES[PIECE_CODES[i][:3]])
-            # print(PIECE_UNICODES["B_P"])
-            # print()
             view[7-r][f] = PIECE_UNICODES[PIECE_CODES[i][:3]]
         else :
             pieces[PIECE_CODES[i]] = "X"
@@ -255,9 +243,7 @@ def build_8way_masks():
         r_code = sq[1]
         d_codes = SQUARE_DIAGS[sq]
         d1_code = f"+{(d_codes % 16)}"
-        d2_code = f"-{(d_codes // 16)}"     
-        # print(f"Visibility of File:{f_code}, Rank:{r_code}")
-        # print(f"Visibility of  D+:{d1_code}, D-:{d2_code}")
+        d2_code = f"-{(d_codes // 16)}"
 
         m = {}
         sqm = build_mask([sq])
@@ -274,7 +260,6 @@ def build_8way_masks():
         m["NE"] = MASKS[d2_code] & (~m["SW"]) & (~sqm)
         for direction in m.keys():
             lprint(f"MASK['{direction}']['{sq}'] = {hex(m[direction])}")
-            # print_board(m[direction])
 ##########################################################
 def build_diagonal_masks():
     d1 = build_mask(["A1"])

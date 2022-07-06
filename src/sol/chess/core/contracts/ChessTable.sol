@@ -683,6 +683,29 @@ contract ChessTable is IChessTable{
         board64B |= (uint64)(1 << F_F | R_7); board64B |= (uint64)(1 << F_F | R_8);
         board64B |= (uint64)(1 << F_G | R_7); board64B |= (uint64)(1 << F_G | R_8);
         board64B |= (uint64)(1 << F_H | R_7); board64B |= (uint64)(1 << F_H | R_8);
+
+        engagements[W_K]   = 0x0004; engagements[B_K ]  = 0x0008;
+        // Queens
+        engagements[W_Q]   = 0x0001; engagements[B_Q ]  = 0x0002;
+        // Rooks
+        // engagements[W_R_A] = 0x00 ; engagements[B_R_A] =  0x00;
+        // engagements[W_R_H] = 0x00 ; engagements[B_R_H] =  0x00;
+        // Bishops
+        engagements[W_B_C] = 0x0004; engagements[B_B_C] = 0x0008;
+        engagements[W_B_F] = 0x0001; engagements[B_B_F] = 0x0002;
+        // Knights
+        engagements[W_N_B] = 0x0010; engagements[B_N_B] = 0x0020;
+        engagements[W_N_G] = 0x0040; engagements[B_N_G] = 0x0080;
+        // Pawns
+        engagements[W_P_A] = 0x0010; engagements[B_P_A] = 0x0020;
+        engagements[W_P_B] = 0x0100; engagements[B_P_B] = 0x0200;
+        engagements[W_P_C] = 0x0004; engagements[B_P_C] = 0x0008;
+        engagements[W_P_D] = 0x1105; engagements[B_P_D] = 0x220A;
+        engagements[W_P_E] = 0x4405; engagements[B_P_E] = 0x880A;
+        engagements[W_P_F] = 0x0001; engagements[B_P_F] = 0x0002;
+        engagements[W_P_G] = 0x0400; engagements[B_P_G] = 0x0800;
+        engagements[W_P_H] = 0x0040; engagements[B_P_H] = 0x0080; 
+
     }
 
     function _precomputations() private{
