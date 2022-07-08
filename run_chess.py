@@ -66,7 +66,7 @@ if "'simulate'" in args.commands or "'all'" in args.commands:
 	lsection("[[SIMULATE]]")
 	s3_simulate_chess(root_path, conf)
 
-if "'play'" in args.commands or "'all'" in args.commands:
+if "'play'" in args.commands: # or "'all'" in args.commands:
 	lsection("[[LETS PLAY]]")
 	run_chess_client(root_path, conf)
 

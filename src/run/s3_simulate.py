@@ -192,8 +192,8 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     try:
         lsection("[PLAYER2 reads the pieces]", 1)
         pieces = p2_table_provider.pieces();
+        lprint(f"pieces value: {hex(pieces)}")
         pieces, view = parse_board(pieces)
-        lprint(f"pieces value: {pieces}")
         lprint(f"parsed pieces:{pieces}")
         print_board(view)
     except Exception as ex:

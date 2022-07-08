@@ -128,6 +128,8 @@ def print_game_state(turn, board64W, board64B, board128, engagements, visibility
     pieces, view = parse_board(board128)
     print_board(view)
     print_engagements(engagements)
+    for i in range(len(visibility)):
+        print(f"visibility[{PIECE_CODES[i]}] = {hex(visibility[i])};")
 ##########################################################
 def save_game_state(turn, board64W, board64B, board128, engagements, visibility):
     print("saving game state")
@@ -232,7 +234,8 @@ def parse_board(board):
             pieces[PIECE_CODES[i]] = FILE_CODES[f] + RANK_CODES[r]
             view[7-r][f] = PIECE_UNICODES[PIECE_CODES[i][:3]]
         else :
-            pieces[PIECE_CODES[i]] = "X"
+            print(f"UNKNOWN CODE for {PIECE_UNICODES[PIECE_CODES[i][:3]]}, {f}, {r}")
+            pieces[PIECE_CODES[i]] = FILE_CODES[f] + RANK_CODES[r]
         board = board >> 8;
 
     return pieces, view

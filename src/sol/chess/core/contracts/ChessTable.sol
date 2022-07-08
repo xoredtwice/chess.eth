@@ -209,7 +209,7 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     function _pawn_white(uint8 _sq) private returns (uint64){
         uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
+        uint8 f = ((_sq - r) / 8);
         uint64 mask = 0x00;
  
         require(r!=0, 'ChessTable: FATAL. PAWN_WHITE');
@@ -241,7 +241,7 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     function _pawn_black(uint8 _sq) private returns (uint64){
         uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
+        uint8 f = ((_sq - r) / 8);
         uint64 mask = 0x00;
         require(r != 7, 'ChessTable: FATAL. PAWN_WHITE');
 
@@ -272,38 +272,38 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     function _knight(uint8 _sq) private returns (uint64){
         uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
+        uint8 f = ((_sq - r) / 8);
         uint64 mask = 0x00;
 
-        if((r + 1 == (r + 1) % 8) && (f - 2 == (f - 2) % 8)){
+        if((r < 7) && (f > 6)){
             mask |= (uint64)(1 << ((r + 1) + (8 * (f - 2))));
         }
 
-        if((r - 1 == (r - 1) % 8) && (f + 2 == (f + 2) % 8)){
+        if((r > 0) && (f < 6)){
             mask |= (uint64)(1 << ((r - 1) + (8 * (f + 2))));
         }
 
-        if((r + 1 == (r + 1) % 8)  && (f + 2 == (f + 2) % 8)){
+        if((r < 7)  && (f < 6)){
             mask |= (uint64)(1 << ((r + 1) + (8 * (f + 2))));
         }
 
-        if((r - 1 == (r - 1) % 8) && (f - 2 == (f - 2) % 8)){
+        if((r > 0) && (f > 1)){
             mask |= (uint64)(1 << ((r - 1) + (8 * (f - 2))));
         }
 
-        if((r - 2 == (r - 2) % 8) && (f - 1 == (f - 1) % 8)){
+        if((r > 1) && (f > 0)){
             mask |= (uint64)(1 << ((r - 2) + (8 * (f - 1))));
         }
 
-        if((r + 2 == (r + 2) % 8) && (f - 1 == (f - 1) % 8)){
+        if((r < 6) && (f > 0)){
             mask |= (uint64)(1 << ((r + 2) + (8 * (f - 1))));
         }
 
-        if((r - 2 == (r - 2) % 8) && (f + 1 == (f + 1) % 8)){
+        if((r > 1) && (f < 7)){
             mask |= (uint64)(1 << ((r - 2) + (8 * (f + 1))));
         }
 
-        if((r + 2 == (r + 2) % 8) && (f + 1 == (f + 1) % 8)){
+        if((r < 6) && (f < 7)){
             mask |= (uint64)(1 << ((r + 2) + (8 * (f + 1))));
         }
 
@@ -372,7 +372,7 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     function _king(uint8 _sq) private returns (uint64){
         uint8 r = (_sq % 8);
-        uint8 f = ((_sq - r) % 8);
+        uint8 f = ((_sq - r) / 8);
 
         if(M64[D_ST][_sq] != 0){
             return M64[D_ST][_sq];
@@ -429,8 +429,9 @@ contract ChessTable is IChessTable{
     //-----------------------------------------------------------------
     function _updatePiece(uint8 _piece, uint8 _state) private{
         uint256 piece_mask = (0xFF << (_piece * 8));
+        uint256 piece_state = ((uint256)(_state)) << (_piece * 8);
         pieces &= (~piece_mask); // clean previous piece state
-        pieces |= _state; // shoving the modified piece byte in
+        pieces |= piece_state; // shoving the modified piece byte in
     }
     //-----------------------------------------------------------------
     function _setEngagement(uint8 _f_piece, uint8 _t_piece, uint8 _value) private{
@@ -475,23 +476,26 @@ contract ChessTable is IChessTable{
         uint64 board64 = board64W | board64B;
 
         // updating pieces
-        uint8 new_state = ((M_SET | to_sq) << (_piece * 8));
+        uint8 new_state = (M_SET | to_sq);
         _updatePiece(_piece, new_state);
 
         // Reloading the visibility of the moved piece
         visibility[_piece] = _reloadVisibility(board64,_piece, to_sq);
 
         // Making squares beyond from_sq visible to engaged pieces
-        // uint32 start_index = _piece * PIECE_COUNT;
         uint32 pc_engagements = engagements[_piece];
         
         // TODO:: It can be replaced with O(log(n)) algorithm
         for(uint8 i=0;i<PIECE_COUNT;i++){
             if(pc_engagements % 2 == 1){
-                uint8 pc_sq = (uint8)((pieces >> (i * 8)) & PC_COORD_MASK);
+                uint8 pc_sq = ((uint8)(pieces >> (i * 8)) & PC_COORD_MASK);
                 visibility[i] = _reloadVisibility(board64, i, pc_sq);               
             }
-            pc_engagements >>= 1;
+            pc_engagements = pc_engagements >> 1;
+            
+            if(pc_engagements == 0){
+                break;
+            }
         }
 
         // Reset engagements of the moved piece
@@ -704,8 +708,40 @@ contract ChessTable is IChessTable{
         engagements[W_P_E] = 0x4405; engagements[B_P_E] = 0x880A;
         engagements[W_P_F] = 0x0001; engagements[B_P_F] = 0x0002;
         engagements[W_P_G] = 0x0400; engagements[B_P_G] = 0x0800;
-        engagements[W_P_H] = 0x0040; engagements[B_P_H] = 0x0080; 
+        engagements[W_P_H] = 0x0040; engagements[B_P_H] = 0x0080;
 
+        visibility[W_K] = 0x30203000000;
+        visibility[B_K] = 0xc040c0000000;
+        visibility[W_Q] = 0x302030000;
+        visibility[B_Q] = 0xc040c00000;
+        visibility[W_R_A] = 0x102;
+        visibility[B_R_A] = 0x8040;
+        visibility[W_R_H] = 0x201000000000000;
+        visibility[B_R_H] = 0x4080000000000000;
+        visibility[W_B_C] = 0x2000200;
+        visibility[B_B_C] = 0x40004000;
+        visibility[W_B_F] = 0x2000200000000;
+        visibility[B_B_F] = 0x40004000000000;
+        visibility[W_N_B] = 0x2040004;
+        visibility[B_N_B] = 0x40200020;
+        visibility[W_N_G] = 0x400040200000000;
+        visibility[B_N_G] = 0x2000204000000000;
+        visibility[W_P_A] = 0x40c;
+        visibility[B_P_A] = 0x2030;
+        visibility[W_P_B] = 0x40c04;
+        visibility[B_P_B] = 0x203020;
+        visibility[W_P_C] = 0x40c0400;
+        visibility[B_P_C] = 0x20302000;
+        visibility[W_P_D] = 0x40c040000;
+        visibility[B_P_D] = 0x2030200000;
+        visibility[W_P_E] = 0x40c04000000;
+        visibility[B_P_E] = 0x203020000000;
+        visibility[W_P_F] = 0x40c0400000000;
+        visibility[B_P_F] = 0x20302000000000;
+        visibility[W_P_G] = 0x40c040000000000;
+        visibility[B_P_G] = 0x2030200000000000;
+        visibility[W_P_H] = 0xc04000000000000;
+        visibility[B_P_H] = 0x3020000000000000;
     }
 
     function _precomputations() private{
