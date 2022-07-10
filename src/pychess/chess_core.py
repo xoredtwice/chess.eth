@@ -235,7 +235,7 @@ def reset_piece_engagements(engagements, _piece):
     engagements[_piece] = 0    
     return engagements
 ##########################################################
-def move(board64W, board64B, board128, engagements, visibility, _piece, _action):
+def move(meta, board64W, board64B, board128, engagements, visibility, _piece, _action):
 
     if _piece % 2 == 0:
         pc_board64 = board64W

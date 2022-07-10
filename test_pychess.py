@@ -61,15 +61,15 @@ if "'visibility'" in args.command:
     print("Visibility: ")
     print_board(vis64)
 elif "'move'" in args.command:
-    turn, board64W, board64B, board128, engagements, visibility = load_game_state(state_file_path)
+    meta, board64W, board64B, board128, engagements, visibility = load_game_state(state_file_path)
 
     lsection(f"[[Testing Move of {args.piece} to {args.square}]]")
 
     piece_id = piece_to_piece_id(args.piece[1:-1])
-    state = build_state(args.square[1:-1])
-    print(f"piece_id:{piece_id}, state:{state}")
+    action = build_state(args.square[1:-1])
+    print(f"piece_id:{piece_id}, action:{action}")
 
-    board64W, board64B, board128, engagements, visibility = move(board64W, board64B, board128, engagements, visibility, piece_id, state)
+    board64W, board64B, board128, engagements, visibility = move(meta, board64W, board64B, board128, engagements, visibility, piece_id, action)
 
     print_game_state(turn, board64W, board64B, board128, engagements, visibility)
 

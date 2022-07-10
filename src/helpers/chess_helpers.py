@@ -121,8 +121,8 @@ def print_engagements(engagements):
             i_piece = i_piece + 1
     lprint(s + "\n}")
 ##########################################################
-def print_game_state(turn, board64W, board64B, board128, engagements, visibility):
-    print(f"Turn: {turn}")
+def print_game_state(meta, board64W, board64B, board128, engagements, visibility):
+    print(f"Meta: {meta}")
     print_board(board64W)
     print_board(board64B)
     pieces, view = parse_board(board128)
@@ -131,10 +131,10 @@ def print_game_state(turn, board64W, board64B, board128, engagements, visibility
         print(f"visibility[{PIECE_CODES[i]}] = {hex(visibility[i])};")
     print_board(view)
 ##########################################################
-def save_game_state(turn, board64W, board64B, board128, engagements, visibility, pickle_path = 'conf/game_state.pickle'):
+def save_game_state(meta, board64W, board64B, board128, engagements, visibility, pickle_path = 'conf/game_state.pickle'):
     print("saving game state")
     game_state = {}
-    game_state["turn"] = turn
+    game_state["meta"] = meta
     game_state["board64W"] = board64W
     game_state["board64B"] = board64B
     game_state["board128"] = board128
@@ -148,7 +148,7 @@ def load_game_state(pickle_path = 'conf/game_state.pickle'):
         print("loading game state")
         with open(pickle_path, "rb") as f:
             game_state = pickle.load(f)
-            turn = game_state["turn"]
+            meta = game_state["meta"]
             board64W = game_state["board64W"]
             board64B = game_state["board64B"]
             board128 = game_state["board128"]
@@ -161,8 +161,8 @@ def load_game_state(pickle_path = 'conf/game_state.pickle'):
         board128 = 0x00
         engagements = [0x00] * 32
         visibility = [0x00] * 32
-        turn = 0
-    return turn, board64W, board64B, board128, engagements, visibility
+        meta = {}
+    return meta, board64W, board64B, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):
     mask = 0x0000000000000000
