@@ -269,8 +269,8 @@ def move(board64W, board64B, board128, engagements, visibility, _piece, _action)
 
     # Reloading the visibility of the moved piece
     visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
-    lprint("Moved piece's visibility:")
-    print_board(visibility[_piece])
+    # lprint("Moved piece's visibility:")
+    # print_board(visibility[_piece])
 
     # Making squares beyond from_sq visible to engaged pieces
     sub_engagements = engagements[_piece]

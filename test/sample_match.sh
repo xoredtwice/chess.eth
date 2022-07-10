@@ -1,5 +1,6 @@
 #!/bin/bash
 
+python test_pychess.py -c reset
 
 python test_pychess.py -c move -p W_P_E -s E4
 python test_pychess.py -c move -p B_P_E -s E5

@@ -3,6 +3,7 @@ import sys
 import argparse
 import pathlib
 import json
+import shutil
 
 from src.logger import setup_logger, lprint, lsection
 from src.helpers.yaml_helpers import load_configuration
@@ -25,6 +26,8 @@ parser.add_argument('-s', dest='square', type=ascii, default="E4",
 args = parser.parse_args()
 
 conf = load_configuration(os.path.abspath(args.conf_path[1:-1]))
+state_file_path = os.path.join(root_path, "conf", conf["pychess"]["state-file"])
+precomputed_state_file_path = os.path.join(root_path, "conf", conf["pychess"]["precomputed-state-file"])
 
 log_path = os.path.join(root_path, "log")
 if not os.path.exists(log_path):
@@ -38,8 +41,6 @@ if "'visibility'" in args.command:
     # board64 = build_mask(["B1", "C1"])
 
     lsection(f"[[Testing Visibility of {args.piece} in {args.square}]]")
-    # print("Board state: ")
-    # print_board(board64)
 
     vis64 = 0x00
     if "'rook'" in args.piece:
@@ -60,7 +61,7 @@ if "'visibility'" in args.command:
     print("Visibility: ")
     print_board(vis64)
 elif "'move'" in args.command:
-    turn, board64W, board64B, board128, engagements, visibility = load_game_state()
+    turn, board64W, board64B, board128, engagements, visibility = load_game_state(state_file_path)
 
     lsection(f"[[Testing Move of {args.piece} to {args.square}]]")
 
@@ -68,18 +69,21 @@ elif "'move'" in args.command:
     state = build_state(args.square[1:-1])
     print(f"piece_id:{piece_id}, state:{state}")
 
-    # print("Pre-move state")
-    # print_game_state(board64W, board64B, board128, engagements, visibility)
-
     board64W, board64B, board128, engagements, visibility = move(board64W, board64B, board128, engagements, visibility, piece_id, state)
-    print("Post-move state")
+
     print_game_state(turn, board64W, board64B, board128, engagements, visibility)
 
     turn = ~ turn
-    save_game_state(turn, board64W, board64B, board128, engagements, visibility)
+    save_game_state(turn, board64W, board64B, board128, engagements, visibility, state_file_path)
 elif "'clear'" in args.command:
     lsection(f"[[Clearing the state]]")
-    if os.path.exists(conf["pychess"]["state-file"]):
-        os.remove(conf["pychess"]["state-file"])
+    if os.path.exists(state_file_path):
+        os.remove(state_file_path)
+elif "'reset'" in args.command:
+    lsection(f"[[Reseting to initial states]]")
+    if os.path.exists(state_file_path):
+        os.remove(state_file_path)
+    shutil.copy2(precomputed_state_file_path, state_file_path)
+
 
 ############################################################################33

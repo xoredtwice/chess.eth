@@ -126,12 +126,12 @@ def print_game_state(turn, board64W, board64B, board128, engagements, visibility
     print_board(board64W)
     print_board(board64B)
     pieces, view = parse_board(board128)
-    print_board(view)
     print_engagements(engagements)
     for i in range(len(visibility)):
         print(f"visibility[{PIECE_CODES[i]}] = {hex(visibility[i])};")
+    print_board(view)
 ##########################################################
-def save_game_state(turn, board64W, board64B, board128, engagements, visibility):
+def save_game_state(turn, board64W, board64B, board128, engagements, visibility, pickle_path = 'conf/game_state.pickle'):
     print("saving game state")
     game_state = {}
     game_state["turn"] = turn
@@ -140,10 +140,10 @@ def save_game_state(turn, board64W, board64B, board128, engagements, visibility)
     game_state["board128"] = board128
     game_state["engagements"] = engagements
     game_state["visibility"] = visibility
-    with open('game_state.pickle', 'wb') as f:
+    with open(pickle_path, 'wb') as f:
         pickle.dump(game_state, f)
 ##########################################################
-def load_game_state(pickle_path = 'game_state.pickle'):
+def load_game_state(pickle_path = 'conf/game_state.pickle'):
     if os.path.exists(pickle_path):
         print("loading game state")
         with open(pickle_path, "rb") as f:

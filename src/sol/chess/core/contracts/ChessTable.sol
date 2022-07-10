@@ -70,10 +70,10 @@ contract ChessTable is IChessTable{
     uint8 public constant R_8 = 0x07;
 
     //              MODES
-    uint8 public constant M_DEAD = 0x00 << 6;
-    uint8 public constant M_SET = 0x01 << 6;
+    uint8 public constant M_DEAD   = 0x00 << 6;
+    uint8 public constant M_SET    = 0x01 << 6;
     uint8 public constant M_PINNED = 0x02 << 6;
-    uint8 public constant M_IMP = 0x03 << 6;
+    uint8 public constant M_IMP    = 0x03 << 6;
     //-----------------------------------------------------------------
     // Piece data masks
     uint8 public constant PC_FILE_MASK = 0x38;

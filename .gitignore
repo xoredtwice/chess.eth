@@ -1,7 +1,9 @@
-chenv/
+
+conf/game_state.pickle
+
 log/
 build/
-
+design/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

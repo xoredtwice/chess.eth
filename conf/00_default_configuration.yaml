@@ -48,3 +48,4 @@ chess:
 
 pychess:
   state-file: "game_state.pickle"
+  precomputed-state-file: "precomputed_state.pickle"
