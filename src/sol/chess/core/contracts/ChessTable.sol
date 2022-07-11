@@ -81,6 +81,15 @@ contract ChessTable is IChessTable{
     uint8 public constant PC_COORD_MASK = 0x3F;
     uint8 public constant PC_MODE_MASK = 0xC0;
     //-----------------------------------------------------------------
+    // State bit indices
+    uint8 public constant S_TURN = 0x01;
+    uint8 public constant S_STARTED = 0x02;
+    uint8 public constant S_WHITE_CHECK = 0x04;
+    uint8 public constant S_BLACK_CHECK = 0x08;
+    uint8 public constant S_WHITE_CHECKMATE = 0x10;
+    uint8 public constant S_BLACK_CHECKMATE = 0x20;
+    uint8 public constant S_DRAW = 0x40;
+    //-----------------------------------------------------------------
     // MASKS64 for visibility updates
     // NE:4, NW:5, SE:6, SW:7
     // N:0, S:1, E:2, W:3
@@ -473,14 +482,12 @@ contract ChessTable is IChessTable{
             board64B &= (uint64)(~(1 << from_sq));
             board64B |= (uint64)(1 << to_sq);
         }
-        uint64 board64 = board64W | board64B;
 
         // updating pieces
-        uint8 new_state = (M_SET | to_sq);
-        _updatePiece(_piece, new_state);
+        _updatePiece(_piece, M_SET | to_sq);
 
         // Reloading the visibility of the moved piece
-        visibility[_piece] = _reloadVisibility(board64,_piece, to_sq);
+        visibility[_piece] = _reloadVisibility(board64W | board64B,_piece, to_sq);
 
         // Making squares beyond from_sq visible to engaged pieces
         uint32 pc_engagements = engagements[_piece];
@@ -489,7 +496,7 @@ contract ChessTable is IChessTable{
         for(uint8 i=0;i<PIECE_COUNT;i++){
             if(pc_engagements % 2 == 1){
                 uint8 pc_sq = ((uint8)(pieces >> (i * 8)) & PC_COORD_MASK);
-                visibility[i] = _reloadVisibility(board64, i, pc_sq);               
+                visibility[i] = _reloadVisibility(board64W | board64B, i, pc_sq);               
             }
             pc_engagements = pc_engagements >> 1;
             
@@ -502,13 +509,18 @@ contract ChessTable is IChessTable{
         _clearEngagements(_piece, 0);
 
         uint64 opp_vis = 0x00;
-        uint8 king_sq;
+        uint64 self_vis = 0x00;
+        uint8 self_king = 0;
+        uint8 opp_king = 0;
+
         // Keeping kings position in mind
         if(_piece % 2 == 0){
-            king_sq = (uint8)(pieces & PC_COORD_MASK);
+            self_king = (uint8)(pieces & PC_COORD_MASK);
+            opp_king = (uint8)((pieces >> 8) & PC_COORD_MASK);
         }
         else{
-            king_sq = (uint8)((pieces >> 8) & PC_COORD_MASK);
+            opp_king = (uint8)(pieces & PC_COORD_MASK);
+            self_king = (uint8)((pieces >> 8) & PC_COORD_MASK);
         }
 
         // Loop over all pieces
@@ -516,6 +528,9 @@ contract ChessTable is IChessTable{
             // opponent total visibility calculation
             if((_piece % 2 == 0 && i_piece % 2 == 1) || (_piece % 2 == 1 && i_piece % 2 == 0)){
                 opp_vis |= visibility[i_piece];
+            }
+            else{
+                self_vis |= visibility[i_piece];
             }
 
             // for all pieces except the moved piece
@@ -525,8 +540,7 @@ contract ChessTable is IChessTable{
 
                 // Update dead piece state
                 if(i_sq == to_sq){
-                    new_state = M_DEAD << (i_piece * 8);
-                    _updatePiece(i_piece, new_state);
+                    _updatePiece(i_piece, M_DEAD << (i_piece * 8));
                 }
                 else{
                     uint8 ipc_mode = (uint8)((pieces >> (i_piece * 8)) & PC_MODE_MASK);
@@ -537,7 +551,7 @@ contract ChessTable is IChessTable{
                         _setEngagement(_piece, i_piece, 1);
 
                         // Making squares beyond to_sq invisible to i_piece
-                        visibility[i_piece] = _reloadVisibility(board64, i_piece, i_sq);
+                        visibility[i_piece] = _reloadVisibility(board64W | board64B, i_piece, i_sq);
 
                         // removing the broken engagements
                         for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j_piece++){
@@ -558,18 +572,34 @@ contract ChessTable is IChessTable{
 
         }
 
+        // calculating checks
+        if(_piece % 2 == 0){
+            if((self_vis >> opp_king) % 2 == 1){
+                state |= S_BLACK_CHECK;
+            }
+            else{
+                state &= (~S_BLACK_CHECK);
+            }
+        }
+        else{    
+            if((self_vis >> opp_king) % 2 == 1){
+                state |= S_WHITE_CHECK;
+            }
+            else{
+                state &= (~S_WHITE_CHECK);
+            }
+        }
+
         // player's king must be safe post-move
-        require((opp_vis >> king_sq) % 2 != 1, "ChessTable: KING_IS_CHECK");
+        require( (opp_vis >> self_king) % 2 == 0, "ChessTABLE: KING_IS_CHECK");
 
-        // // Checking white's checkmate
-        // if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (pieces >> 7) % 2 == 1 :
-        //     # black won
-        //     print("BLACK WON!! not implemented")
+        if(state & S_TURN == 0){
+            state |= S_TURN;
+        }
+        else{
+            state &= (~S_TURN);
+        }
 
-        // // Checking black's checkmate
-        // if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (pieces >> 15) % 2 == 1 :
-        //     # white won
-        //     print("WHITE WON!! not implemented")
 
         // lastMove = _piece << 8 | _action; 
         // moves.push(lastMove);
@@ -579,6 +609,22 @@ contract ChessTable is IChessTable{
         turn = moves.length % 2 == 0 ? white : black;
 
         emit PlayerMoved(_player, _piece, _action);
+
+        // Checking white's checkmate
+        if((_piece % 2 == 1) && (state & S_WHITE_CHECK == 1) && (visibility[0] & (~opp_vis) & (~board64W)) == 0){
+
+            // black won
+            state |= S_WHITE_CHECKMATE;
+            emit GameEnded(false, black, lobby); // TODO:: third param must be changed
+        }
+
+        // Checking black's checkmate
+        if(_piece % 2 == 0 && (state & S_BLACK_CHECK == 1) && (visibility[1] & (~opp_vis) & (~board64B)) == 0){
+            // white won
+            state |= S_BLACK_CHECKMATE;
+            emit GameEnded(false, white, lobby); // TODO:: third param must be changed
+        }
+
     }
 
     //-----------------------------------------------------------------

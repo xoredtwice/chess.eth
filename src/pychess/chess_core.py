@@ -35,10 +35,10 @@ def mask_direction(square, direction, block64):
 
     if sq_id >= msb :
         # directions: NorthWest, West, SouthWest, South    
-        return MASKS[direction][SQUARE_ARRAY[msb]] #^ (1 << msb)    
+        return MASKS[direction][SQUARE_ARRAY[msb]]   
     else:
         # directions: SouthEast, East, NorthEast, North
-        return MASKS[direction][SQUARE_ARRAY[lsb]] #^ (1 << lsb)
+        return MASKS[direction][SQUARE_ARRAY[lsb]]
 ##########################################################
 def pawn_white(_sq):
     r = (_sq % 8)
@@ -220,7 +220,7 @@ def _reloadVisibility(board64, pieces256, _piece, _sq):
 
     return new_vis
 ##########################################################
-def update_piece128(pieces256, _piece, _state):
+def update_piece256(pieces256, _piece, _state):
     piece_mask = (0xFF << (_piece * 8))
     pieces256 = pieces256 & (~piece_mask) # clean previous piece state
     pieces256 = pieces256 | _state # shoving the modified piece byte in
@@ -273,7 +273,7 @@ def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _
 
     # updating pieces256
     new_state = ((M_SET | to_sq) << (_piece * 8))
-    pieces256 = update_piece128(pieces256, _piece, new_state)
+    pieces256 = update_piece256(pieces256, _piece, new_state)
 
     # Reloading the visibility of the moved piece
     visibility[_piece] = _reloadVisibility(board64, pieces256,_piece, to_sq)
@@ -321,7 +321,7 @@ def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _
             # Update dead piece state
             if i_sq == to_sq:
                 new_state = M_DEAD << (i_piece * 8)
-                pieces256 = update_piece128(pieces256, i_piece, new_state)
+                pieces256 = update_piece256(pieces256, i_piece, new_state)
             else:
                 ipc_mode = (pieces256 >> (i_piece * 8)) & MASK256_MODE
 
