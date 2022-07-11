@@ -149,19 +149,21 @@ def queen(board64, _sq):
 def king(_sq):
     f_code = FILE_CODES[(_sq // 8)]
     r_code = RANK_CODES[(_sq % 8)]
+    raw_vis = 0x00
     if f"*{f_code}{r_code}" in MASKS.keys():
-        return MASKS[f"*{f_code}{r_code}"]
+        raw_vis = MASKS[f"*{f_code}{r_code}"]
     else:
         if RANKS[r_code] == 0:
-            return (MASKS["*B1"] << (8 * (FILES[f_code] - 1)))
+            raw_vis = (MASKS["*B1"] << (8 * (FILES[f_code] - 1)))
         elif RANKS[r_code] == 7:
-            return (MASKS["*B8"] << (8 * (FILES[f_code] - 1)))
+            raw_vis = (MASKS["*B8"] << (8 * (FILES[f_code] - 1)))
         elif FILES[f_code] == 0:
-            return (MASKS["*A2"] << (RANKS[r_code] - 1))
+            raw_vis = (MASKS["*A2"] << (RANKS[r_code] - 1))
         elif FILES[f_code] == 7:
-            return (MASKS["*H2"] << (RANKS[r_code] - 1))
+            raw_vis = (MASKS["*H2"] << (RANKS[r_code] - 1))
         else:
-            return (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1))))
+            raw_vis = (MASKS["*B2"] << ((RANKS[r_code] - 1) + (8 * (FILES[f_code] - 1))))
+    return raw_vis
 ##########################################################
 def knight(_sq):
     _sq = SQUARE_ARRAY[_sq]

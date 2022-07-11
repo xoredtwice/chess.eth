@@ -122,13 +122,14 @@ def print_engagements(engagements):
     lprint(s + "\n}")
 ##########################################################
 def print_game_state(meta, board64W, board64B, board128, engagements, visibility):
-    print(f"Meta: {meta}")
     print_board(board64W)
     print_board(board64B)
     pieces, view = parse_board(board128)
     print_engagements(engagements)
     for i in range(len(visibility)):
         print(f"visibility[{PIECE_CODES[i]}] = {hex(visibility[i])};")
+    for k in meta.keys():
+        lprint(f"{k} : {meta[k]}")
     print_board(view)
 ##########################################################
 def save_game_state(meta, board64W, board64B, board128, engagements, visibility, pickle_path = 'conf/game_state.pickle'):
@@ -162,6 +163,10 @@ def load_game_state(pickle_path = 'conf/game_state.pickle'):
         engagements = [0x00] * 32
         visibility = [0x00] * 32
         meta = {}
+        meta["turn"] = 0
+        meta["is_white_check"] = 0
+        meta["is_black_check"] = 0
+
     return meta, board64W, board64B, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):

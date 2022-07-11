@@ -71,10 +71,9 @@ elif "'move'" in args.command:
 
     board64W, board64B, board128, engagements, visibility = move(meta, board64W, board64B, board128, engagements, visibility, piece_id, action)
 
-    print_game_state(turn, board64W, board64B, board128, engagements, visibility)
+    print_game_state(meta, board64W, board64B, board128, engagements, visibility)
 
-    turn = ~ turn
-    save_game_state(turn, board64W, board64B, board128, engagements, visibility, state_file_path)
+    save_game_state(meta, board64W, board64B, board128, engagements, visibility, state_file_path)
 elif "'clear'" in args.command:
     lsection(f"[[Clearing the state]]")
     if os.path.exists(state_file_path):
