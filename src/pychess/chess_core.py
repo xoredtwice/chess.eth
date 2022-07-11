@@ -1,4 +1,4 @@
-from src.pychess.chess_consts import MASK128_FILE, MASK128_RANK, MASK128_POSITION, MASK128_MODE, MASKS
+from src.pychess.chess_consts import MASK256_FILE, MASK256_RANK, MASK256_POSITION, MASK256_MODE, MASKS
 from src.pychess.chess_consts import M_DEAD, M_SET, M_PINNED, M_IMP, PIECE_COUNT, SQUARE_IDS, SQUARE_ARRAY
 from src.helpers.chess_helpers import print_board, print_engagements, build_mask, PIECE_CODES, PIECE_IDS, RANKS, FILES, FILE_CODES, RANK_CODES
 from src.logger import lprint
@@ -198,7 +198,7 @@ def knight(_sq):
 
     return mask
 ##########################################################
-def _reloadVisibility(board64, board128, _piece, _sq):
+def _reloadVisibility(board64, pieces256, _piece, _sq):
     # TODO:: make sure piece is in legal range
     new_vis = 0x000000000000000
 
@@ -220,11 +220,11 @@ def _reloadVisibility(board64, board128, _piece, _sq):
 
     return new_vis
 ##########################################################
-def update_piece128(board128, _piece, _state):
+def update_piece128(pieces256, _piece, _state):
     piece_mask = (0xFF << (_piece * 8))
-    board128 = board128 & (~piece_mask) # clean previous piece state
-    board128 = board128 | _state # shoving the modified piece byte in
-    return board128
+    pieces256 = pieces256 & (~piece_mask) # clean previous piece state
+    pieces256 = pieces256 | _state # shoving the modified piece byte in
+    return pieces256
 ##########################################################
 def set_engagement(engagements, _f_piece, _t_piece, _value):
     if _value == 0:
@@ -237,21 +237,20 @@ def reset_piece_engagements(engagements, _piece):
     engagements[_piece] = 0    
     return engagements
 ##########################################################
-def move(meta, board64W, board64B, board128, engagements, visibility, _piece, _action):
+def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _action):
 
     if _piece % 2 == 0:
         pc_board64 = board64W
     else:
         pc_board64 = board64B
 
-    to_sq = _action & MASK128_POSITION
+    to_sq = _action & MASK256_POSITION
 
     # is the square visible to the moved piece?
-    # require((visibility[_piece] >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
     if ((visibility[_piece] & (~pc_board64)) >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
         raise Exception("ILLEGAL_MOVE")
 
-    from_sq = (board128 >> (_piece * 8)) & MASK128_POSITION
+    from_sq = (pieces256 >> (_piece * 8)) & MASK256_POSITION
 
     # Updating board64
     if _piece % 2 == 0:
@@ -265,21 +264,19 @@ def move(meta, board64W, board64B, board128, engagements, visibility, _piece, _a
         board64B = board64B | (1 << to_sq)
     board64 = board64W | board64B
 
-    # updating board128
+    # updating pieces256
     new_state = ((M_SET | to_sq) << (_piece * 8))
-    board128 = update_piece128(board128, _piece, new_state)
+    pieces256 = update_piece128(pieces256, _piece, new_state)
 
     # Reloading the visibility of the moved piece
-    visibility[_piece] = _reloadVisibility(board64, board128,_piece, to_sq)
-    # lprint("Moved piece's visibility:")
-    # print_board(visibility[_piece])
+    visibility[_piece] = _reloadVisibility(board64, pieces256,_piece, to_sq)
 
     # Making squares beyond from_sq visible to engaged pieces
     sub_engagements = engagements[_piece]
     for i in range(PIECE_COUNT):
         if sub_engagements % 2 == 1:
-            pc_sq = (board128 >> (i * 8)) & MASK128_POSITION
-            visibility[i] = _reloadVisibility(board64, board128, i, pc_sq)
+            pc_sq = (pieces256 >> (i * 8)) & MASK256_POSITION
+            visibility[i] = _reloadVisibility(board64, pieces256, i, pc_sq)
         sub_engagements = sub_engagements >> 1
 
     # Reset engagements of the moved piece
@@ -287,31 +284,39 @@ def move(meta, board64W, board64B, board128, engagements, visibility, _piece, _a
 
     i_piece = 0
     opp_vis = 0x00
+    self_vis = 0x00
+    opp_king = 0x00
+    self_king = 0x00
 
-    # Keeping kings position in mind
+    # Keeping kings positions in mind
     if _piece % 2 == 0:
-        king_sq = board128 & MASK128_POSITION
+        self_king = pieces256 & MASK256_POSITION
+        opp_king = (pieces256 >> 8) & MASK256_POSITION
     else:
-        king_sq = (board128 >> 8) & MASK128_POSITION
+        opp_king = pieces256 & MASK256_POSITION
+        self_king = (pieces256 >> 8) & MASK256_POSITION
+
 
     # Loop over all pieces
     while(i_piece >= 0 and i_piece <= PIECE_COUNT - 1):
 
-        # opponent total visibility calculation
+        # total visibility calculation
         if (_piece % 2 == 0 and i_piece % 2 == 1) or (_piece % 2 == 1 and i_piece % 2 == 0) :
             opp_vis = opp_vis | visibility[i_piece]
+        else:
+            self_vis = self_vis | visibility[i_piece]
 
         # for all pieces except the moved piece
         if i_piece != _piece:
             # i_piece square calculation
-            i_sq = (board128 >> (i_piece * 8)) & MASK128_POSITION
+            i_sq = (pieces256 >> (i_piece * 8)) & MASK256_POSITION
 
             # Update dead piece state
             if i_sq == to_sq:
                 new_state = M_DEAD << (i_piece * 8)
-                board128 = update_piece128(board128, i_piece, new_state)
+                pieces256 = update_piece128(pieces256, i_piece, new_state)
             else:
-                ipc_mode = (board128 >> (i_piece * 8)) & MASK128_MODE
+                ipc_mode = (pieces256 >> (i_piece * 8)) & MASK256_MODE
 
                 # Adding post-move _piece to i_piece engagements
                 if((visibility[i_piece]) >> to_sq)  % 2 == 1 and ipc_mode != 0:
@@ -319,13 +324,13 @@ def move(meta, board64W, board64B, board128, engagements, visibility, _piece, _a
                     engagements = set_engagement(engagements, _piece, i_piece, 1)
 
                     # Making squares beyond to_sq invisible to i_piece
-                    visibility[i_piece] = _reloadVisibility(board64, board128, i_piece, i_sq)
+                    visibility[i_piece] = _reloadVisibility(board64, pieces256, i_piece, i_sq)
                     # print_board(visibility[i_piece])
 
                     # removing the broken engagements
                     for j_piece in range(32):
                         if (engagements[j_piece] >> i_piece) % 2 == 1:
-                            j_sq = (board128 >> (j_piece * 8)) & MASK128_POSITION
+                            j_sq = (pieces256 >> (j_piece * 8)) & MASK256_POSITION
                             if(visibility[i_piece] >> j_sq) % 2 == 0:
                                 engagements = set_engagement(engagements, j_piece, i_piece, 0)
                 
@@ -335,21 +340,32 @@ def move(meta, board64W, board64B, board128, engagements, visibility, _piece, _a
 
         i_piece = i_piece + 1
 
+    # calculating checks
+    if (self_vis >> opp_king) % 2 == 1:
+        if _piece % 2 == 0:
+            meta["is_black_check"] = 1
+        else:
+            meta["is_white_check"] = 1
+
     # player's king must be safe post-move
-    print(f"king square: {king_sq}")
-    print(opp_vis >> king_sq)
-    if (opp_vis >> king_sq) % 2 == 1:
+    if (opp_vis >> self_king) % 2 == 1:
         raise Exception("ChessCore: KING_IS_CHECK")
 
     # Checking white's checkmate
-    print_board(visibility[0] & (~board64W))
-    if _piece % 2 == 1 and (visibility[0] & (~board64W)) == 0 and (board128 >> 7) % 2 == 1 :
+    if _piece % 2 == 1 and (visibility[0] & (~opp_vis) & (~board64W)) == 0:
         # black won
         print("BLACK WON!! not implemented")
 
     # Checking black's checkmate
-    if _piece % 2 == 0 and (visibility[1] & (~board64B)) == 0 and (board128 >> 15) % 2 == 1 :
+    if _piece % 2 == 0 and (visibility[1] & (~opp_vis) & (~board64B)) == 0:
         # white won
         print("WHITE WON!! not implemented")
-    return board64W, board64B, board128, engagements, visibility
+
+    if meta["turn"] == 0:
+        meta["turn"] = 1
+    else:
+        meta["turn"] = 0
+
+
+    return meta, board64W, board64B, pieces256, engagements, visibility
 ##########################################################

@@ -61,7 +61,7 @@ if "'visibility'" in args.command:
     print("Visibility: ")
     print_board(vis64)
 elif "'move'" in args.command:
-    meta, board64W, board64B, board128, engagements, visibility = load_game_state(state_file_path)
+    meta, board64W, board64B, pieces256, engagements, visibility = load_game_state(state_file_path)
 
     lsection(f"[[Testing Move of {args.piece} to {args.square}]]")
 
@@ -69,11 +69,11 @@ elif "'move'" in args.command:
     action = build_state(args.square[1:-1])
     print(f"piece_id:{piece_id}, action:{action}")
 
-    board64W, board64B, board128, engagements, visibility = move(meta, board64W, board64B, board128, engagements, visibility, piece_id, action)
+    meta, board64W, board64B, pieces256, engagements, visibility = move(meta, board64W, board64B, pieces256, engagements, visibility, piece_id, action)
 
-    print_game_state(meta, board64W, board64B, board128, engagements, visibility)
+    print_game_state(meta, board64W, board64B, pieces256, engagements, visibility)
 
-    save_game_state(meta, board64W, board64B, board128, engagements, visibility, state_file_path)
+    save_game_state(meta, board64W, board64B, pieces256, engagements, visibility, state_file_path)
 elif "'clear'" in args.command:
     lsection(f"[[Clearing the state]]")
     if os.path.exists(state_file_path):

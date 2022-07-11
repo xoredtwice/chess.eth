@@ -540,7 +540,6 @@ contract ChessTable is IChessTable{
                         visibility[i_piece] = _reloadVisibility(board64, i_piece, i_sq);
 
                         // removing the broken engagements
-                        // sub_engagements = engagements >> i_piece;
                         for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j_piece++){
                             if((engagements[j_piece] >> i_piece) % 2 == 1){
                                 uint8 j_sq = (uint8)((pieces >> (j_piece * 8)) & PC_COORD_MASK);
