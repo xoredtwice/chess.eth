@@ -246,6 +246,13 @@ def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _
 
     to_sq = _action & MASK256_POSITION
 
+    # is game finished?
+    if meta["is_white_checkmate"] == 1:
+        raise Exception("WHITE IS CHECKMATE")
+
+    if meta["is_black_checkmate"] == 1:
+        raise Exception("BLACK IS CHECKMATE")
+
     # is the square visible to the moved piece?
     if ((visibility[_piece] & (~pc_board64)) >> to_sq) % 2 != 1 and visibility[_piece] != 0 : # TODO:: remove second condition [IMPRTANT]
         raise Exception("ILLEGAL_MOVE")
@@ -341,31 +348,38 @@ def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _
         i_piece = i_piece + 1
 
     # calculating checks
-    if (self_vis >> opp_king) % 2 == 1:
-        if _piece % 2 == 0:
+    if _piece % 2 == 0:
+        if (self_vis >> opp_king) % 2 == 1:
             meta["is_black_check"] = 1
         else:
+            meta["is_black_check"] = 0
+    else:
+        if (self_vis >> opp_king) % 2 == 1:
             meta["is_white_check"] = 1
+        else:
+            meta["is_white_check"] = 0
 
     # player's king must be safe post-move
     if (opp_vis >> self_king) % 2 == 1:
         raise Exception("ChessCore: KING_IS_CHECK")
 
-    # Checking white's checkmate
-    if _piece % 2 == 1 and (visibility[0] & (~opp_vis) & (~board64W)) == 0:
-        # black won
-        print("BLACK WON!! not implemented")
-
-    # Checking black's checkmate
-    if _piece % 2 == 0 and (visibility[1] & (~opp_vis) & (~board64B)) == 0:
-        # white won
-        print("WHITE WON!! not implemented")
 
     if meta["turn"] == 0:
         meta["turn"] = 1
     else:
         meta["turn"] = 0
 
+    # Checking white's checkmate
+    if _piece % 2 == 1 and meta["is_white_check"] == 1 and (visibility[0] & (~opp_vis) & (~board64W)) == 0:
+        # black won
+        meta["is_white_checkmate"] = 1
+        lprint("ChessCore: BLACK WON!!")
+
+    # Checking black's checkmate
+    if _piece % 2 == 0 and meta["is_black_check"] == 1 and (visibility[1] & (~opp_vis) & (~board64B)) == 0:
+        # white won
+        meta["is_black_checkmate"] = 1
+        lprint("ChessCore: WHITE WON!!")
 
     return meta, board64W, board64B, pieces256, engagements, visibility
 ##########################################################
