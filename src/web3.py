@@ -3,6 +3,8 @@ import json
 from pprint import pprint
 from brownie import Contract
 from web3 import Web3
+from src.logger import lprint, lsection, lexcept
+from src.helpers.chess_helpers import parse_board, print_board, PIECE_IDS
 #*******************************************************************************
 def get_brownie_provider(compiled_path, contract_filename, deploy_address, owner_address):
     with open(compiled_path, "r") as file:
@@ -18,4 +20,33 @@ def load_web3_environment(network):
 
     return w3, chain_id, network["accounts"]
 #*******************************************************************************
-# def read_pieces():
+def send_move(player_address, player_provider, piece, action):
+    try:
+        tx = player_provider.move(piece, action);
+        return json.dumps(dict(tx.events['PlayerMoved']), indent=4)
+    except Exception as ex:
+        lprint(f"Exception in sending move() by {player_address}")
+        lexcept(ex, True)
+        return None
+#*******************************************************************************
+def read_pieces(player_address, player_provider):
+    try:
+        return player_provider.pieces();
+    except Exception as ex:
+        lprint(f"Exception in sending table.pieces() by {player_address}")
+        lexcept(ex, True)
+        return None
+#*******************************************************************************
+def send_move_and_read(player_tag, player_address, player_provider, piece, action):
+
+    lsection(f"[{player_tag} sends {action}]", 1)
+
+    ev = send_move(player_address, player_provider, PIECE_IDS['W_P_E'], 0x23)
+    lprint(f"[EVENT] ChessTable.PlayerMoved: {ev}")
+
+    lsection(f"[{player_tag} reads the pieces]", 1)
+    pieces256 = read_pieces(player_address, player_provider)
+    lprint(f"pieces value: {hex(pieces256)}")
+    pieces, view = parse_board(pieces256)
+    lprint(f"parsed pieces:{pieces}")
+    print_board(view)

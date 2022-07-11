@@ -1,7 +1,7 @@
 import json
 import os
 import brownie
-from src.web3 import get_brownie_provider, load_web3_environment
+from src.web3 import get_brownie_provider, load_web3_environment, send_move_and_read
 from src.logger import lprint, lsection, lexcept
 from src.helpers.chess_helpers import parse_board, print_board, PIECE_IDS
 from pprint import pprint
@@ -138,7 +138,41 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
         lprint(f"Exception in sending lobby.sitAndWait() by {p2_address}")
         lexcept(ex, True)
 
+    return table_address
     # ################################################################################
+
+def s3_simulate_exceptions():
+    print("Not implemented")
+    ###############################################################################
+    # player2 sends e5 -> [REVERT EXPECTED]
+    ################################################################################
+    # try:
+    #     lsection("[PLAYER2 sends e5]", 1)
+    #     p2_il_tx = p2_table_provider.move( PIECE_IDS['B_P_E'], 0x02);
+    #     lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(p2_il_tx.events['PlayerMoved']), indent=4)}")
+    # except Exception as ex:
+    #     lprint(f"Exception in sending move() by {p2_address}")
+    #     lexcept(ex, True)
+
+    ###############################################################################
+    # player1 sends move for player2's piece -> [REVERT EXPECTED]
+    ################################################################################
+
+    ###############################################################################
+    # player1 sends illegal move for her own piece -> [REVERT EXPECTED]
+    ################################################################################
+#*******************************************************************************
+def s3_simulate_gameplay(root_path, network, table_address):
+    build_path = os.path.join(root_path, "build")
+
+    w3, chain_id, accounts = load_web3_environment(network)
+
+    p1_address = accounts[1]['address']
+    p1_private = accounts[1]['private']
+
+    p2_address = accounts[2]['address']
+    p2_private = accounts[2]['private']
+
     table_path = os.path.join(build_path, "chess", "core", "build", "contracts", "ChessTable.json")
     p1_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p1_address)
     p2_table_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, p2_address)
@@ -161,45 +195,15 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     black_provider = get_brownie_provider(table_path, "ChessTable.sol", table_address, black_address)
 
     ###############################################################################
-    # player2 sends e5 -> [REVERT EXPECTED]
-    ################################################################################
-    # try:
-    #     lsection("[PLAYER2 sends e5]", 1)
-    #     p2_il_tx = p2_table_provider.move( PIECE_IDS['B_P_E'], 0x02);
-    #     lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(p2_il_tx.events['PlayerMoved']), indent=4)}")
-    # except Exception as ex:
-    #     lprint(f"Exception in sending move() by {p2_address}")
-    #     lexcept(ex, True)
-
-    ###############################################################################
-    # player1 sends move for player2's piece -> [REVERT EXPECTED]
-    ################################################################################
-
-    ###############################################################################
-    # player1 sends illegal move for her own piece -> [REVERT EXPECTED]
-    ################################################################################
-
-    ###############################################################################
     # white sends [e4]
     ################################################################################
-    try:
-        lsection("[WHITE sends e4]", 1)
-        wh_e4_tx = white_provider.move(PIECE_IDS['W_P_E'], 0x23);
-        lprint(f"[EVENT] ChessTable.PlayerMoved: {json.dumps(dict(wh_e4_tx.events['PlayerMoved']), indent=4)}")
-    except Exception as ex:
-        lprint(f"Exception in sending move() by {white_address}")
-        lexcept(ex, True)
-    try:
-        lsection("[PLAYER2 reads the pieces]", 1)
-        pieces = p2_table_provider.pieces();
-        lprint(f"pieces value: {hex(pieces)}")
-        pieces, view = parse_board(pieces)
-        lprint(f"parsed pieces:{pieces}")
-        print_board(view)
-    except Exception as ex:
-        lprint(f"Exception in sending table.getBoard() by {p1_address}")
-        lexcept(ex, True)
+    
+    send_move_and_read("WHITE", white_address, white_provider, PIECE_IDS['W_P_E'], 0x23)
+
+
+#*******************************************************************************
 def s3_simulate_chess(root_path, conf):
+
     ###############################################################################
     # Preparing environment
     ################################################################################
@@ -211,4 +215,5 @@ def s3_simulate_chess(root_path, conf):
     receipts = json.load(receipts_file)
     receipts_file.close()
 
-    s3_simulate_game_initialization(root_path, conf["network"], receipts, conf["tokens"], conf["chess"]["players"])
+    table_address = s3_simulate_game_initialization(root_path, conf["network"], receipts, conf["tokens"], conf["chess"]["players"])
+    s3_simulate_gameplay(root_path, conf["network"], table_address)

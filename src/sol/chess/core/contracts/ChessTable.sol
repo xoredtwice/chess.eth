@@ -711,7 +711,6 @@ contract ChessTable is IChessTable{
         // setting up the board through two variables
         // board64W 64bit, each bit shows whether a white piece fills a square or not
         // same for black
-        // board = board64W + board64B;
 
         // board64W =
         board64W |= (uint64)(1 << F_A | R_1); board64W |= (uint64)(1 << F_A | R_2);
