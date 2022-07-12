@@ -101,6 +101,11 @@ def piece_to_piece_id(piece):
     else:
         return -1
 ##########################################################
+def square_id(sq):
+    f = sq[0]
+    r = sq[1]
+    return (RANKS[r] + FILES[f] * 8)
+##########################################################
 def print_engagements(engagements):
     s = "engagements: {"
     for j_piece in range(len(engagements)):

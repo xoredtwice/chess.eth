@@ -3,7 +3,7 @@ import os
 import brownie
 from src.web3 import get_brownie_provider, load_web3_environment, send_move_and_read
 from src.logger import lprint, lsection, lexcept
-from src.helpers.chess_helpers import parse_board, print_board, PIECE_IDS
+from src.helpers.chess_helpers import parse_board, print_board, PIECE_IDS, square_id
 from pprint import pprint
 #*******************************************************************************
 #*******************************************************************************
@@ -141,7 +141,7 @@ def s3_simulate_game_initialization(root_path, network, receipts, tokens, player
     return table_address
     # ################################################################################
 
-def s3_simulate_exceptions():
+def s3_simulate_reverts():
     print("Not implemented")
     ###############################################################################
     # player2 sends e5 -> [REVERT EXPECTED]
@@ -198,7 +198,8 @@ def s3_simulate_gameplay(root_path, network, table_address):
     # white sends [e4]
     ################################################################################
     
-    send_move_and_read("WHITE", white_address, white_provider, PIECE_IDS['W_P_E'], 0x23)
+    send_move_and_read("WHITE", white_address, white_provider, PIECE_IDS['W_P_E'], square_id('E4'))
+    send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_P_E'], square_id('E5'))
 
 
 #*******************************************************************************
