@@ -255,10 +255,10 @@ contract ChessTable is IChessTable{
         require(r != 7, 'ChessTable: FATAL. PAWN_WHITE');
 
         if(r == 6){
-            mask |= (uint64)(0x03 << (((f) * 8) + (r + 1)));
+            mask |= (uint64)(0x03 << ((f * 8) + (r - 2)));
         }  
         else if(r != 0){
-            mask |= (uint64)(0x01 << (((f) * 8) + (r + 1)));
+            mask |= (uint64)(0x01 << ((f * 8) + (r - 1)));
         }
         else{
             // TODO:: implement pawn improvement
@@ -407,7 +407,6 @@ contract ChessTable is IChessTable{
     //
     //-----------------------------------------------------------------
     function _reloadVisibility(uint64 _block64, uint8 _piece, uint8 _sq) private returns (uint64){
-        // TODO:: make sure _piece is in legal range
         require(_piece < PIECE_COUNT, "ChessTable, PIECE_OUT_OF_RANGE");
         require(_sq < SQUARE_COUNT, "ChessTable, SQUARE_OUT_OF_RANGE");
 
@@ -452,16 +451,12 @@ contract ChessTable is IChessTable{
         }
     }
     //-----------------------------------------------------------------
-    function _clearEngagements(uint8 _piece, uint8 _direction) private{
-        if(_direction == 0){
-            engagements[_piece] = 0xFFFFFFFF;
-        }
-        else{
-            // TODO:: wrong
-            for(uint8 i=0; i<PIECE_COUNT; i++){
-                engagements[i] &= (uint32)(~( 0x00000001 << (_piece)));
-            }
-        }
+    function _clearEngagements(uint8 _piece) private{
+        engagements[_piece] = 0xFFFFFFFF;
+    }
+    //-----------------------------------------------------------------
+    function getVisibility(uint8 piece) external view returns(uint64){
+        return visibility[piece];
     }
     //-----------------------------------------------------------------
     function _move(address _player, uint8 _piece, uint8 _action) private{
@@ -469,7 +464,7 @@ contract ChessTable is IChessTable{
         uint8 to_sq = _action & PC_COORD_MASK;
 
         // is the square visible to the moved piece?
-        require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+        // require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
 
         uint8 from_sq = (uint8)(pieces >> (_piece * 8)) & PC_COORD_MASK;
 
@@ -506,7 +501,7 @@ contract ChessTable is IChessTable{
         }
 
         // Reset engagements of the moved piece
-        _clearEngagements(_piece, 0);
+        _clearEngagements(_piece);
 
         uint64 opp_vis = 0x00;
         uint64 self_vis = 0x00;
@@ -515,12 +510,12 @@ contract ChessTable is IChessTable{
 
         // Keeping kings position in mind
         if(_piece % 2 == 0){
-            self_king = (uint8)(pieces & PC_COORD_MASK);
-            opp_king = (uint8)((pieces >> 8) & PC_COORD_MASK);
+            self_king = (uint8)(pieces) & PC_COORD_MASK;
+            opp_king = (uint8)(pieces >> 8) & PC_COORD_MASK;
         }
         else{
-            opp_king = (uint8)(pieces & PC_COORD_MASK);
-            self_king = (uint8)((pieces >> 8) & PC_COORD_MASK);
+            opp_king = (uint8)(pieces) & PC_COORD_MASK;
+            self_king = (uint8)(pieces >> 8) & PC_COORD_MASK;
         }
 
         // Loop over all pieces
@@ -536,17 +531,18 @@ contract ChessTable is IChessTable{
             // for all pieces except the moved piece
             if(i_piece != _piece){
                 // i_piece square calculation
-                uint8 i_sq = (uint8)((pieces >> (i_piece * 8)) & PC_COORD_MASK);
+                uint8 i_sq = (uint8)((pieces >> (i_piece * 8)) % 256) & PC_COORD_MASK;
 
                 // Update dead piece state
                 if(i_sq == to_sq){
-                    _updatePiece(i_piece, M_DEAD << (i_piece * 8));
+                    _updatePiece(i_piece, M_DEAD);
+                    // i_sq = to_sq;
                 }
                 else{
-                    uint8 ipc_mode = (uint8)((pieces >> (i_piece * 8)) & PC_MODE_MASK);
+                    uint8 ipc_mode = (uint8)((pieces >> (i_piece * 8)) % 256) & PC_MODE_MASK;
 
                     // Adding post-move _piece to i_piece engagements
-                    if(((visibility[i_piece]) >> to_sq)  % 2 == 1 && ipc_mode != 0){
+                    if(((visibility[i_piece]) >> to_sq) % 2 == 1 && ipc_mode != M_DEAD){
                         // update engagement
                         _setEngagement(_piece, i_piece, 1);
 
@@ -556,7 +552,7 @@ contract ChessTable is IChessTable{
                         // removing the broken engagements
                         for(uint8 j_piece = 0;j_piece< PIECE_COUNT; j_piece++){
                             if((engagements[j_piece] >> i_piece) % 2 == 1){
-                                uint8 j_sq = (uint8)((pieces >> (j_piece * 8)) & PC_COORD_MASK);
+                                uint8 j_sq = (uint8)((pieces >> (j_piece * 8))) & PC_COORD_MASK;
                                 if((visibility[i_piece] >> j_sq) % 2 == 0){
                                     _setEngagement(j_piece, i_piece, 0);
                                 }
@@ -611,7 +607,7 @@ contract ChessTable is IChessTable{
         emit PlayerMoved(_player, _piece, _action);
 
         // Checking white's checkmate
-        if((_piece % 2 == 1) && (state & S_WHITE_CHECK == 1) && (visibility[0] & (~opp_vis) & (~board64W)) == 0){
+        if((_piece % 2 == 1) && (state & S_WHITE_CHECK != 0) && (visibility[0] & (~opp_vis) & (~board64W)) == 0){
 
             // black won
             state |= S_WHITE_CHECKMATE;
@@ -619,7 +615,7 @@ contract ChessTable is IChessTable{
         }
 
         // Checking black's checkmate
-        if(_piece % 2 == 0 && (state & S_BLACK_CHECK == 1) && (visibility[1] & (~opp_vis) & (~board64B)) == 0){
+        if(_piece % 2 == 0 && (state & S_BLACK_CHECK != 0) && (visibility[1] & (~opp_vis) & (~board64B)) == 0){
             // white won
             state |= S_BLACK_CHECKMATE;
             emit GameEnded(false, white, lobby); // TODO:: third param must be changed
@@ -644,13 +640,15 @@ contract ChessTable is IChessTable{
         white = player1;
         black = player2;
         turn = white;
-        state = 0x10;
+        state = S_STARTED;
         emit GameStarted(white, black, meta);
         return true;
     }
 
     function move(uint8 piece, uint8 action) external returns (bool) {
-        require(state >= 0x10, 'ChessTable: STATE_MISMATCH');
+        require(state & S_STARTED != 0, 'ChessTable: STATE_MISMATCH');
+        require(state & S_WHITE_CHECKMATE == 0, 'ChessTable: WHITE_CHECKMATE');
+        require(state & S_BLACK_CHECKMATE == 0, 'ChessTable: BLACK_CHECKMATE');
         
         // TODO:: the maxed out game's result must get resolved.
         require(moves.length < MAX_MOVES, 'ChessTable: MOVE_OVERFLOW');

@@ -205,26 +205,13 @@ def s3_simulate_gameplay(root_path, network, table_address):
     send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_P_A'], square_id('A6'))
 
     send_move_and_read("WHITE", white_address, white_provider, PIECE_IDS['W_B_F'], square_id('C4'))
-    send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_N_B'], square_id('C6'))
+    send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_P_B'], square_id('B6'))
 
     send_move_and_read("WHITE", white_address, white_provider, PIECE_IDS['W_Q'], square_id('F7'))
 
     # send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_P_B'], square_id('B6'))
     # send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_P_A'], square_id('A5'))
     # send_move_and_read("BLACK", black_address, black_provider, PIECE_IDS['B_K'], square_id('E7'))
-
-# python test_pychess.py -c move -p W_Q -s H5
-# python test_pychess.py -c move -p B_P_A -s A6
-
-# python test_pychess.py -c move -p W_B_F -s C4
-# python test_pychess.py -c move -p B_P_B -s B6
-
-# # checkmate
-# python test_pychess.py -c move -p W_Q -s F7
-
-# # checking post checkmate move
-# python test_pychess.py -c move -p B_P_A -s A5
-# python test_pychess.py -c move -p B_K -s E7
 
 
 #*******************************************************************************

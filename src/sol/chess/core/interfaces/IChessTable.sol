@@ -13,6 +13,7 @@ interface IChessTable {
     function board64W() external view returns(uint64);
     function board64B() external view returns(uint64);
 
+    function getVisibility(uint8 piece) external view returns(uint64);
 
     function state() external view returns (uint8);
     function activeGame() external view returns (uint);
