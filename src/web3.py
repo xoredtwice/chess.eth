@@ -26,7 +26,15 @@ def send_move(player_address, player_provider, piece, action):
         return json.dumps(dict(tx.events['PlayerMoved']), indent=4)
     except Exception as ex:
         lprint(f"Exception in sending move() by {player_address}")
-        lexcept(ex, True)
+        # lexcept(ex, True)
+        return None
+#*******************************************************************************
+def read_boards(player_address, player_provider):
+    try:
+        return player_provider.board64W(), player_provider.board64B();
+    except Exception as ex:
+        lprint(f"Exception in sending table.board64W() or table.board64B() by {player_address}")
+        # lexcept(ex, True)
         return None
 #*******************************************************************************
 def read_pieces(player_address, player_provider):
@@ -34,14 +42,14 @@ def read_pieces(player_address, player_provider):
         return player_provider.pieces();
     except Exception as ex:
         lprint(f"Exception in sending table.pieces() by {player_address}")
-        lexcept(ex, True)
+        # lexcept(ex, True)
         return None
 #*******************************************************************************
 def send_move_and_read(player_tag, player_address, player_provider, piece, action):
 
-    lsection(f"[{player_tag} sends {action}]", 1)
+    lsection(f"[{player_tag} sends {hex(piece)},{hex(action)}]", 1)
 
-    ev = send_move(player_address, player_provider, PIECE_IDS['W_P_E'], 0x23)
+    ev = send_move(player_address, player_provider, piece, action)
     lprint(f"[EVENT] ChessTable.PlayerMoved: {ev}")
 
     lsection(f"[{player_tag} reads the pieces]", 1)
@@ -50,3 +58,8 @@ def send_move_and_read(player_tag, player_address, player_provider, piece, actio
     pieces, view = parse_board(pieces256)
     lprint(f"parsed pieces:{pieces}")
     print_board(view)
+
+    board64W, board64B = read_boards(player_address, player_provider)
+
+    # print_board(board64W)
+    # print_board(board64B)

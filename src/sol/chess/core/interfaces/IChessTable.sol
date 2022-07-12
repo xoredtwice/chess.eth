@@ -10,6 +10,10 @@ interface IChessTable {
     function turn() external view returns (address);
     function pieces() external view returns(uint256);
 
+    function board64W() external view returns(uint64);
+    function board64B() external view returns(uint64);
+
+
     function state() external view returns (uint8);
     function activeGame() external view returns (uint);
     function lastMove() external view returns (uint16);

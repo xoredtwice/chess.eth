@@ -601,8 +601,8 @@ contract ChessTable is IChessTable{
         }
 
 
-        // lastMove = _piece << 8 | _action; 
-        // moves.push(lastMove);
+        lastMove = _piece << 8 | _action; 
+        moves.push(lastMove);
 
         // Changing the turn
         // TODO:: it can be done through flipping the addresses too.
@@ -713,24 +713,24 @@ contract ChessTable is IChessTable{
         // same for black
 
         // board64W =
-        board64W |= (uint64)(1 << F_A | R_1); board64W |= (uint64)(1 << F_A | R_2);
-        board64W |= (uint64)(1 << F_B | R_1); board64W |= (uint64)(1 << F_B | R_2);
-        board64W |= (uint64)(1 << F_C | R_1); board64W |= (uint64)(1 << F_C | R_2);
-        board64W |= (uint64)(1 << F_D | R_1); board64W |= (uint64)(1 << F_D | R_2);
-        board64W |= (uint64)(1 << F_E | R_1); board64W |= (uint64)(1 << F_E | R_2);
-        board64W |= (uint64)(1 << F_F | R_1); board64W |= (uint64)(1 << F_F | R_2);
-        board64W |= (uint64)(1 << F_G | R_1); board64W |= (uint64)(1 << F_G | R_2);
-        board64W |= (uint64)(1 << F_H | R_1); board64W |= (uint64)(1 << F_H | R_2);
+        board64W |= (uint64)(1 << (F_A | R_1)); board64W |= (uint64)(1 << (F_A | R_2));
+        board64W |= (uint64)(1 << (F_B | R_1)); board64W |= (uint64)(1 << (F_B | R_2));
+        board64W |= (uint64)(1 << (F_C | R_1)); board64W |= (uint64)(1 << (F_C | R_2));
+        board64W |= (uint64)(1 << (F_D | R_1)); board64W |= (uint64)(1 << (F_D | R_2));
+        board64W |= (uint64)(1 << (F_E | R_1)); board64W |= (uint64)(1 << (F_E | R_2));
+        board64W |= (uint64)(1 << (F_F | R_1)); board64W |= (uint64)(1 << (F_F | R_2));
+        board64W |= (uint64)(1 << (F_G | R_1)); board64W |= (uint64)(1 << (F_G | R_2));
+        board64W |= (uint64)(1 << (F_H | R_1)); board64W |= (uint64)(1 << (F_H | R_2));
 
         // board64B =
-        board64B |= (uint64)(1 << F_A | R_7); board64B |= (uint64)(1 << F_A | R_8);
-        board64B |= (uint64)(1 << F_B | R_7); board64B |= (uint64)(1 << F_B | R_8);
-        board64B |= (uint64)(1 << F_C | R_7); board64B |= (uint64)(1 << F_C | R_8);
-        board64B |= (uint64)(1 << F_D | R_7); board64B |= (uint64)(1 << F_D | R_8);
-        board64B |= (uint64)(1 << F_E | R_7); board64B |= (uint64)(1 << F_E | R_8);
-        board64B |= (uint64)(1 << F_F | R_7); board64B |= (uint64)(1 << F_F | R_8);
-        board64B |= (uint64)(1 << F_G | R_7); board64B |= (uint64)(1 << F_G | R_8);
-        board64B |= (uint64)(1 << F_H | R_7); board64B |= (uint64)(1 << F_H | R_8);
+        board64B |= (uint64)(1 << (F_A | R_7)); board64B |= (uint64)(1 << (F_A | R_8));
+        board64B |= (uint64)(1 << (F_B | R_7)); board64B |= (uint64)(1 << (F_B | R_8));
+        board64B |= (uint64)(1 << (F_C | R_7)); board64B |= (uint64)(1 << (F_C | R_8));
+        board64B |= (uint64)(1 << (F_D | R_7)); board64B |= (uint64)(1 << (F_D | R_8));
+        board64B |= (uint64)(1 << (F_E | R_7)); board64B |= (uint64)(1 << (F_E | R_8));
+        board64B |= (uint64)(1 << (F_F | R_7)); board64B |= (uint64)(1 << (F_F | R_8));
+        board64B |= (uint64)(1 << (F_G | R_7)); board64B |= (uint64)(1 << (F_G | R_8));
+        board64B |= (uint64)(1 << (F_H | R_7)); board64B |= (uint64)(1 << (F_H | R_8));
 
         engagements[W_K]   = 0x0004; engagements[B_K ]  = 0x0008;
         // Queens
