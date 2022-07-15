@@ -464,7 +464,7 @@ contract ChessTable is IChessTable{
         uint8 to_sq = _action & PC_COORD_MASK;
 
         // is the square visible to the moved piece?
-        // require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
+        require(((visibility[_piece] & (~pieceB64)) >> to_sq) % 2 == 1, "ChessTable: ILLEGAL_MOVE");
 
         uint8 from_sq = (uint8)(pieces >> (_piece * 8)) & PC_COORD_MASK;
 
