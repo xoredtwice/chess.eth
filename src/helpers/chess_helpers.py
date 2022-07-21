@@ -173,6 +173,12 @@ def load_game_state(pickle_path = 'conf/game_state.pickle'):
         meta["is_black_check"] = 0
         meta["is_white_checkmate"] = 0
         meta["is_black_checkmate"] = 0
+        meta["is_W_K_moved"] = 0
+        meta["is_B_K_moved"] = 0
+        meta["is_W_R_A_moved"] = 0
+        meta["is_W_R_H_moved"] = 0
+        meta["is_B_R_A_moved"] = 0
+        meta["is_B_R_H_moved"] = 0
     return meta, board64W, board64B, board128, engagements, visibility
 ##########################################################
 def build_mask(squares):

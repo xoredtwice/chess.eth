@@ -271,6 +271,11 @@ def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _
         board64B = board64B | (1 << to_sq)
     board64 = board64W | board64B
 
+    # detecting king move
+    if _piece < 2 :
+        print("Not implemented")
+        
+
     # updating pieces256
     new_state = ((M_SET | to_sq) << (_piece * 8))
     pieces256 = update_piece256(pieces256, _piece, new_state)
@@ -362,6 +367,12 @@ def move(meta, board64W, board64B, pieces256, engagements, visibility, _piece, _
     # player's king must be safe post-move
     if (opp_vis >> self_king) % 2 == 1:
         raise Exception("ChessCore: KING_IS_CHECK")
+
+    if _piece < 2 :
+        if _piece == 0:
+            meta["is_W_K_moved"] = 1
+        else:
+            meta["is_B_K_moved"] = 1
 
 
     if meta["turn"] == 0:
